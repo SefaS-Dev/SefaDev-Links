@@ -29,14 +29,15 @@
     .semester, .details, .drive-hint, .view-meta, .view-kicker, .footer-note { text-shadow: 0 0 6px #0b0d10, 0 0 2px #0b0d10; }
     /* Duvar kağıdı: ekrana sabit; yatay ekranda geniş, dikey ekranda uzun sürüm. */
     .wallpaper {
-      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      position: fixed; inset: -3%; z-index: -1; pointer-events: none;
       background: #0b0d10 url("img/bg-wide.webp") center / cover no-repeat;
+      filter: blur(5px) saturate(1.1); /* WebGL yoksa da kıvrımlar yumuşak görünsün */
     }
     @media (max-aspect-ratio: 1/1) {
       .wallpaper { background-image: url("img/bg-tall.webp"); }
     }
-    /* Duvar kağıdının noktalı (Bayer dithering) hâli; WebGL çalışırsa düz görselin üstüne çizilir. */
-    .wallpaper-dither { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity 400ms ease; }
+    /* Duvar kağıdının noktalı (Bayer dithering), hareketli hâli; WebGL çalışırsa düz görselin üstüne çizilir. */
+    .wallpaper-dither { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; opacity: 0; transition: opacity 400ms ease; }
     .wallpaper-dither.is-ready { opacity: 1; }
     * { box-sizing: border-box; }
     body {
@@ -278,6 +279,36 @@
       .file-download { min-width: 52px; margin-right: 4px; padding-inline: 8px; }
       .preview-header { padding-block: 12px 18px; }
     }
+    /* Koyu cam paneller: arkadaki duvar kağıdı panellerin altında bulanık ve koyulaşmış görünür. */
+    :root {
+      --glass: rgb(16 18 22 / 58%);
+      --glass-strong: rgb(16 18 22 / 72%);
+      --glass-border: rgb(255 255 255 / 8%);
+      --glass-blur: blur(18px) saturate(1.35);
+    }
+    .course, .file-list, .hero-frame, .all-folders, .pill {
+      background: var(--glass);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 18px 40px rgb(0 0 0 / 28%);
+    }
+    .course { border-radius: 16px; }
+    .course-picture { margin: 10px 10px 0; border-radius: 10px; }
+    .course-body { padding: 20px 22px 18px; }
+    .hero-frame { padding: 10px; border-radius: 18px; }
+    .hero-frame .hero-image { border-radius: 10px; }
+    .file-list { border-radius: 14px; }
+    .all-folders { border-radius: 12px; }
+    .pill { background: var(--glass-strong); }
+    @media (hover: hover) {
+      .course:hover { border-color: rgb(255 255 255 / 18%); box-shadow: 0 1px 0 rgb(255 255 255 / 6%) inset, 0 22px 48px rgb(0 0 0 / 38%); }
+      .all-folders:hover { background: rgb(255 255 255 / 12%); color: var(--text); }
+      .file-row:hover { background: rgb(255 255 255 / 5%); }
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .course, .file-list, .hero-frame, .all-folders, .pill { background: rgb(18 21 26 / 92%); }
+    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
       .course:hover, .course:hover img { transform: none; }
@@ -304,7 +335,7 @@
           <div class="hero-rule" aria-hidden="true"></div>
           <p class="details">Ankara Medipol Üniversitesi · Bilgisayar Programcılığı · 2026-2027 Güz</p>
         </div>
-        <img class="hero-image" src="img/hero.webp" width="1600" height="1067" fetchpriority="high" alt="Sıcak akşam ışığında laptop, defter, kahve, kitaplar, devre kartı ve küçük bir bitki bulunan öğrenci masası.">
+        <div class="hero-frame"><img class="hero-image" src="img/hero.webp" width="1600" height="1067" fetchpriority="high" alt="Sıcak akşam ışığında laptop, defter, kahve, kitaplar, devre kartı ve küçük bir bitki bulunan öğrenci masası."></div>
       </div>
     </header>
     <main id="dersler" tabindex="-1">
@@ -690,7 +721,9 @@
     })();
   </script>
   <script>
-    // Duvar kağıdını 2 px'lik noktalara böler (8x8 Bayer). Sabit çizim: yalnız yüklemede ve boyut değişince.
+    // Mor sis arka planı: görsel yerine kodla üretilen, sürekli akan, ara ara belirip kaybolan duman (domain-warped fbm).
+    // Tuval nokta boyutunda (2 CSS px) düşük çözünürlükte çizilir, CSS ile keskin büyütülür: hem 2 px Bayer noktaları
+    // net kalır hem de maliyet ~16 kat azalır. ~30 fps; sekme gizliyken durur; "hareketi azalt" açıksa sabit tek kare.
     (() => {
       const canvas = document.getElementById('wallpaper-dither');
       const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
@@ -699,26 +732,53 @@
       const vert = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }';
       const frag = `
         precision highp float;
-        uniform sampler2D img; uniform vec2 res; uniform vec2 imgSize; uniform float cell;
+        uniform vec2 res; uniform float t;
         float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
         float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
         float bayer8(vec2 a){ return bayer4(0.5 * a) * 0.25 + bayer2(a); }
+        float hash(vec2 p){ p = fract(p * vec2(127.1, 311.7)); p += dot(p, p + 34.5); return fract(p.x * p.y); }
+        float noise(vec2 p){
+          vec2 i = floor(p), f = fract(p);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+        }
+        float fbm(vec2 p){
+          float v = 0.0, a = 0.5;
+          mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+          for (int i = 0; i < 4; i++) { v += a * noise(p); p = m * p; a *= 0.42; }
+          return v;
+        }
         void main(){
-          vec2 c = floor(gl_FragCoord.xy / cell);
-          vec2 local = fract(gl_FragCoord.xy / cell);
-          vec2 uv = (c * cell + 0.5 * cell) / res;
-          uv.y = 1.0 - uv.y;
-          // background-size: cover eşdeğeri
-          float sr = res.x / res.y, ir = imgSize.x / imgSize.y;
-          vec2 scale = sr > ir ? vec2(1.0, ir / sr) : vec2(sr / ir, 1.0);
-          vec2 tuv = (uv - 0.5) * scale + 0.5;
-          vec3 col = texture2D(img, tuv).rgb;
+          vec2 uv = gl_FragCoord.xy / res;
+          vec2 p = (gl_FragCoord.xy - 0.5 * res) / res.y * 0.75; // küçük sayı = büyük, yumuşak kıvrımlar
+          float s = t * 0.045;
 
-          float levels = 6.0;
-          vec3 q = floor(col * (levels - 1.0) + bayer8(c)) / (levels - 1.0);
-          float gap = cell >= 3.0 ? step(local.x, 0.85) * step(local.y, 0.85) : 1.0;
-          vec3 base = vec3(0.043, 0.051, 0.063);
-          gl_FragColor = vec4(max(base, q * mix(0.55, 1.0, gap) * 0.85), 1.0);
+          // Domain warping: gürültüyü kendi gürültüsüyle bük, iç içe kıvrılan duman/sıvı akışı çıkar.
+          vec2 q = vec2(fbm(p + vec2(0.0, s)), fbm(p + vec2(5.2, 1.3) - s * 0.7));
+          vec2 r = vec2(fbm(p + 2.4 * q + vec2(1.7, 9.2) + s * 1.3), fbm(p + 2.4 * q + vec2(8.3, 2.8) - s));
+          float f = fbm(p + 2.2 * r);
+          f = smoothstep(0.22, 0.55, f); // fbm burada ~0.2–0.6 aralığında; 0–1'e yayılır // kontrast: geniş karanlık alanlar, belirgin ışık kıvrımları
+
+          // Renk: mor sis. Tam renkli değil; koyu zeminde yarı saydam, soluk mor duman.
+          vec3 col = mix(vec3(0.016, 0.014, 0.03), vec3(0.17, 0.07, 0.34), smoothstep(0.25, 0.8, f));
+          col = mix(col, vec3(0.50, 0.36, 0.86), 0.55 * smoothstep(0.65, 1.0, f));
+          col = mix(col, vec3(0.75, 0.42, 0.78), 0.25 * smoothstep(0.45, 0.62, r.x) * f); // yer yer pembemsi ton
+
+          // Sis yoğunluğu zamanla gelip gider: büyük ve çok yavaş bir alan, dumanı bazen belirginleştirir,
+          // bazen neredeyse silip yalnız koyu zemini bırakır. "Ara ara hafifçe geçen sis" hissi buradan.
+          // İki yoğunluk alanı zıt yönlere kayar; sis bir yerde kalmaz, ekranın iki yanında da dolaşır.
+          float fog = max(fbm(p * 0.5 + vec2(t * 0.045, -t * 0.015) + 11.0),
+                          fbm(p * 0.5 + vec2(-t * 0.04, t * 0.02) + 37.0));
+          fog = smoothstep(0.26, 0.5, fog);
+          col *= mix(0.25, 0.95, fog);
+
+          // Yön yok: sis ekranın her yerinde eşit gezer. Yalnız kenarlarda hafif kararma (vinyet) var.
+          float vig = 1.0 - smoothstep(0.35, 0.95, length((uv - 0.5) * vec2(1.1, 1.0)));
+          col *= mix(0.55, 1.0, vig);
+
+          float levels = 7.0;
+          vec3 qd = floor(col * (levels - 1.0) + bayer8(gl_FragCoord.xy)) / (levels - 1.0);
+          gl_FragColor = vec4(max(vec3(0.043, 0.051, 0.063), qd), 1.0);
         }`;
 
       function shader(type, src) {
@@ -743,47 +803,38 @@
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
       const u = name => gl.getUniformLocation(prog, name);
 
-      const tex = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(k => gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE));
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-      let current = '', size = [1, 1], loaded = false;
-      function pickSource() { return innerWidth / innerHeight <= 1 ? 'img/bg-tall.webp' : 'img/bg-wide.webp'; }
-      function draw() {
-        if (!loaded) return;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.round(innerWidth * dpr);
-        canvas.height = Math.round(innerHeight * dpr);
+      const still = matchMedia('(prefers-reduced-motion: reduce)');
+      const start = performance.now();
+      let raf = 0, last = 0;
+      function resize() {
+        const DOT = 2; // nokta boyu (CSS piksel)
+        canvas.width = Math.max(1, Math.round(innerWidth / DOT));
+        canvas.height = Math.max(1, Math.round(innerHeight / DOT));
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.uniform2f(u('res'), canvas.width, canvas.height);
-        gl.uniform2f(u('imgSize'), size[0], size[1]);
-        gl.uniform1f(u('cell'), Math.max(2, Math.round(2 * dpr)));
-        gl.uniform1i(u('img'), 0);
+      }
+      function render(now) {
+        gl.uniform1f(u('t'), still.matches ? 20 : 20 + (now - start) / 1000);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
-      function load() {
-        const src = pickSource();
-        if (src === current) return draw();
-        current = src;
-        const image = new Image();
-        image.onload = () => {
-          if (src !== current) return;
-          try {
-            gl.bindTexture(gl.TEXTURE_2D, tex);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-          } catch (e) { return; } // ör. file:// üzerinde görsel kullanılamazsa düz duvar kağıdı kalır
-          size = [image.naturalWidth, image.naturalHeight];
-          loaded = true;
-          draw();
-          canvas.classList.add('is-ready');
-        };
-        image.src = src;
+      function loop(now) {
+        raf = requestAnimationFrame(loop);
+        if (now - last < 33) return;
+        last = now;
+        render(now);
       }
+      function play() {
+        cancelAnimationFrame(raf); raf = 0;
+        if (still.matches || document.hidden) render(performance.now());
+        else raf = requestAnimationFrame(loop);
+      }
+      document.addEventListener('visibilitychange', play);
+      still.addEventListener('change', play);
       let timer;
-      addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(load, 120); });
-      load();
+      addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => { resize(); play(); }, 120); });
+      resize();
+      play();
+      canvas.classList.add('is-ready');
     })();
   </script>
 </body>
