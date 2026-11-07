@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="description" content="Ankara Medipol Üniversitesi 2. sınıf Bilgisayar Programcılığı, 2026-2027 Güz dönemi ders notları, sunumlar ve kaynaklar.">
+  <title>2. Sınıf PC Programcılığı — Ders Materyalleri</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap&subset=latin-ext" rel="stylesheet">
+  <style>
+    /* Yalnız koyu tema. */
+    :root {
+      color-scheme: dark;
+      --background: #0b0d10;
+      --surface: rgb(19 23 29 / 90%);
+      --text: #f2eee6;
+      --muted: #a3aab0;
+      --border: rgb(255 255 255 / 9%);
+      --accent: #f0a27c;
+      --sage: rgb(255 255 255 / 6%);
+      --focus: #f0a27c;
+      --shadow: 0 16px 40px rgb(0 0 0 / 45%);
+      --heading-font: "DM Serif Display", Georgia, "Times New Roman", serif;
+      --body-font: "Inter", "Segoe UI", system-ui, sans-serif;
+    }
+    .semester, .details, .drive-hint, .view-meta, .view-kicker, .footer-note { text-shadow: 0 0 6px #0b0d10, 0 0 2px #0b0d10; }
+    /* Duvar kağıdı: ekrana sabit; yatay ekranda geniş, dikey ekranda uzun sürüm. */
+    .wallpaper {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background: #0b0d10 url("img/bg-wide.webp") center / cover no-repeat;
+    }
+    @media (max-aspect-ratio: 1/1) {
+      .wallpaper { background-image: url("img/bg-tall.webp"); }
+    }
+    /* Duvar kağıdının noktalı (Bayer dithering) hâli; WebGL çalışırsa düz görselin üstüne çizilir. */
+    .wallpaper-dither { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity 400ms ease; }
+    .wallpaper-dither.is-ready { opacity: 1; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: var(--body-font);
+      font-size: 1rem;
+      line-height: 1.6;
+      -webkit-text-size-adjust: 100%;
+    }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; }
+    h1, h2, h3, p { margin: 0; }
+    h1, h2, h3 { font-weight: 400; }
+    ::selection { background: var(--sage); color: var(--text); }
+    .shell { width: min(1160px, calc(100% - 80px)); margin-inline: auto; }
+    .masthead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      min-height: 92px;
+      border-bottom: 1px solid var(--border);
+    }
+    .masthead-name { font-family: var(--heading-font); font-size: 1.25rem; }
+    .semester { color: var(--muted); font-size: .75rem; letter-spacing: .1em; }
+    .hero {
+      display: grid;
+      grid-template-columns: .92fr 1.08fr;
+      align-items: center;
+      gap: 60px;
+      padding-block: 56px 64px;
+    }
+    h1 {
+      max-width: 13ch;
+      font-family: var(--heading-font);
+      font-size: clamp(2.75rem, 4.5vw, 4.125rem);
+      line-height: 1.06;
+      letter-spacing: -.035em;
+      text-wrap: balance;
+      overflow-wrap: break-word;
+    }
+    .subtitle {
+      margin-top: 18px;
+      color: var(--accent);
+      font-family: var(--heading-font);
+      font-size: clamp(1.5rem, 2.3vw, 2rem);
+      font-style: italic;
+      line-height: 1.2;
+    }
+    .hero-rule { width: 42px; height: 2px; margin-block: 28px 20px; background: var(--accent); }
+    .details { max-width: 36ch; color: var(--muted); font-size: .8125rem; line-height: 1.8; text-wrap: pretty; }
+    .hero-image { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 12px; }
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      margin-bottom: 24px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+    h2 { font-family: var(--heading-font); font-size: 2rem; line-height: 1.2; letter-spacing: -.025em; }
+    .drive-hint { color: var(--muted); font-size: .75rem; }
+    .courses {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 28px 24px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .courses > li { display: flex; min-width: 0; }
+    .course {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      text-decoration: none;
+      transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+    }
+    .course-picture { overflow: hidden; border-radius: 11px 11px 0 0; background: var(--sage); }
+    .course-picture img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; transition: transform 260ms ease; }
+    .course-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 23px 24px 20px; }
+    .course-number { margin-bottom: 10px; color: var(--accent); font-size: .6875rem; font-weight: 600; letter-spacing: .1em; }
+    h3 { margin-bottom: 8px; font-family: var(--heading-font); font-size: 1.4375rem; line-height: 1.25; letter-spacing: -.015em; text-wrap: pretty; }
+    .course-note { margin-bottom: 24px; color: var(--muted); font-size: .78125rem; }
+    .course-action {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--accent);
+      font-size: .75rem;
+      font-weight: 600;
+    }
+    .arrow { font-size: 1.125rem; font-weight: 400; line-height: 1; }
+    @media (hover: hover) {
+      .course:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: var(--shadow); }
+      .course:hover img { transform: scale(1.035); }
+      .all-folders:hover { background: var(--text); color: var(--background); }
+    }
+    a:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }
+    .archive-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-top: 48px;
+      padding-block: 28px 40px;
+      border-top: 1px solid var(--border);
+    }
+    .footer-title { font-family: var(--heading-font); font-size: 1.375rem; }
+    .footer-note { margin-top: 4px; color: var(--muted); font-size: .75rem; }
+    .all-folders {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      min-height: 48px;
+      padding: 11px 20px;
+      border: 1px solid var(--text);
+      border-radius: 6px;
+      font-size: .8125rem;
+      font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background-color 240ms ease, color 240ms ease;
+    }
+    .skip-link { position: absolute; top: 12px; left: 16px; z-index: 1; min-height: 44px; padding: 10px 18px; border-radius: 6px; background: var(--surface); transform: translateY(-200%); }
+    .skip-link:focus { transform: translateY(0); }
+    [hidden] { display: none !important; }
+    .extras { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 32px; font-size: .8125rem; }
+    .extras h2 { color: var(--muted); font-family: var(--body-font); font-size: .8125rem; letter-spacing: 0; }
+    .extras a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); text-underline-offset: 4px; }
+    .explorer { padding-block: 28px 40px; }
+    .back-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); font-size: .875rem; text-decoration: none; overflow-wrap: anywhere; }
+    .view-header { padding-block: 24px 28px; border-bottom: 1px solid var(--border); }
+    .view-kicker { margin-bottom: 10px; color: var(--muted); font-size: .75rem; }
+    .view-title { max-width: none; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.15; letter-spacing: -.025em; overflow-wrap: anywhere; }
+    .view-title:focus, #dersler:focus { outline: none; }
+    .view-meta { margin-top: 12px; color: var(--muted); font-size: .8125rem; }
+    .file-group { margin-top: 28px; }
+    .group-title { margin-bottom: 14px; font-family: var(--body-font); font-size: 1rem; font-weight: 600; letter-spacing: 0; line-height: 1.5; }
+    .file-list { margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); list-style: none; }
+    .file-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+    .file-row + .file-row { border-top: 1px solid var(--border); }
+    .file-open { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 16px; min-height: 64px; padding: 12px 16px; text-decoration: none; }
+    .file-type { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-size: .625rem; font-weight: 600; }
+    .file-name { min-width: 0; font-size: .875rem; overflow-wrap: anywhere; }
+    .file-download { display: inline-flex; align-items: center; justify-content: center; min-width: 60px; min-height: 44px; margin-right: 8px; padding: 8px 12px; color: var(--accent); font-size: .8125rem; text-decoration: none; }
+    .file-open:focus-visible, .file-download:focus-visible { outline-offset: -4px; border-radius: 6px; }
+    /* Tam ekran önizleme: iframe tüm pencereyi kaplar, kontroller üstünde yüzer. */
+    body.is-preview { overflow: hidden; }
+    .explorer.preview-view { position: fixed; inset: 0; z-index: 10; width: auto; max-width: none; margin: 0; padding: 0; background: #202124; }
+    .preview-frame { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border: 0; background: #202124; }
+    .preview-bar {
+      position: absolute; top: 14px; left: 14px; right: 14px; z-index: 2;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      pointer-events: none;
+    }
+    .preview-bar > * { pointer-events: auto; }
+    .pill {
+      display: flex; align-items: center; gap: 4px; min-width: 0; padding: 5px;
+      border: 1px solid rgba(255, 255, 255, .08); border-radius: 999px;
+      background: rgba(28, 33, 40, .94); color: #f3eee6;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .35), 0 1px 2px rgba(0, 0, 0, .3);
+    }
+    .pill-title { min-width: 0; max-width: 46vw; margin: 0; padding: 0 16px 0 6px; overflow: hidden; color: inherit; font-family: var(--body-font); font-size: .875rem; font-weight: 600; letter-spacing: 0; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
+    .pill-title:focus { outline: none; }
+    .pill-title small { display: block; color: rgba(243, 238, 230, .6); font-size: .6875rem; font-weight: 400; }
+    .pill-btn {
+      display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px;
+      min-width: 40px; height: 40px; padding: 0 14px; border-radius: 999px;
+      color: inherit; font-size: .8125rem; font-weight: 500; text-decoration: none; white-space: nowrap;
+      transition: background-color 160ms ease;
+    }
+    .pill-btn svg { width: 18px; height: 18px; flex: 0 0 auto; }
+    .pill-btn.icon-only { padding: 0; }
+    .pill-btn:hover { background: rgba(255, 255, 255, .1); }
+    .pill-btn.primary { background: var(--accent); color: #fff; }
+    .pill-btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
+    .pill-btn:focus-visible { outline: 2px solid #f3eee6; outline-offset: 2px; }
+    .preview-unavailable {
+      position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      padding: 32px 20px; color: #f3eee6; text-align: center;
+    }
+    .preview-unavailable .file-type { min-width: 64px; min-height: 40px; border-color: rgba(255, 255, 255, .2); color: rgba(243, 238, 230, .75); font-size: .8125rem; }
+    .preview-unavailable p { color: rgba(243, 238, 230, .7); font-size: .9375rem; }
+    .preview-unavailable .pill-btn { height: 48px; padding-inline: 28px; }
+    @media (max-width: 640px) {
+      .preview-bar { top: 10px; left: 10px; right: 10px; gap: 8px; }
+      .pill-title { padding-right: 8px; }
+      .pill-btn .label { display: none; }
+      .pill-btn.has-label { padding: 0; width: 40px; }
+      .preview-unavailable .pill-btn.has-label { width: auto; padding-inline: 28px; }
+      .preview-unavailable .pill-btn .label { display: inline; }
+    }
+    @media (hover: hover) {
+      .back-link:hover, .file-open:hover .file-name, .file-download:hover { text-decoration: underline; text-underline-offset: 4px; }
+      .file-row:hover { background: var(--sage); }
+      .action-link:hover { box-shadow: var(--shadow); }
+    }
+    @media (max-width: 1000px) {
+      .hero { gap: 32px; }
+      .courses { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .shell { width: calc(100% - 32px); }
+      .masthead { min-height: 74px; gap: 12px; }
+      .masthead-name { font-size: 1.0625rem; }
+      .semester { font-size: .625rem; letter-spacing: .05em; text-align: right; }
+      .hero { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-block: 36px 36px; }
+      h1 { max-width: 13ch; font-size: clamp(2.5rem, 10.5vw, 3.5rem); }
+      .subtitle { margin-top: 12px; font-size: 1.625rem; }
+      .hero-rule { margin-block: 22px 16px; }
+      .details { max-width: 40ch; font-size: .75rem; }
+      .section-heading { gap: 10px; margin-bottom: 20px; padding-top: 24px; }
+      h2 { font-size: 1.75rem; }
+      .drive-hint { font-size: .6875rem; }
+      .courses { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+      .course-body { padding: 22px 22px 20px; }
+      h3 { font-size: 1.5rem; }
+      .course-note { font-size: .8125rem; }
+      .archive-footer { align-items: flex-start; flex-direction: column; gap: 20px; margin-top: 36px; padding-bottom: 28px; }
+      .all-folders { width: 100%; }
+      .explorer { padding-top: 16px; }
+      .view-header { padding-block: 20px 24px; }
+      .file-group { margin-top: 24px; }
+      .file-open { grid-template-columns: 48px minmax(0, 1fr); gap: 10px; padding: 12px 10px; }
+      .file-download { min-width: 52px; margin-right: 4px; padding-inline: 8px; }
+      .preview-header { padding-block: 12px 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+      .course:hover, .course:hover img { transform: none; }
+    }
+    @media (forced-colors: active) {
+      a:focus-visible { outline-color: Highlight; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wallpaper" aria-hidden="true"></div>
+  <canvas class="wallpaper-dither" id="wallpaper-dither" aria-hidden="true"></canvas>
+  <a class="skip-link" href="#dersler">İçeriğe geç</a>
+  <div class="shell" id="home-view">
+    <header>
+      <div class="masthead">
+        <p class="masthead-name">Ders arşivi<span aria-hidden="true">.</span></p>
+        <p class="semester">2026–2027 / GÜZ DÖNEMİ</p>
+      </div>
+      <div class="hero">
+        <div class="hero-copy">
+          <h1>2. Sınıf PC Programcılığı</h1>
+          <p class="subtitle">Ders Materyalleri</p>
+          <div class="hero-rule" aria-hidden="true"></div>
+          <p class="details">Ankara Medipol Üniversitesi · Bilgisayar Programcılığı · 2026-2027 Güz</p>
+        </div>
+        <img class="hero-image" src="img/hero.webp" width="1600" height="1067" fetchpriority="high" alt="Sıcak akşam ışığında laptop, defter, kahve, kitaplar, devre kartı ve küçük bir bitki bulunan öğrenci masası.">
+      </div>
+    </header>
+    <main id="dersler" tabindex="-1">
+      <section aria-labelledby="courses-title">
+        <div class="section-heading">
+          <h2 id="courses-title">Bu dönemin dersleri</h2>
+          <p class="drive-hint" id="drive-hint">Dersini seç, materyallerine göz at.</p>
+        </div>
+        <nav aria-label="Ders materyalleri" aria-describedby="drive-hint">
+          <ul class="courses">
+            <li>
+              <a class="course" href="#/ders/ataturk" data-course-id="1OWzegI1q7jArRxpYyXyNjfF35nYZXKyd">
+                <div class="course-picture"><img src="img/ataturk.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Eski Ankara silueti, kitaplar, harita ve kalemle hazırlanmış Cumhuriyet dönemi tarih masası."></div>
+                <div class="course-body">
+                  <span class="course-number" aria-hidden="true">01 / TARİH</span>
+                  <h3>Atatürk İlkeleri ve İnkılap Tarihi I</h3>
+                  <p class="course-note">Haftalık ders notları</p>
+                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="course" href="#/ders/graf" data-course-id="1a3xhF87UYMboZjqJUbI0uW4Fn8FdzCNZ">
+                <div class="course-picture"><img src="img/graf.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Nehir ve köprüler üzerinde düğümlerle kenarları birleştiren zarif bir ağ."></div>
+                <div class="course-body">
+                  <span class="course-number" aria-hidden="true">02 / MATEMATİK</span>
+                  <h3>Graf Teorisi</h3>
+                  <p class="course-note">Ders notları</p>
+                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="course" href="#/ders/mantiksal" data-course-id="1UyZkFA_vW586KQLxRL_zSqRiTBhmuWHc">
+                <div class="course-picture"><img src="img/mantiksal.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Mantık kapıları, devre yolları ve doğruluk tablosu kâğıdı bulunan çalışma masası."></div>
+                <div class="course-body">
+                  <span class="course-number" aria-hidden="true">03 / DİJİTAL SİSTEMLER</span>
+                  <h3>Mantıksal Tasarım</h3>
+                  <p class="course-note">Haftalık ders notları + kaynak kitap</p>
+                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="course" href="#/ders/mikroislemci" data-course-id="1zpzmnaery7FNozOanxFtFddc8Hk2k_T4">
+                <div class="course-picture"><img src="img/mikroislemci.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Devre kartı üzerinde çift sıra metal pinleriyle eski nesil bir mikroişlemci yongası."></div>
+                <div class="course-body">
+                  <span class="course-number" aria-hidden="true">04 / DONANIM</span>
+                  <h3>Mikroişlemci Mimarisi</h3>
+                  <p class="course-note">Ders notları + başvuru kaynakları</p>
+                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="course" href="#/ders/mobil" data-course-id="1LijhRWlcf-Y-tWn3xbsoS0fHFl0PeKD-">
+                <div class="course-picture"><img src="img/mobil.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Elde tutulan Android telefonun sade arayüzü ve yanında akış şemalı bir çalışma defteri."></div>
+                <div class="course-body">
+                  <span class="course-number" aria-hidden="true">05 / UYGULAMA GELİŞTİRME</span>
+                  <h3>Mobil Yazılım</h3>
+                  <p class="course-note">Haftalık ders notları + sunumlar</p>
+                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="course" href="#/ders/nyp" data-course-id="18uBmK3RNH9XLG3EpRyoQYwK4ogBtvR5x">
+                <div class="course-picture"><img src="img/nyp.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Sınıfları ve kalıtım ilişkilerini anlatan, katmanlar hâlinde birbirine bağlı ahşap bloklar."></div>
+                <div class="course-body">
+                  <span class="course-number" aria-hidden="true">06 / PROGRAMLAMA</span>
+                  <h3>Nesne Yönelimli Programlama</h3>
+                  <p class="course-note">Ders notları</p>
+                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="course" href="#/ders/veri" data-course-id="1inHHFOzr-Bb2axFz5sCNt88I1TVNLWLN">
+                <div class="course-picture"><img src="img/veri.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Masaya yayılmış çubuk, çizgi ve pasta grafikleri ile renkli işaretleyici kalemler."></div>
+                <div class="course-body">
+                  <span class="course-number" aria-hidden="true">07 / VERİ</span>
+                  <h3>Veri Görselleştirme</h3>
+                  <p class="course-note">Haftalık sunumlar + görseller</p>
+                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </section>
+    </main>
+    <footer class="archive-footer">
+      <div>
+        <p class="footer-title">Dönemin tamamı, bir arada.</p>
+        <p class="footer-note">Tüm ders materyallerine ana klasörden ulaşabilirsin.</p>
+      </div>
+      <a class="all-folders" href="https://drive.google.com/drive/folders/1YpHynkgoiPNA4n0AcLmtVa8OnP7nX6dS" target="_blank" rel="noopener" aria-label="Tüm klasörü aç (Google Drive, yeni sekmede)">Tüm klasörü aç <span class="arrow" aria-hidden="true">↗</span></a>
+    </footer>
+  </div>
+  <main class="shell explorer" id="explorer-view" aria-labelledby="view-title" hidden></main>
+  <script id="archive-data" type="application/json">
+    {
+  "title": "2. Sınıf PC Programcılığı — Ders Materyalleri",
+  "root": {"type": "folder", "id": "1YpHynkgoiPNA4n0AcLmtVa8OnP7nX6dS"},
+  "courses": [
+    {"name": "Atatürk İlkeleri ve İnkılap Tarihi I", "id": "1OWzegI1q7jArRxpYyXyNjfF35nYZXKyd", "groups": [
+      {"name": null, "id": null, "items": [
+        {"name": "01. Ders Notu.pdf", "id": "1DO8RCxRg2vhff8sfUzk-934_evHI9Hjh"},
+        {"name": "02. Ders Notu.pdf", "id": "1NpFzIJ6_2VxYrJ9I_ECZoINs4yLPN26N"},
+        {"name": "03. Ders Notu.pdf", "id": "1eKT1xr0nPfuBM7JIk5yo2OenXnh3yzVC"},
+        {"name": "04. Ders Notu.pdf", "id": "1ha0DQAbFkz7lBP-5OWqpCZmdOC6tXxyw"},
+        {"name": "05. Ders Notu.pdf", "id": "1sGf1UQgSm53J3ziibNRiRunw4CwS4EEO"},
+        {"name": "06. Ders Notu.pdf", "id": "12lp-_3wPrKCPW5AwNnQYzAwamZr2cFT-"},
+        {"name": "07. Ders Notu.pdf", "id": "1sbNqvKiawcfXGz6b_z2ZTntxcpgS5X_K"},
+        {"name": "08. Ders Notu.pdf", "id": "1LL1R_Vogmg7Smrn1S2ZnqtPxK0c4AShc"},
+        {"name": "09. Ders Notu.pdf", "id": "19Wtz3CRDTDiuxDwaSiCPvalbqycn1cbK"},
+        {"name": "10. Ders Notu.pdf", "id": "1WS4WIbqGBrjFMCU_CHlkCBbb9NKcLuXV"},
+        {"name": "11. Ders Notu.pdf", "id": "1L1U4OaBXqZD3Jkdr8HEtrVoTDKG-KCRj"},
+        {"name": "12. Ders Notu.pdf", "id": "1awTQ6GLA9icMSE5q7QpwoTd9n6CasPDQ"},
+        {"name": "13. Ders Notu.pdf", "id": "1xyqNQF93AeWmp6AXNv3-36T0EtPewHY1"},
+        {"name": "14. Ders Notu.pdf", "id": "1GkpdJWVy6inc5PCcTSAR_Xt3NCiz6DOv"}
+      ]}
+    ]},
+    {"name": "Graf Teorisi", "id": "1a3xhF87UYMboZjqJUbI0uW4Fn8FdzCNZ", "groups": [
+      {"name": null, "id": null, "items": [
+        {"name": "GrafTeorisi.pdf", "id": "16Vfmlfl4yVmqMDEWRH-3tTCAevj-ppKZ"}
+      ]}
+    ]},
+    {"name": "Mantıksal Tasarım", "id": "1UyZkFA_vW586KQLxRL_zSqRiTBhmuWHc", "groups": [
+      {"name": "Haftalık Ders Notları", "id": "1NX2aYGtvVHYIcm_AVjveOHcdXdEk_wzR", "items": [
+        {"name": "02. Hafta.pdf", "id": "1vFK0fwh63Mfachne1GjRjdFAchhQ7pTx"},
+        {"name": "03. Hafta.pdf", "id": "1-vb8FAqo1SdPzMLASfI6DLMJoiYoIVMC"},
+        {"name": "04. Hafta.pdf", "id": "1cc-Zm1Pul9HmjGiqZK6atIU8j-3fZh0l"},
+        {"name": "05. Hafta.pdf", "id": "12F0_bqnCzZT1hZK5uCjAD0HqwxYvAeSG"},
+        {"name": "06. Hafta.pdf", "id": "1zjD-dfx0zLiadYAMyW8DA_Zb707HQ_aT"},
+        {"name": "06-07. Haftalar.pdf", "id": "1QiYdVptzhXjkQspuhPJnd84dcFTkE5vE"},
+        {"name": "08-09. Haftalar.pdf", "id": "1Uhm7PVzbL3pDj7BY3VIPRkefsRF21vMX"},
+        {"name": "10. Hafta.pdf", "id": "1UBupy1NTLf7pMFMzqDxJey8jzCT5bHIf"},
+        {"name": "11-12. Haftalar.pdf", "id": "1yBfx_yRaTjRaPa2OIp5qEKFwdOVYfTq4"}
+      ]},
+      {"name": "Kaynak Kitaplar", "id": "1NdcTRn_hzGUYxoe1MoAM1YoSnBSu8PXd", "items": [
+        {"name": "Digital Design - Global Edition (2018).pdf", "id": "1FIal72O7vX_SndSWAAZkVdETIqzwCr0h"}
+      ]}
+    ]},
+    {"name": "Mikroişlemci Mimarisi", "id": "1zpzmnaery7FNozOanxFtFddc8Hk2k_T4", "groups": [
+      {"name": "Haftalık Ders Notları", "id": "16Z9ywLg4wp-bgcxun9NHUO-HCYLFIshd", "items": [
+        {"name": "01. Hafta.pdf", "id": "1Nx4fGqLoo0gl4QjXyGp2ILwSqikf7ftZ"},
+        {"name": "02-03. Haftalar.pdf", "id": "1e4VOzkX6COeAcCaxberN8Qa_ErCmc73v"},
+        {"name": "03-04. Haftalar.pdf", "id": "1Tbuywqe3dGq60wxI7dsuH3xrD4cmZLoB"},
+        {"name": "05. Hafta.pdf", "id": "1lxPDureqAPDGP649yQMpRtKgg7-SF-2y"},
+        {"name": "06. Hafta.pdf", "id": "11LTjq3jnh36JoQ2HtfdNIvfSvJBh-TOw"},
+        {"name": "Mikroislemci_Mimarisi_14_Hafta_RV32I_8086_Duzenlenmis.pptx", "id": "1COvt_Hv8lOoXfZrAQf1F60vq-_otFQkf"}
+      ]},
+      {"name": "Başvuru Kaynakları", "id": "15vJXidtB3VFq2RxPD-rkv_q0fZCRok97", "items": [
+        {"name": "i8086_instruction_set-2.pdf", "id": "1ckQLYAhznTFAuo8dpJv7GAR5YzxaHx2I"},
+        {"name": "Intel8255A.pdf", "id": "1KaJOvlatSuCLpZRnpS_5eS5bgEpUljFg"}
+      ]}
+    ]},
+    {"name": "Mobil Yazılım", "id": "1LijhRWlcf-Y-tWn3xbsoS0fHFl0PeKD-", "groups": [
+      {"name": "Haftalık Ders Notları", "id": "1a8XXePloDGQV71ktJT9BRiZQAVuy0ZcQ", "items": [
+        {"name": "01. Hafta.pdf", "id": "1SPx28Vbf_5xvhmTgI2aUZbtafxmahk1G"},
+        {"name": "02-03. Haftalar.pdf", "id": "1squ4hNW9hmjf2wNJbg-enBHAtMpoZXVI"},
+        {"name": "04. Hafta.pdf", "id": "1Zyvkh_SpwOwawr26Mr6t-4-nzy1eDj4A"},
+        {"name": "05. Hafta.pdf", "id": "1Ia7T41MQZQzoh0k_OoHuBDK9s4-BCeFe"},
+        {"name": "HAFTA-6_Modern_Android_ve_Compose_v3.pptx", "id": "1oXR7O5lJ6DVv2TyLdeUumet0McD3U2Mz"}
+      ]}
+    ]},
+    {"name": "Nesne Yönelimli Programlama", "id": "18uBmK3RNH9XLG3EpRyoQYwK4ogBtvR5x", "groups": [
+      {"name": null, "id": null, "items": [
+        {"name": "Nesne Yönelimli Programlama.pdf", "id": "1o9EUzrYXA2UEso7097IbtqMAJcCItwWu"}
+      ]}
+    ]},
+    {"name": "Veri Görselleştirme", "id": "1inHHFOzr-Bb2axFz5sCNt88I1TVNLWLN", "groups": [
+      {"name": "Haftalık Sunumlar", "id": "1BsFVOAW6kl4ekc-LR1_-lKE60MrAima3", "items": [
+        {"name": "02. Sunum.pdf", "id": "1AOafBc755jE5m8V5gyGEqBpdUhvw04Hh"},
+        {"name": "03. Sunum.pdf", "id": "1_qd3dZK4XNWBoY0Xl-7tkeBRE0fjYSp5"},
+        {"name": "04. Sunum.pdf", "id": "149ZCkZjArSEqKWz196MrBV7yfOD-bC37"},
+        {"name": "05. Sunum.pdf", "id": "1x0KiRXX6YjTa_psq_USXNZz4L9KCUgWi"},
+        {"name": "06. Sunum.pdf", "id": "1ijLL-wookfBVuerHRHXvwL5N80WDCZp0"},
+        {"name": "07. Sunum.pdf", "id": "1mabU8IK8418esk5WG3VPAse94jiBNRyF"},
+        {"name": "08. Sunum.pdf", "id": "1hCxYkoiqxeN09t2nyxy2Hqvkb_R76_RD"},
+        {"name": "09. Sunum.pdf", "id": "1VgPfcFfvJ4jy5BQ_-bc1IEkBH_vrE_ES"},
+        {"name": "10. Sunum.pdf", "id": "1tTo2wxpaaPJoupT_jVhJtxtPciT2XsVZ"},
+        {"name": "11. Sunum.pdf", "id": "1Tol_gxBOZHoZ3h5Zpe3xRwCghTtYZo1k"},
+        {"name": "12. Sunum.pdf", "id": "1nqxUSm58b54Rl42UPFv9q0MqGD-zw41A"}
+      ]},
+      {"name": "Görseller", "id": "15FHndBzazZugU50RwQXIk4vzW8vGa8kM", "items": [
+        {"name": "resimler (klasör)", "id": "1vT-qUqo47ei6j8gyPGO5x63Gh_BCQDS0", "type": "folder"},
+        {"name": "4GLTE.png", "id": "1LnzpQSpmOX4Rw7L8rYD2oZY49-1V-2qN"}
+      ]}
+    ]}
+  ],
+  "extras": [
+    {"name": "MainForm.zip", "id": "1HmItpw4DjQbN-F5p98ExFetnVg8n1tKd"}
+  ]
+}
+  </script>
+  <script>
+    (() => {
+      const data = JSON.parse(document.getElementById('archive-data').textContent);
+      const home = document.getElementById('home-view');
+      const explorer = document.getElementById('explorer-view');
+      const cards = new Map(Array.from(document.querySelectorAll('.course'), card => [card.dataset.courseId, card]));
+      const courses = data.courses.map(course => ({
+        ...course,
+        slug: cards.get(course.id).getAttribute('href').split('/').pop()
+      }));
+      const coursesBySlug = new Map(courses.map(course => [course.slug, course]));
+      const filesById = new Map();
+      const naturalOrder = new Intl.Collator('tr', { numeric: true, sensitivity: 'base' });
+      const previewTypes = new Set(['pdf', 'pptx', 'png']);
+
+      for (const course of courses) {
+        for (const group of course.groups) {
+          for (const item of group.items) filesById.set(item.id, { item, course });
+        }
+      }
+      for (const item of data.extras || []) filesById.set(item.id, { item, course: null });
+
+      // Names are rendered as text; only IDs enter the fixed Drive URL templates.
+      function element(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+
+      function link(text, href, className) {
+        const node = element('a', className, text);
+        node.href = href;
+        return node;
+      }
+
+      function fileType(item) {
+        return item.type === 'folder' ? 'Klasör' : (item.name.split('.').pop() || 'Dosya').toUpperCase();
+      }
+
+      function downloadLink(item, className = 'file-download') {
+        const node = link('İndir', `https://drive.google.com/uc?export=download&id=${encodeURIComponent(item.id)}`, className);
+        node.setAttribute('aria-label', `${item.name} — İndir`);
+        return node;
+      }
+
+      function showCourse(course) {
+        explorer.append(link('← Tüm dersler', '#', 'back-link'));
+        const header = element('header', 'view-header');
+        header.append(element('p', 'view-kicker', 'Ders materyalleri'));
+        const title = element('h1', 'view-title', course.name);
+        title.id = 'view-title';
+        title.tabIndex = -1;
+        const count = course.groups.reduce((total, group) => total + group.items.length, 0);
+        header.append(title, element('p', 'view-meta', `${count} materyal`));
+        explorer.append(header);
+
+        course.groups.forEach((group, index) => {
+          const section = element('section', 'file-group');
+          if (group.name) {
+            const heading = element('h2', 'group-title', group.name);
+            heading.id = `group-${index}`;
+            section.setAttribute('aria-labelledby', heading.id);
+            section.append(heading);
+          } else {
+            section.setAttribute('aria-label', 'Ders dosyaları');
+          }
+          const list = element('ul', 'file-list');
+          const leading = name => { const m = /^(\d+)(-\d+)?/.exec(name); return m ? [Number(m[1]), m[2] ? 1 : 0] : [Infinity, 0]; };
+          const byName = (a, b) => { const x = leading(a.name), y = leading(b.name); return (x[0] - y[0]) || (x[1] - y[1]) || naturalOrder.compare(a.name, b.name); };
+          for (const item of [...group.items].sort(byName)) {
+            const row = element('li', 'file-row');
+            const open = link('', `#/dosya/${encodeURIComponent(item.id)}`, 'file-open');
+            open.append(element('span', 'file-type', fileType(item)), element('span', 'file-name', item.name));
+            row.append(open, downloadLink(item));
+            list.append(row);
+          }
+          section.append(list);
+          explorer.append(section);
+        });
+        document.title = `${course.name} — Ders Materyalleri`;
+      }
+
+      const ICONS = {
+        back: '<path d="M15 18l-6-6 6-6"/>',
+        download: '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
+        external: '<path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/>'
+      };
+      function pillButton(icon, label, href, extraClass = '') {
+        const node = link('', href, `pill-btn ${extraClass}`.trim());
+        node.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>`;
+        if (label) { node.classList.add('has-label'); node.append(element('span', 'label', label)); }
+        node.setAttribute('aria-label', label || 'Geri');
+        node.title = label || 'Geri';
+        return node;
+      }
+
+      function showFile({ item, course }) {
+        explorer.classList.add('preview-view');
+        document.body.classList.add('is-preview');
+        const id = encodeURIComponent(item.id);
+        const downloadHref = `https://drive.google.com/uc?export=download&id=${id}`;
+
+        const bar = element('div', 'preview-bar');
+        const left = element('div', 'pill');
+        const back = pillButton('back', '', course ? `#/ders/${course.slug}` : '#', 'icon-only');
+        back.setAttribute('aria-label', course ? `${course.name} dersine dön` : 'Tüm derslere dön');
+        const title = element('h1', 'pill-title', item.name.replace(/\.[^.]+$/, ''));
+        title.id = 'view-title';
+        title.tabIndex = -1;
+        if (course) title.append(element('small', '', course.name));
+        left.append(back, title);
+
+        const right = element('div', 'pill');
+        const open = pillButton('external', 'Yeni sekmede aç', item.type === 'folder'
+          ? `https://drive.google.com/drive/folders/${id}`
+          : `https://drive.google.com/file/d/${id}/view`);
+        open.target = '_blank';
+        open.rel = 'noopener';
+        if (item.type === 'folder') right.append(open);
+        else right.append(open, pillButton('download', 'İndir', downloadHref, 'primary'));
+        bar.append(left, right);
+
+        if (item.type === 'folder' || previewTypes.has(item.name.split('.').pop().toLowerCase())) {
+          const frame = element('iframe', 'preview-frame');
+          frame.title = `${item.name} — Önizleme`;
+          frame.src = item.type === 'folder'
+            ? `https://drive.google.com/embeddedfolderview?id=${id}#grid`
+            : `https://drive.google.com/file/d/${id}/preview`;
+          frame.allowFullscreen = true;
+          explorer.append(frame);
+        } else {
+          const message = element('div', 'preview-unavailable');
+          message.append(element('span', 'file-type', fileType(item)), element('p', '', 'Bu dosya önizlenemiyor, indirip açabilirsin.'), pillButton('download', 'İndir', downloadHref, 'primary'));
+          explorer.append(message);
+        }
+        explorer.append(bar);
+        document.title = `${item.name} — Ders Materyalleri`;
+      }
+
+      const extras = data.extras || [];
+      if (extras.length) {
+        const section = element('section', 'extras');
+        const heading = element('h2', '', 'Diğer dosyalar');
+        heading.id = 'extras-title';
+        section.setAttribute('aria-labelledby', heading.id);
+        section.append(heading);
+        for (const item of extras) section.append(link(item.name, `#/dosya/${encodeURIComponent(item.id)}`));
+        document.getElementById('dersler').append(section);
+      }
+
+      // Let hash changes create ordinary browser history entries, including on file://.
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      function render(moveFocus = false) {
+        const courseRoute = /^#\/ders\/([^/]+)$/.exec(location.hash);
+        const fileRoute = /^#\/dosya\/([A-Za-z0-9_-]+)$/.exec(location.hash);
+        const course = courseRoute && coursesBySlug.get(courseRoute[1]);
+        const file = fileRoute && filesById.get(fileRoute[1]);
+        const isDetail = Boolean(course || file);
+        home.hidden = isDetail;
+        explorer.hidden = !isDetail;
+        explorer.classList.remove('preview-view');
+        document.body.classList.remove('is-preview');
+        explorer.replaceChildren();
+        if (course) showCourse(course);
+        else if (file) showFile(file);
+        else document.title = data.title;
+
+        document.querySelector('.skip-link').setAttribute('href', isDetail ? '#explorer-view' : '#dersler');
+        if (moveFocus) {
+          const target = isDetail ? document.getElementById('view-title') : home.querySelector('h1');
+          target.tabIndex = -1;
+          target.focus({ preventScroll: true });
+        }
+        window.scrollTo(0, 0);
+      }
+
+      document.querySelector('.skip-link').addEventListener('click', event => {
+        event.preventDefault();
+        const target = explorer.hidden ? document.getElementById('dersler') : document.getElementById('view-title');
+        target.focus({ preventScroll: true });
+        target.scrollIntoView();
+      });
+      window.addEventListener('hashchange', () => render(true));
+      render();
+    })();
+  </script>
+  <script>
+    // Duvar kağıdını 2 px'lik noktalara böler (8x8 Bayer). Sabit çizim: yalnız yüklemede ve boyut değişince.
+    (() => {
+      const canvas = document.getElementById('wallpaper-dither');
+      const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
+      if (!gl) return;
+
+      const vert = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }';
+      const frag = `
+        precision highp float;
+        uniform sampler2D img; uniform vec2 res; uniform vec2 imgSize; uniform float cell;
+        float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+        float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+        float bayer8(vec2 a){ return bayer4(0.5 * a) * 0.25 + bayer2(a); }
+        void main(){
+          vec2 c = floor(gl_FragCoord.xy / cell);
+          vec2 local = fract(gl_FragCoord.xy / cell);
+          vec2 uv = (c * cell + 0.5 * cell) / res;
+          uv.y = 1.0 - uv.y;
+          // background-size: cover eşdeğeri
+          float sr = res.x / res.y, ir = imgSize.x / imgSize.y;
+          vec2 scale = sr > ir ? vec2(1.0, ir / sr) : vec2(sr / ir, 1.0);
+          vec2 tuv = (uv - 0.5) * scale + 0.5;
+          vec3 col = texture2D(img, tuv).rgb;
+
+          float levels = 6.0;
+          vec3 q = floor(col * (levels - 1.0) + bayer8(c)) / (levels - 1.0);
+          float gap = cell >= 3.0 ? step(local.x, 0.85) * step(local.y, 0.85) : 1.0;
+          vec3 base = vec3(0.043, 0.051, 0.063);
+          gl_FragColor = vec4(max(base, q * mix(0.55, 1.0, gap) * 0.85), 1.0);
+        }`;
+
+      function shader(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+      }
+      const vs = shader(gl.VERTEX_SHADER, vert), fs = shader(gl.FRAGMENT_SHADER, frag);
+      if (!vs || !fs) return;
+      const prog = gl.createProgram();
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+      gl.useProgram(prog);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, 'p');
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      const u = name => gl.getUniformLocation(prog, name);
+
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(k => gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE));
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+      let current = '', size = [1, 1], loaded = false;
+      function pickSource() { return innerWidth / innerHeight <= 1 ? 'img/bg-tall.webp' : 'img/bg-wide.webp'; }
+      function draw() {
+        if (!loaded) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(innerWidth * dpr);
+        canvas.height = Math.round(innerHeight * dpr);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.uniform2f(u('res'), canvas.width, canvas.height);
+        gl.uniform2f(u('imgSize'), size[0], size[1]);
+        gl.uniform1f(u('cell'), Math.max(2, Math.round(2 * dpr)));
+        gl.uniform1i(u('img'), 0);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function load() {
+        const src = pickSource();
+        if (src === current) return draw();
+        current = src;
+        const image = new Image();
+        image.onload = () => {
+          if (src !== current) return;
+          try {
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+          } catch (e) { return; } // ör. file:// üzerinde görsel kullanılamazsa düz duvar kağıdı kalır
+          size = [image.naturalWidth, image.naturalHeight];
+          loaded = true;
+          draw();
+          canvas.classList.add('is-ready');
+        };
+        image.src = src;
+      }
+      let timer;
+      addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(load, 120); });
+      load();
+    })();
+  </script>
+</body>
+</html>
