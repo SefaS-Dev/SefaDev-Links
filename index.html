@@ -9,234 +9,219 @@
   <title>2. Sınıf PC Programcılığı — Ders Materyalleri</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap&subset=latin-ext" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap&subset=latin-ext" rel="stylesheet">
   <style>
-    /* Yalnız koyu tema. */
+    /* Yalnız koyu tema: mor sisle aynı aileden soğuk tonlar, tek yazı tipi (Inter), lavanta vurgu. */
     :root {
       color-scheme: dark;
       --background: #0b0d10;
-      --surface: rgb(19 23 29 / 90%);
-      --text: #f2eee6;
-      --muted: #a3aab0;
-      --border: rgb(255 255 255 / 9%);
-      --accent: #f0a27c;
-      --sage: rgb(255 255 255 / 6%);
-      --focus: #f0a27c;
-      --shadow: 0 16px 40px rgb(0 0 0 / 45%);
-      --heading-font: "DM Serif Display", Georgia, "Times New Roman", serif;
-      --body-font: "Inter", "Segoe UI", system-ui, sans-serif;
+      --text: #eceaf2;
+      --muted: #9a98a8;
+      --faint: #6d6b7a;
+      --line: rgb(255 255 255 / 7%);
+      --accent: #b8a4f4;
+      --focus: #c9b9ff;
+      --glass: rgb(14 14 20 / 62%);
+      --glass-strong: rgb(14 14 20 / 78%);
+      --glass-border: rgb(255 255 255 / 8%);
+      --glass-blur: blur(18px) saturate(1.35);
+      --font: "Inter", "Segoe UI", system-ui, sans-serif;
     }
-    .semester, .details, .drive-hint, .view-meta, .view-kicker, .footer-note { text-shadow: 0 0 6px #0b0d10, 0 0 2px #0b0d10; }
-    /* Duvar kağıdı: ekrana sabit; yatay ekranda geniş, dikey ekranda uzun sürüm. */
-    .wallpaper {
-      position: fixed; inset: -3%; z-index: -1; pointer-events: none;
-      background: #0b0d10 url("img/bg-wide.webp") center / cover no-repeat;
-      filter: blur(5px) saturate(1.1); /* WebGL yoksa da kıvrımlar yumuşak görünsün */
-    }
-    @media (max-aspect-ratio: 1/1) {
-      .wallpaper { background-image: url("img/bg-tall.webp"); }
-    }
-    /* Duvar kağıdının noktalı (Bayer dithering), hareketli hâli; WebGL çalışırsa düz görselin üstüne çizilir. */
-    .wallpaper-dither { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; opacity: 0; transition: opacity 400ms ease; }
-    .wallpaper-dither.is-ready { opacity: 1; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       background: var(--background);
       color: var(--text);
-      font-family: var(--body-font);
+      font-family: var(--font);
       font-size: 1rem;
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
       -webkit-text-size-adjust: 100%;
     }
     a { color: inherit; }
-    img { display: block; max-width: 100%; }
     h1, h2, h3, p { margin: 0; }
-    h1, h2, h3 { font-weight: 400; }
-    ::selection { background: var(--sage); color: var(--text); }
-    .shell { width: min(1160px, calc(100% - 80px)); margin-inline: auto; }
-    .masthead {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 24px;
-      min-height: 92px;
-      border-bottom: 1px solid var(--border);
-    }
-    .masthead-name { font-family: var(--heading-font); font-size: 1.25rem; }
-    .semester { color: var(--muted); font-size: .75rem; letter-spacing: .1em; }
-    .hero {
-      display: grid;
-      grid-template-columns: .92fr 1.08fr;
-      align-items: center;
-      gap: 60px;
-      padding-block: 56px 64px;
-    }
-    h1 {
-      max-width: 13ch;
-      font-family: var(--heading-font);
-      font-size: clamp(2.75rem, 4.5vw, 4.125rem);
-      line-height: 1.06;
-      letter-spacing: -.035em;
-      text-wrap: balance;
-      overflow-wrap: break-word;
-    }
-    .subtitle {
-      margin-top: 18px;
-      color: var(--accent);
-      font-family: var(--heading-font);
-      font-size: clamp(1.5rem, 2.3vw, 2rem);
-      font-style: italic;
-      line-height: 1.2;
-    }
-    .hero-rule { width: 42px; height: 2px; margin-block: 28px 20px; background: var(--accent); }
-    .details { max-width: 36ch; color: var(--muted); font-size: .8125rem; line-height: 1.8; text-wrap: pretty; }
-    .hero-image { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 12px; }
-    .section-heading {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px 24px;
-      margin-bottom: 24px;
-      padding-top: 28px;
-      border-top: 1px solid var(--border);
-    }
-    h2 { font-family: var(--heading-font); font-size: 2rem; line-height: 1.2; letter-spacing: -.025em; }
-    .drive-hint { color: var(--muted); font-size: .75rem; }
-    .courses {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 28px 24px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-    .courses > li { display: flex; min-width: 0; }
+    h1, h2, h3 { font-weight: 600; }
+    ::selection { background: rgb(184 164 244 / 30%); color: var(--text); }
+    [hidden] { display: none !important; }
+    /* Sisin üstündeki soluk yazılar her yerde okunur kalsın. */
+    .semester, .kicker, .lede, .section-hint, .view-meta, .view-kicker, .footer-note, .extras { text-shadow: 0 0 8px #0b0d10, 0 0 2px #0b0d10; }
+
+    /* Arka plan: hareketli noktalı mor sis (WebGL). Yüklenirken ya da WebGL yoksa düz koyu zemin. */
+    .wallpaper-dither { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; opacity: 0; transition: opacity 400ms ease; }
+    .wallpaper-dither.is-ready { opacity: 1; }
+
+    .shell { width: min(880px, calc(100% - 64px)); margin-inline: auto; }
+
+    /* Üst şerit */
+    .masthead { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 76px; }
+    .masthead-name { font-size: .875rem; font-weight: 600; letter-spacing: -.01em; }
+    .masthead-name span { color: var(--accent); }
+    .semester { color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
+
+    /* Giriş */
+    .hero { padding-block: 72px 48px; }
+    .kicker { margin-bottom: 18px; color: var(--accent); font-size: .75rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { max-width: 16ch; font-size: clamp(2.5rem, 6vw, 4rem); line-height: 1.04; letter-spacing: -.045em; text-wrap: balance; }
+    .lede { margin-top: 20px; max-width: 46ch; color: var(--muted); font-size: 1rem; line-height: 1.65; text-wrap: pretty; }
+    .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; padding: 0; list-style: none; }
+    .stats li { padding: 6px 12px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .stats strong { color: var(--text); font-weight: 600; }
+
+    /* Ders listesi: bento ızgara. Her ders görselli bir cam kart; 4+2 / 2+2+2 / 3+3 yerleşimi. */
+    .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 24px; flex-wrap: wrap; margin-bottom: 14px; padding-inline: 4px; }
+    h2 { font-size: .8125rem; font-weight: 600; letter-spacing: .02em; }
+    .section-hint { color: var(--muted); font-size: .75rem; }
+    .courses { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+    .courses > li { grid-column: span 2; display: flex; }
+    .courses > li.w3 { grid-column: span 3; }
+    .courses > li.w4 { grid-column: span 4; }
     .course {
       display: flex;
       flex-direction: column;
       width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--surface);
+      padding: 8px;
+      border-radius: 20px;
       text-decoration: none;
-      transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+      transition: background-color 180ms ease, border-color 180ms ease;
     }
-    .course-picture { overflow: hidden; border-radius: 11px 11px 0 0; background: var(--sage); }
-    .course-picture img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; transition: transform 260ms ease; }
-    .course-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 23px 24px 20px; }
-    .course-number { margin-bottom: 10px; color: var(--accent); font-size: .6875rem; font-weight: 600; letter-spacing: .1em; }
-    h3 { margin-bottom: 8px; font-family: var(--heading-font); font-size: 1.4375rem; line-height: 1.25; letter-spacing: -.015em; text-wrap: pretty; }
-    .course-note { margin-bottom: 24px; color: var(--muted); font-size: .78125rem; }
-    .course-action {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      width: 100%;
-      margin-top: auto;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-      color: var(--accent);
-      font-size: .75rem;
-      font-weight: 600;
+    .course-art { display: block; height: 200px; overflow: hidden; border-radius: 13px; background: #1c1c1c; }
+    .courses > li.w4 .course-art { height: 240px; }
+    .courses > li.tall .course-art { height: 240px; }
+    .course-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 300ms ease; }
+    /* Kart metni: solda başlık ve not; dosya sayısı + ok sağda, başlıkla aynı satırda. */
+    /* .course-text "contents": başlık ve not ayrı ızgara öğesi olur; not, sayının altına da uzanıp tam genişliği kullanır. */
+    .course-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 6px 12px; flex: 1; padding: 20px 16px 18px; }
+    .course-body .course-text { display: contents; }
+    .course-body h3 { grid-column: 1; grid-row: 1; }
+    .course-body .course-meta { grid-column: 2; grid-row: 1; gap: 8px; height: 1.434rem; } /* başlığın ilk satırıyla aynı yükseklik: dikeyde ortalı durur */
+    .course-body .course-note { grid-column: 1 / -1; grid-row: 2; margin-top: 0; line-height: 1.5; }
+    .course-text { min-width: 0; }
+    h3 { font-size: 1.0625rem; font-weight: 550; line-height: 1.35; letter-spacing: -.015em; text-wrap: pretty; }
+    .course-note { margin-top: 2px; color: var(--muted); font-size: .8125rem; }
+    .course-meta { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: .8125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .arrow { color: var(--accent); font-size: 1.0625rem; line-height: 1; transition: transform 180ms ease; }
+    /* İmleç spot ışığı: imleç ızgaranın üstündeyken her kartta, imlecin konumunda yumuşak mor ışık ve
+       arka plandaki sis gibi küçük noktalar belirir. Yakındaki kartlar da kenarlarından hafifçe aydınlanır.
+       --mx/--my karta göre imleç konumu; JS ayarlar. Dokunmatik ekranlarda yok. */
+    .course { position: relative; isolation: isolate; overflow: hidden; --mx: -999px; --my: -999px; }
+    .course::before, .course::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 300ms ease; }
+    .course::before { z-index: -1; background: radial-gradient(320px circle at var(--mx) var(--my), rgb(184 164 244 / 22%), rgb(184 164 244 / 6%) 45%, transparent 75%); }
+    .course::after {
+      z-index: 2;
+      background-image: radial-gradient(circle, rgb(205 190 255 / 55%) 1px, transparent 1.4px);
+      background-size: 6px 6px;
+      -webkit-mask-image: radial-gradient(170px circle at var(--mx) var(--my), #000, transparent 72%);
+      mask-image: radial-gradient(170px circle at var(--mx) var(--my), #000, transparent 72%);
+      mix-blend-mode: screen;
     }
-    .arrow { font-size: 1.125rem; font-weight: 400; line-height: 1; }
+    @media (hover: hover) and (pointer: fine) {
+      .courses:hover .course::before { opacity: 1; }
+      .courses:hover .course::after { opacity: .5; }
+    }
     @media (hover: hover) {
-      .course:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: var(--shadow); }
-      .course:hover img { transform: scale(1.035); }
-      .all-folders:hover { background: var(--text); color: var(--background); }
+      .course:hover { background: rgb(255 255 255 / 5%); border-color: rgb(255 255 255 / 14%); }
+      .course:hover .course-art img { transform: scale(1.03); }
+      .course:hover .arrow { transform: translateX(3px); }
     }
-    a:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }
-    .archive-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      margin-top: 48px;
-      padding-block: 28px 40px;
-      border-top: 1px solid var(--border);
-    }
-    .footer-title { font-family: var(--heading-font); font-size: 1.375rem; }
-    .footer-note { margin-top: 4px; color: var(--muted); font-size: .75rem; }
-    .all-folders {
-      display: inline-flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 32px;
-      min-height: 48px;
-      padding: 11px 20px;
-      border: 1px solid var(--text);
-      border-radius: 6px;
-      font-size: .8125rem;
-      font-weight: 500;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: background-color 240ms ease, color 240ms ease;
-    }
-    .skip-link { position: absolute; top: 12px; left: 16px; z-index: 1; min-height: 44px; padding: 10px 18px; border-radius: 6px; background: var(--surface); transform: translateY(-200%); }
-    .skip-link:focus { transform: translateY(0); }
-    [hidden] { display: none !important; }
-    .extras { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 32px; font-size: .8125rem; }
-    .extras h2 { color: var(--muted); font-family: var(--body-font); font-size: .8125rem; letter-spacing: 0; }
+    a:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 8px; }
+
+    .extras { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 18px; padding-inline: 4px; font-size: .8125rem; }
+    .extras h2 { color: var(--faint); font-size: .8125rem; font-weight: 400; letter-spacing: 0; }
     .extras a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); text-underline-offset: 4px; }
-    .explorer { padding-block: 28px 40px; }
+
+    /* Alt kısım */
+    .archive-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 56px; padding-block: 28px 48px; border-top: 1px solid var(--line); }
+    .footer-title { font-size: .9375rem; font-weight: 600; }
+    .footer-note { margin-top: 2px; color: var(--muted); font-size: .8125rem; }
+    .all-folders {
+      display: inline-flex; align-items: center; justify-content: space-between; gap: 24px;
+      min-height: 46px; padding: 10px 18px; border-radius: 12px;
+      font-size: .8125rem; font-weight: 500; text-decoration: none; white-space: nowrap;
+      transition: background-color 180ms ease, border-color 180ms ease;
+    }
+    .all-folders .arrow { font-size: .9375rem; }
+    @media (hover: hover) { .all-folders:hover { background: rgb(255 255 255 / 10%); border-color: rgb(255 255 255 / 16%); } }
+
+    .skip-link { position: absolute; top: 12px; left: 16px; z-index: 1; min-height: 44px; padding: 10px 18px; border-radius: 8px; background: var(--glass-strong); transform: translateY(-200%); }
+    .skip-link:focus { transform: translateY(0); }
+
+    /* Ders içi dosya listesi */
+    .explorer { padding-block: 24px 48px; }
     .back-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); font-size: .875rem; text-decoration: none; overflow-wrap: anywhere; }
-    .view-header { padding-block: 24px 28px; border-bottom: 1px solid var(--border); }
-    .view-kicker { margin-bottom: 10px; color: var(--muted); font-size: .75rem; }
-    .view-title { max-width: none; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.15; letter-spacing: -.025em; overflow-wrap: anywhere; }
+    .view-header { padding-block: 20px 28px; }
+    .view-kicker { margin-bottom: 10px; color: var(--accent); font-size: .75rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+    .view-title { max-width: none; font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.1; letter-spacing: -.04em; overflow-wrap: anywhere; }
     .view-title:focus, #dersler:focus { outline: none; }
     .view-meta { margin-top: 12px; color: var(--muted); font-size: .8125rem; }
-    .file-group { margin-top: 28px; }
-    .group-title { margin-bottom: 14px; font-family: var(--body-font); font-size: 1rem; font-weight: 600; letter-spacing: 0; line-height: 1.5; }
-    .file-list { margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); list-style: none; }
-    .file-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
-    .file-row + .file-row { border-top: 1px solid var(--border); }
-    .file-open { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 16px; min-height: 64px; padding: 12px 16px; text-decoration: none; }
-    .file-type { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-size: .625rem; font-weight: 600; }
+    .file-group { margin-top: 24px; }
+    .group-title { margin-bottom: 12px; padding-inline: 4px; font-size: .8125rem; font-weight: 600; letter-spacing: .02em; line-height: 1.5; }
+    .file-list { margin: 0; padding: 6px; list-style: none; }
+    .file-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; border-radius: 11px; transition: background-color 160ms ease; }
+    .file-row + .file-row::before { content: ""; position: absolute; top: 0; left: 14px; right: 14px; height: 1px; background: var(--line); }
+    .file-open { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 14px; min-height: 58px; padding: 10px 14px; text-decoration: none; }
+    .file-type { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; padding: 2px 6px; border: 1px solid var(--glass-border); border-radius: 6px; color: var(--muted); font-size: .625rem; font-weight: 600; letter-spacing: .04em; }
     .file-name { min-width: 0; font-size: .875rem; overflow-wrap: anywhere; }
-    .file-download { display: inline-flex; align-items: center; justify-content: center; min-width: 60px; min-height: 44px; margin-right: 8px; padding: 8px 12px; color: var(--accent); font-size: .8125rem; text-decoration: none; }
-    .file-open:focus-visible, .file-download:focus-visible { outline-offset: -4px; border-radius: 6px; }
+    .file-download { display: inline-flex; align-items: center; justify-content: center; min-width: 60px; min-height: 44px; margin-right: 6px; padding: 8px 12px; color: var(--accent); font-size: .8125rem; text-decoration: none; }
+    .file-open:focus-visible, .file-download:focus-visible { outline-offset: -4px; }
+    @media (hover: hover) {
+      .back-link:hover, .file-open:hover .file-name, .file-download:hover { text-decoration: underline; text-underline-offset: 4px; }
+      .file-row:hover { background: rgb(255 255 255 / 5%); }
+    }
+
     /* Tam ekran önizleme: iframe tüm pencereyi kaplar, kontroller üstünde yüzer. */
     body.is-preview { overflow: hidden; }
     .explorer.preview-view { position: fixed; inset: 0; z-index: 10; width: auto; max-width: none; margin: 0; padding: 0; background: #202124; }
     .preview-frame { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border: 0; background: #202124; }
-    .preview-bar {
-      position: absolute; top: 14px; left: 14px; right: 14px; z-index: 2;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      pointer-events: none;
-    }
+    .preview-bar { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; pointer-events: none; }
     .preview-bar > * { pointer-events: auto; }
-    .pill {
-      display: flex; align-items: center; gap: 4px; min-width: 0; padding: 5px;
-      border: 1px solid rgba(255, 255, 255, .08); border-radius: 999px;
-      background: rgba(28, 33, 40, .94); color: #f3eee6;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, .35), 0 1px 2px rgba(0, 0, 0, .3);
-    }
-    .pill-title { min-width: 0; max-width: 46vw; margin: 0; padding: 0 16px 0 6px; overflow: hidden; color: inherit; font-family: var(--body-font); font-size: .875rem; font-weight: 600; letter-spacing: 0; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
+    .pill { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 5px; border-radius: 999px; color: var(--text); }
+    .pill-title { min-width: 0; max-width: 46vw; margin: 0; padding: 0 16px 0 6px; overflow: hidden; color: inherit; font-size: .875rem; font-weight: 600; letter-spacing: 0; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
     .pill-title:focus { outline: none; }
-    .pill-title small { display: block; color: rgba(243, 238, 230, .6); font-size: .6875rem; font-weight: 400; }
-    .pill-btn {
-      display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px;
-      min-width: 40px; height: 40px; padding: 0 14px; border-radius: 999px;
-      color: inherit; font-size: .8125rem; font-weight: 500; text-decoration: none; white-space: nowrap;
-      transition: background-color 160ms ease;
-    }
+    .pill-title small { display: block; color: var(--muted); font-size: .6875rem; font-weight: 400; }
+    .pill-btn { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; min-width: 40px; height: 40px; padding: 0 14px; border-radius: 999px; color: inherit; font-size: .8125rem; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background-color 160ms ease; }
     .pill-btn svg { width: 18px; height: 18px; flex: 0 0 auto; }
     .pill-btn.icon-only { padding: 0; }
-    .pill-btn:hover { background: rgba(255, 255, 255, .1); }
-    .pill-btn.primary { background: var(--accent); color: #fff; }
-    .pill-btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
-    .pill-btn:focus-visible { outline: 2px solid #f3eee6; outline-offset: 2px; }
-    .preview-unavailable {
-      position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-      padding: 32px 20px; color: #f3eee6; text-align: center;
-    }
-    .preview-unavailable .file-type { min-width: 64px; min-height: 40px; border-color: rgba(255, 255, 255, .2); color: rgba(243, 238, 230, .75); font-size: .8125rem; }
-    .preview-unavailable p { color: rgba(243, 238, 230, .7); font-size: .9375rem; }
+    .pill-btn:hover { background: rgb(255 255 255 / 10%); }
+    .pill-btn.primary { background: var(--accent); color: #17132a; }
+    .pill-btn.primary:hover { background: var(--accent); filter: brightness(1.08); }
+    .pill-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .preview-unavailable { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 32px 20px; color: var(--text); text-align: center; }
+    .preview-unavailable .file-type { min-width: 64px; min-height: 40px; font-size: .8125rem; }
+    .preview-unavailable p { color: var(--muted); font-size: .9375rem; }
     .preview-unavailable .pill-btn { height: 48px; padding-inline: 28px; }
+
+    /* Koyu cam paneller: arkadaki sis panellerin altında bulanık ve koyulaşmış görünür. */
+    .course, .file-list, .all-folders, .pill {
+      background: var(--glass);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 18px 40px rgb(0 0 0 / 28%);
+    }
+    .file-list { border-radius: 16px; }
+    .pill { background: var(--glass-strong); }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .course, .file-list, .all-folders, .pill, .stats li { background: rgb(16 16 22 / 92%); }
+    }
+
     @media (max-width: 640px) {
+      .shell { width: calc(100% - 32px); }
+      .masthead { min-height: 64px; }
+      .hero { padding-block: 40px 32px; }
+      .kicker { margin-bottom: 14px; font-size: .6875rem; }
+      h1 { font-size: clamp(2.25rem, 11vw, 3rem); }
+      .lede { margin-top: 16px; font-size: .9375rem; }
+      .stats { margin-top: 22px; }
+      .courses { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      .courses > li, .courses > li.w3, .courses > li.w4 { grid-column: auto; }
+      .course { border-radius: 18px; }
+      .course-art, .courses > li.w4 .course-art, .courses > li.tall .course-art { height: 180px; }
+      .course-body { padding: 18px 12px 14px; gap: 12px; }
+      .course-meta .count-label { display: none; }
+      h3 { font-size: 1rem; }
+      .archive-footer { flex-direction: column; align-items: stretch; gap: 18px; margin-top: 40px; padding-bottom: 32px; }
+      .file-open { grid-template-columns: 48px minmax(0, 1fr); gap: 10px; padding: 10px; }
+      .file-download { min-width: 52px; margin-right: 2px; padding-inline: 8px; }
       .preview-bar { top: 10px; left: 10px; right: 10px; gap: 8px; }
       .pill-title { padding-right: 8px; }
       .pill-btn .label { display: none; }
@@ -244,74 +229,8 @@
       .preview-unavailable .pill-btn.has-label { width: auto; padding-inline: 28px; }
       .preview-unavailable .pill-btn .label { display: inline; }
     }
-    @media (hover: hover) {
-      .back-link:hover, .file-open:hover .file-name, .file-download:hover { text-decoration: underline; text-underline-offset: 4px; }
-      .file-row:hover { background: var(--sage); }
-      .action-link:hover { box-shadow: var(--shadow); }
-    }
-    @media (max-width: 1000px) {
-      .hero { gap: 32px; }
-      .courses { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 640px) {
-      .shell { width: calc(100% - 32px); }
-      .masthead { min-height: 74px; gap: 12px; }
-      .masthead-name { font-size: 1.0625rem; }
-      .semester { font-size: .625rem; letter-spacing: .05em; text-align: right; }
-      .hero { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-block: 36px 36px; }
-      h1 { max-width: 13ch; font-size: clamp(2.5rem, 10.5vw, 3.5rem); }
-      .subtitle { margin-top: 12px; font-size: 1.625rem; }
-      .hero-rule { margin-block: 22px 16px; }
-      .details { max-width: 40ch; font-size: .75rem; }
-      .section-heading { gap: 10px; margin-bottom: 20px; padding-top: 24px; }
-      h2 { font-size: 1.75rem; }
-      .drive-hint { font-size: .6875rem; }
-      .courses { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-      .course-body { padding: 22px 22px 20px; }
-      h3 { font-size: 1.5rem; }
-      .course-note { font-size: .8125rem; }
-      .archive-footer { align-items: flex-start; flex-direction: column; gap: 20px; margin-top: 36px; padding-bottom: 28px; }
-      .all-folders { width: 100%; }
-      .explorer { padding-top: 16px; }
-      .view-header { padding-block: 20px 24px; }
-      .file-group { margin-top: 24px; }
-      .file-open { grid-template-columns: 48px minmax(0, 1fr); gap: 10px; padding: 12px 10px; }
-      .file-download { min-width: 52px; margin-right: 4px; padding-inline: 8px; }
-      .preview-header { padding-block: 12px 18px; }
-    }
-    /* Koyu cam paneller: arkadaki duvar kağıdı panellerin altında bulanık ve koyulaşmış görünür. */
-    :root {
-      --glass: rgb(16 18 22 / 58%);
-      --glass-strong: rgb(16 18 22 / 72%);
-      --glass-border: rgb(255 255 255 / 8%);
-      --glass-blur: blur(18px) saturate(1.35);
-    }
-    .course, .file-list, .hero-frame, .all-folders, .pill {
-      background: var(--glass);
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 18px 40px rgb(0 0 0 / 28%);
-    }
-    .course { border-radius: 16px; }
-    .course-picture { margin: 10px 10px 0; border-radius: 10px; }
-    .course-body { padding: 20px 22px 18px; }
-    .hero-frame { padding: 10px; border-radius: 18px; }
-    .hero-frame .hero-image { border-radius: 10px; }
-    .file-list { border-radius: 14px; }
-    .all-folders { border-radius: 12px; }
-    .pill { background: var(--glass-strong); }
-    @media (hover: hover) {
-      .course:hover { border-color: rgb(255 255 255 / 18%); box-shadow: 0 1px 0 rgb(255 255 255 / 6%) inset, 0 22px 48px rgb(0 0 0 / 38%); }
-      .all-folders:hover { background: rgb(255 255 255 / 12%); color: var(--text); }
-      .file-row:hover { background: rgb(255 255 255 / 5%); }
-    }
-    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      .course, .file-list, .hero-frame, .all-folders, .pill { background: rgb(18 21 26 / 92%); }
-    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-      .course:hover, .course:hover img { transform: none; }
     }
     @media (forced-colors: active) {
       a:focus-visible { outline-color: Highlight; }
@@ -319,108 +238,126 @@
   </style>
 </head>
 <body>
-  <div class="wallpaper" aria-hidden="true"></div>
   <canvas class="wallpaper-dither" id="wallpaper-dither" aria-hidden="true"></canvas>
   <a class="skip-link" href="#dersler">İçeriğe geç</a>
   <div class="shell" id="home-view">
     <header>
       <div class="masthead">
         <p class="masthead-name">Ders arşivi<span aria-hidden="true">.</span></p>
-        <p class="semester">2026–2027 / GÜZ DÖNEMİ</p>
+        <p class="semester">2026–2027 Güz</p>
       </div>
       <div class="hero">
-        <div class="hero-copy">
-          <h1>2. Sınıf PC Programcılığı</h1>
-          <p class="subtitle">Ders Materyalleri</p>
-          <div class="hero-rule" aria-hidden="true"></div>
-          <p class="details">Ankara Medipol Üniversitesi · Bilgisayar Programcılığı · 2026-2027 Güz</p>
-        </div>
-        <div class="hero-frame"><img class="hero-image" src="img/hero.webp" width="1600" height="1067" fetchpriority="high" alt="Sıcak akşam ışığında laptop, defter, kahve, kitaplar, devre kartı ve küçük bir bitki bulunan öğrenci masası."></div>
+        <p class="kicker">Bilgisayar Programcılığı · 2. sınıf</p>
+        <h1>2. Sınıf PC Programcılığı</h1>
+        <p class="lede">Ankara Medipol Üniversitesi, 2026–2027 Güz dönemi ders notları, sunumlar ve kaynaklar. Dosyaları sayfadan önizleyebilir ya da indirebilirsin.</p>
+        <ul class="stats" aria-label="Özet">
+          <li><strong>8</strong> ders</li>
+          <li><strong data-total-files></strong> dosya</li>
+        </ul>
       </div>
     </header>
     <main id="dersler" tabindex="-1">
       <section aria-labelledby="courses-title">
         <div class="section-heading">
           <h2 id="courses-title">Bu dönemin dersleri</h2>
-          <p class="drive-hint" id="drive-hint">Dersini seç, materyallerine göz at.</p>
+          <p class="section-hint" id="drive-hint">Dersini seç, materyallerine göz at.</p>
         </div>
         <nav aria-label="Ders materyalleri" aria-describedby="drive-hint">
           <ul class="courses">
-            <li>
-              <a class="course" href="#/ders/ataturk" data-course-id="1OWzegI1q7jArRxpYyXyNjfF35nYZXKyd">
-                <div class="course-picture"><img src="img/ataturk.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Eski Ankara silueti, kitaplar, harita ve kalemle hazırlanmış Cumhuriyet dönemi tarih masası."></div>
-                <div class="course-body">
-                  <span class="course-number" aria-hidden="true">01 / TARİH</span>
+            <li class="w4">
+              <a class="course" href="#/ders/ataturk" data-course-id="19AG2xJxJdgn69Jmey25SO0X7hhp_AaTt">
+                <span class="course-art"><img src="img/ataturk.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
                   <h3>Atatürk İlkeleri ve İnkılap Tarihi I</h3>
-                  <p class="course-note">Haftalık ders notları</p>
-                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
-                </div>
+                  <span class="course-note">Haftalık ders notları + vize çalışma soruları</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
+              </a>
+            </li>
+            <li class="tall">
+              <a class="course" href="#/ders/csharp" data-course-id="1GVMTfGEsitoA93VEwYQEnzOlXLpI2l2j">
+                <span class="course-art"><img src="img/csharp.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
+                  <h3>C# Programlama</h3>
+                  <span class="course-note">Windows Forms örnek projeleri</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
               </a>
             </li>
             <li>
-              <a class="course" href="#/ders/graf" data-course-id="1a3xhF87UYMboZjqJUbI0uW4Fn8FdzCNZ">
-                <div class="course-picture"><img src="img/graf.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Nehir ve köprüler üzerinde düğümlerle kenarları birleştiren zarif bir ağ."></div>
-                <div class="course-body">
-                  <span class="course-number" aria-hidden="true">02 / MATEMATİK</span>
+              <a class="course" href="#/ders/graf" data-course-id="17XGOcCLTt1NRVIlg_5XlBSXXf94boFIW">
+                <span class="course-art"><img src="img/graf.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
                   <h3>Graf Teorisi</h3>
-                  <p class="course-note">Ders notları</p>
-                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
-                </div>
+                  <span class="course-note">Ders notu + örnek proje</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
               </a>
             </li>
             <li>
-              <a class="course" href="#/ders/mantiksal" data-course-id="1UyZkFA_vW586KQLxRL_zSqRiTBhmuWHc">
-                <div class="course-picture"><img src="img/mantiksal.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Mantık kapıları, devre yolları ve doğruluk tablosu kâğıdı bulunan çalışma masası."></div>
-                <div class="course-body">
-                  <span class="course-number" aria-hidden="true">03 / DİJİTAL SİSTEMLER</span>
+              <a class="course" href="#/ders/mantiksal" data-course-id="103yvhXN7d2vyb7Tahqz_wC5XrrmTgim-">
+                <span class="course-art"><img src="img/mantiksal.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
                   <h3>Mantıksal Tasarım</h3>
-                  <p class="course-note">Haftalık ders notları + kaynak kitap</p>
-                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
-                </div>
+                  <span class="course-note">Bölüm sunumları + haftalık notlar</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
               </a>
             </li>
             <li>
-              <a class="course" href="#/ders/mikroislemci" data-course-id="1zpzmnaery7FNozOanxFtFddc8Hk2k_T4">
-                <div class="course-picture"><img src="img/mikroislemci.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Devre kartı üzerinde çift sıra metal pinleriyle eski nesil bir mikroişlemci yongası."></div>
-                <div class="course-body">
-                  <span class="course-number" aria-hidden="true">04 / DONANIM</span>
+              <a class="course" href="#/ders/mikroislemci" data-course-id="1eJiEcUFXVxDXw0p46Um-9yPKhQXK7fBS">
+                <span class="course-art"><img src="img/mikroislemci.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
                   <h3>Mikroişlemci Mimarisi</h3>
-                  <p class="course-note">Ders notları + başvuru kaynakları</p>
-                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
-                </div>
+                  <span class="course-note">14 haftalık ders notu + kodlar ve devreler</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
               </a>
             </li>
             <li>
-              <a class="course" href="#/ders/mobil" data-course-id="1LijhRWlcf-Y-tWn3xbsoS0fHFl0PeKD-">
-                <div class="course-picture"><img src="img/mobil.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Elde tutulan Android telefonun sade arayüzü ve yanında akış şemalı bir çalışma defteri."></div>
-                <div class="course-body">
-                  <span class="course-number" aria-hidden="true">05 / UYGULAMA GELİŞTİRME</span>
+              <a class="course" href="#/ders/mobil" data-course-id="1GoXP9d8MXndh3obicTgIhTDqHZDqjl7_">
+                <span class="course-art"><img src="img/mobil.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
                   <h3>Mobil Yazılım</h3>
-                  <p class="course-note">Haftalık ders notları + sunumlar</p>
-                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
-                </div>
+                  <span class="course-note">Kotlin ve Compose sunumları + projeler</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
               </a>
             </li>
             <li>
-              <a class="course" href="#/ders/nyp" data-course-id="18uBmK3RNH9XLG3EpRyoQYwK4ogBtvR5x">
-                <div class="course-picture"><img src="img/nyp.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Sınıfları ve kalıtım ilişkilerini anlatan, katmanlar hâlinde birbirine bağlı ahşap bloklar."></div>
-                <div class="course-body">
-                  <span class="course-number" aria-hidden="true">06 / PROGRAMLAMA</span>
+              <a class="course" href="#/ders/nyp" data-course-id="12skevBuZlHbl3fCf-DReUb7puMC5xWJW">
+                <span class="course-art"><img src="img/nyp.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
                   <h3>Nesne Yönelimli Programlama</h3>
-                  <p class="course-note">Ders notları</p>
-                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
-                </div>
+                  <span class="course-note">Ders notu + örnek projeler</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
               </a>
             </li>
             <li>
-              <a class="course" href="#/ders/veri" data-course-id="1inHHFOzr-Bb2axFz5sCNt88I1TVNLWLN">
-                <div class="course-picture"><img src="img/veri.webp" width="1200" height="800" loading="lazy" decoding="async" alt="Masaya yayılmış çubuk, çizgi ve pasta grafikleri ile renkli işaretleyici kalemler."></div>
-                <div class="course-body">
-                  <span class="course-number" aria-hidden="true">07 / VERİ</span>
+              <a class="course" href="#/ders/veri" data-course-id="1dKPxyKwQcsSHqpN6NGo4xrHXgVMNhPbm">
+                <span class="course-art"><img src="img/veri.svg" alt="" width="1536" height="1024" decoding="async"></span>
+                <span class="course-body">
+                <span class="course-text">
                   <h3>Veri Görselleştirme</h3>
-                  <p class="course-note">Haftalık sunumlar + görseller</p>
-                  <span class="course-action">Dosyaları gör <span class="arrow" aria-hidden="true">→</span></span>
-                </div>
+                  <span class="course-note">Haftalık sunumlar + görseller</span>
+                </span>
+                <span class="course-meta"><span class="course-count"></span><span class="arrow" aria-hidden="true">→</span></span>
+              </span>
               </a>
             </li>
           </ul>
@@ -437,100 +374,20 @@
   </div>
   <main class="shell explorer" id="explorer-view" aria-labelledby="view-title" hidden></main>
   <script id="archive-data" type="application/json">
-    {
+{
   "title": "2. Sınıf PC Programcılığı — Ders Materyalleri",
   "root": {"type": "folder", "id": "1YpHynkgoiPNA4n0AcLmtVa8OnP7nX6dS"},
   "courses": [
-    {"name": "Atatürk İlkeleri ve İnkılap Tarihi I", "id": "1OWzegI1q7jArRxpYyXyNjfF35nYZXKyd", "groups": [
-      {"name": null, "id": null, "items": [
-        {"name": "01. Ders Notu.pdf", "id": "1DO8RCxRg2vhff8sfUzk-934_evHI9Hjh"},
-        {"name": "02. Ders Notu.pdf", "id": "1NpFzIJ6_2VxYrJ9I_ECZoINs4yLPN26N"},
-        {"name": "03. Ders Notu.pdf", "id": "1eKT1xr0nPfuBM7JIk5yo2OenXnh3yzVC"},
-        {"name": "04. Ders Notu.pdf", "id": "1ha0DQAbFkz7lBP-5OWqpCZmdOC6tXxyw"},
-        {"name": "05. Ders Notu.pdf", "id": "1sGf1UQgSm53J3ziibNRiRunw4CwS4EEO"},
-        {"name": "06. Ders Notu.pdf", "id": "12lp-_3wPrKCPW5AwNnQYzAwamZr2cFT-"},
-        {"name": "07. Ders Notu.pdf", "id": "1sbNqvKiawcfXGz6b_z2ZTntxcpgS5X_K"},
-        {"name": "08. Ders Notu.pdf", "id": "1LL1R_Vogmg7Smrn1S2ZnqtPxK0c4AShc"},
-        {"name": "09. Ders Notu.pdf", "id": "19Wtz3CRDTDiuxDwaSiCPvalbqycn1cbK"},
-        {"name": "10. Ders Notu.pdf", "id": "1WS4WIbqGBrjFMCU_CHlkCBbb9NKcLuXV"},
-        {"name": "11. Ders Notu.pdf", "id": "1L1U4OaBXqZD3Jkdr8HEtrVoTDKG-KCRj"},
-        {"name": "12. Ders Notu.pdf", "id": "1awTQ6GLA9icMSE5q7QpwoTd9n6CasPDQ"},
-        {"name": "13. Ders Notu.pdf", "id": "1xyqNQF93AeWmp6AXNv3-36T0EtPewHY1"},
-        {"name": "14. Ders Notu.pdf", "id": "1GkpdJWVy6inc5PCcTSAR_Xt3NCiz6DOv"}
-      ]}
-    ]},
-    {"name": "Graf Teorisi", "id": "1a3xhF87UYMboZjqJUbI0uW4Fn8FdzCNZ", "groups": [
-      {"name": null, "id": null, "items": [
-        {"name": "GrafTeorisi.pdf", "id": "16Vfmlfl4yVmqMDEWRH-3tTCAevj-ppKZ"}
-      ]}
-    ]},
-    {"name": "Mantıksal Tasarım", "id": "1UyZkFA_vW586KQLxRL_zSqRiTBhmuWHc", "groups": [
-      {"name": "Haftalık Ders Notları", "id": "1NX2aYGtvVHYIcm_AVjveOHcdXdEk_wzR", "items": [
-        {"name": "02. Hafta.pdf", "id": "1vFK0fwh63Mfachne1GjRjdFAchhQ7pTx"},
-        {"name": "03. Hafta.pdf", "id": "1-vb8FAqo1SdPzMLASfI6DLMJoiYoIVMC"},
-        {"name": "04. Hafta.pdf", "id": "1cc-Zm1Pul9HmjGiqZK6atIU8j-3fZh0l"},
-        {"name": "05. Hafta.pdf", "id": "12F0_bqnCzZT1hZK5uCjAD0HqwxYvAeSG"},
-        {"name": "06. Hafta.pdf", "id": "1zjD-dfx0zLiadYAMyW8DA_Zb707HQ_aT"},
-        {"name": "06-07. Haftalar.pdf", "id": "1QiYdVptzhXjkQspuhPJnd84dcFTkE5vE"},
-        {"name": "08-09. Haftalar.pdf", "id": "1Uhm7PVzbL3pDj7BY3VIPRkefsRF21vMX"},
-        {"name": "10. Hafta.pdf", "id": "1UBupy1NTLf7pMFMzqDxJey8jzCT5bHIf"},
-        {"name": "11-12. Haftalar.pdf", "id": "1yBfx_yRaTjRaPa2OIp5qEKFwdOVYfTq4"}
-      ]},
-      {"name": "Kaynak Kitaplar", "id": "1NdcTRn_hzGUYxoe1MoAM1YoSnBSu8PXd", "items": [
-        {"name": "Digital Design - Global Edition (2018).pdf", "id": "1FIal72O7vX_SndSWAAZkVdETIqzwCr0h"}
-      ]}
-    ]},
-    {"name": "Mikroişlemci Mimarisi", "id": "1zpzmnaery7FNozOanxFtFddc8Hk2k_T4", "groups": [
-      {"name": "Haftalık Ders Notları", "id": "16Z9ywLg4wp-bgcxun9NHUO-HCYLFIshd", "items": [
-        {"name": "01. Hafta.pdf", "id": "1Nx4fGqLoo0gl4QjXyGp2ILwSqikf7ftZ"},
-        {"name": "02-03. Haftalar.pdf", "id": "1e4VOzkX6COeAcCaxberN8Qa_ErCmc73v"},
-        {"name": "03-04. Haftalar.pdf", "id": "1Tbuywqe3dGq60wxI7dsuH3xrD4cmZLoB"},
-        {"name": "05. Hafta.pdf", "id": "1lxPDureqAPDGP649yQMpRtKgg7-SF-2y"},
-        {"name": "06. Hafta.pdf", "id": "11LTjq3jnh36JoQ2HtfdNIvfSvJBh-TOw"},
-        {"name": "Mikroislemci_Mimarisi_14_Hafta_RV32I_8086_Duzenlenmis.pptx", "id": "1COvt_Hv8lOoXfZrAQf1F60vq-_otFQkf"}
-      ]},
-      {"name": "Başvuru Kaynakları", "id": "15vJXidtB3VFq2RxPD-rkv_q0fZCRok97", "items": [
-        {"name": "i8086_instruction_set-2.pdf", "id": "1ckQLYAhznTFAuo8dpJv7GAR5YzxaHx2I"},
-        {"name": "Intel8255A.pdf", "id": "1KaJOvlatSuCLpZRnpS_5eS5bgEpUljFg"}
-      ]}
-    ]},
-    {"name": "Mobil Yazılım", "id": "1LijhRWlcf-Y-tWn3xbsoS0fHFl0PeKD-", "groups": [
-      {"name": "Haftalık Ders Notları", "id": "1a8XXePloDGQV71ktJT9BRiZQAVuy0ZcQ", "items": [
-        {"name": "01. Hafta.pdf", "id": "1SPx28Vbf_5xvhmTgI2aUZbtafxmahk1G"},
-        {"name": "02-03. Haftalar.pdf", "id": "1squ4hNW9hmjf2wNJbg-enBHAtMpoZXVI"},
-        {"name": "04. Hafta.pdf", "id": "1Zyvkh_SpwOwawr26Mr6t-4-nzy1eDj4A"},
-        {"name": "05. Hafta.pdf", "id": "1Ia7T41MQZQzoh0k_OoHuBDK9s4-BCeFe"},
-        {"name": "HAFTA-6_Modern_Android_ve_Compose_v3.pptx", "id": "1oXR7O5lJ6DVv2TyLdeUumet0McD3U2Mz"}
-      ]}
-    ]},
-    {"name": "Nesne Yönelimli Programlama", "id": "18uBmK3RNH9XLG3EpRyoQYwK4ogBtvR5x", "groups": [
-      {"name": null, "id": null, "items": [
-        {"name": "Nesne Yönelimli Programlama.pdf", "id": "1o9EUzrYXA2UEso7097IbtqMAJcCItwWu"}
-      ]}
-    ]},
-    {"name": "Veri Görselleştirme", "id": "1inHHFOzr-Bb2axFz5sCNt88I1TVNLWLN", "groups": [
-      {"name": "Haftalık Sunumlar", "id": "1BsFVOAW6kl4ekc-LR1_-lKE60MrAima3", "items": [
-        {"name": "02. Sunum.pdf", "id": "1AOafBc755jE5m8V5gyGEqBpdUhvw04Hh"},
-        {"name": "03. Sunum.pdf", "id": "1_qd3dZK4XNWBoY0Xl-7tkeBRE0fjYSp5"},
-        {"name": "04. Sunum.pdf", "id": "149ZCkZjArSEqKWz196MrBV7yfOD-bC37"},
-        {"name": "05. Sunum.pdf", "id": "1x0KiRXX6YjTa_psq_USXNZz4L9KCUgWi"},
-        {"name": "06. Sunum.pdf", "id": "1ijLL-wookfBVuerHRHXvwL5N80WDCZp0"},
-        {"name": "07. Sunum.pdf", "id": "1mabU8IK8418esk5WG3VPAse94jiBNRyF"},
-        {"name": "08. Sunum.pdf", "id": "1hCxYkoiqxeN09t2nyxy2Hqvkb_R76_RD"},
-        {"name": "09. Sunum.pdf", "id": "1VgPfcFfvJ4jy5BQ_-bc1IEkBH_vrE_ES"},
-        {"name": "10. Sunum.pdf", "id": "1tTo2wxpaaPJoupT_jVhJtxtPciT2XsVZ"},
-        {"name": "11. Sunum.pdf", "id": "1Tol_gxBOZHoZ3h5Zpe3xRwCghTtYZo1k"},
-        {"name": "12. Sunum.pdf", "id": "1nqxUSm58b54Rl42UPFv9q0MqGD-zw41A"}
-      ]},
-      {"name": "Görseller", "id": "15FHndBzazZugU50RwQXIk4vzW8vGa8kM", "items": [
-        {"name": "resimler (klasör)", "id": "1vT-qUqo47ei6j8gyPGO5x63Gh_BCQDS0", "type": "folder"},
-        {"name": "4GLTE.png", "id": "1LnzpQSpmOX4Rw7L8rYD2oZY49-1V-2qN"}
-      ]}
-    ]}
+    {"name": "Atatürk İlkeleri ve İnkılap Tarihi I", "id": "19AG2xJxJdgn69Jmey25SO0X7hhp_AaTt", "groups": [{"name": null, "id": null, "items": [{"name": "Ders Hakkında.pdf", "id": "1g-BVFFYXnnmf5pACE_cEs3oqrJhtTpwW"}]}, {"name": "Notlar", "id": "1qbwhZhpURuqFYNjcAHTPrQSIbgPqJv2A", "items": [{"name": "Hafta 01 - Ders Notu.pdf", "id": "1gTRZvn3wlp0lCCkqAY9HE4rzv4spZ9hq"}, {"name": "Hafta 02 - Ders Notu.pdf", "id": "1PXtfH8YP0VdDFDX9IhNWDda4BLIPG2EX"}, {"name": "Hafta 03 - Ders Notu.pdf", "id": "1k902VjlJx7vlsthY31SzwsMbpJPFfgQ6"}, {"name": "Hafta 04 - Ders Notu.pdf", "id": "1qYN_SRX2lvtxVrLmMLO4TwR4cNTiuhYS"}, {"name": "Hafta 05 - Ders Notu.pdf", "id": "1ijpRel0h3SH35Yv7EU_Jucxz7EfwM0wh"}, {"name": "Hafta 06 - Ders Notu.pdf", "id": "1nYntd--F99hVQvRgXc2LksR1fwjhjk5K"}, {"name": "Hafta 07 - Ders Notu.pdf", "id": "1twgxpfLxo5jcIjbLzwVLWfhruQcf4cXB"}, {"name": "Hafta 08 - Ders Notu.pdf", "id": "1OKgSIBLBsMh5vpZaEQirDQXaUUYryfVD"}, {"name": "Hafta 09 - Ders Notu.pdf", "id": "11bXVaQL0w0HeobpnUsJ8wSfYXJjGR15L"}, {"name": "Hafta 10 - Ders Notu.pdf", "id": "1jyqy98pZ8kHZ498HWTHZXqwegZyU5exa"}, {"name": "Hafta 11 - Ders Notu.pdf", "id": "1wWROyJ3S4QiP6sB9kr33R85aStqjS3sI"}, {"name": "Hafta 12 - Ders Notu.pdf", "id": "1JOiea2jvwQKeFMIbaxK18ailcoc_L1MZ"}, {"name": "Hafta 13 - Ders Notu.pdf", "id": "1hhUUvBpYsm2pesbyDslUeTPm9F0WwI7_"}, {"name": "Hafta 14 - Ders Notu.pdf", "id": "1kpYiIgoicwJ_cHwv3XM030S-7YiqUeWO"}]}, {"name": "Vize", "id": "1PkAwyo81GlXaE9vp3NQ0yNHYS___ulen", "items": [{"name": "Vize Çalışma Soruları.pdf", "id": "1XZ_7tqraTvwuZQiNPt6uRcy-k7WxohKO"}, {"name": "Vize Çalışma Soruları - Cevap Anahtarı.pdf", "id": "1a1fSOCU-U2WdmNaYBSaEWboXq-W2q_0q"}]}]},
+    {"name": "C# Programlama", "id": "1GVMTfGEsitoA93VEwYQEnzOlXLpI2l2j", "groups": [{"name": "Örnek Projeler", "id": "1YWIm-qQe2kTQ5UtQlGYLJz-UJj7OuvkV", "items": [{"name": "Adres Bilgileri.zip", "id": "1Eq0kCBwXD6QsMUdy_DZvhKWysBSsvEho"}, {"name": "Aritmetik Ortalama.zip", "id": "1UgxeywSCoAIwSxol7gIL9SDrcORC0A_q"}, {"name": "Asal Sayı Bulma (WinForm).zip", "id": "1SnkvxOnXngrUt6TcTJNBSIURyzXTCHmE"}, {"name": "Asal Sayılar ve Noel Ağacı.rar", "id": "1BC-apZ9cRLdpDopoE2G3H9Yirz43-BTE"}, {"name": "Fibonacci Sayıları.zip", "id": "1IAWIHhPUoUyuQMZ3ml-kEWlYv-XfnMPU"}, {"name": "Hesap Makinesi.zip", "id": "1aPjmD3JjOqJubHQYohjZ37VkBnWi0Xbi"}, {"name": "Hesap Makinesi 2.zip", "id": "1Qobv7w4EqGAZYNoXAjQfq1UbFdG5cCvc"}, {"name": "Hesap Makinesi 2023.zip", "id": "1DWDfVfpqNXKgTYHBoJnTOJk-YPh6P8gs"}, {"name": "Matris Çarpımı.rar", "id": "1RqCdJJjTZ3fX4_ePtIQzbaRHSZ3TTufi"}, {"name": "Matris İşlemleri.rar", "id": "1mEh7EHlQ1ejvVLVps0d4DHi7I_FaFuY0"}, {"name": "Matris Toplama.zip", "id": "1NrO_eRFqEiu2yxIf5EW9aqpAzEycUgaY"}, {"name": "Metinde Harf Bulma.zip", "id": "1LKY5CJLY2qcODrajRZdJRS5uheah9xqZ"}, {"name": "Pizza Siparişi.zip", "id": "1CDB2s99dSiEl-1sd6CxOow1_pbXijySY"}, {"name": "Pizza Siparişi 2024.zip", "id": "1Ue4mzwUjf7YBzMWd0KprmtzQpNi7xCcS"}, {"name": "Tic Tac Toe (Diziler).zip", "id": "1IbHjadq4vHjOLMhriSJuzfSH-bBT2Ykh"}, {"name": "Tic Tac Toe 2.zip", "id": "11Eb_LMSkqdaWdeGaWZi6Q74gZxbhB56-"}, {"name": "Ürünleri Listeleme (ListView).zip", "id": "18dJBBsDei8Li39osGgRSNemShzrM25uj"}]}]},
+    {"name": "Graf Teorisi", "id": "17XGOcCLTt1NRVIlg_5XlBSXXf94boFIW", "groups": [{"name": "Notlar", "id": "1t2xB_dqSxRMb5qOwDf9wbptYe_8qi_Ks", "items": [{"name": "Graf Teorisi.pdf", "id": "1kDIuhCpgmQuqFt5xw6LAKLoOlRUJaKpa"}]}, {"name": "Örnek Projeler", "id": "1ffT5Iv_OCaQ1dSr3rML_21_7sI52D72I", "items": [{"name": "MainForm.zip", "id": "17VF55VfVk8JjG2sTtd9bKoYsu99sNzL-"}]}]},
+    {"name": "Mantıksal Tasarım", "id": "103yvhXN7d2vyb7Tahqz_wC5XrrmTgim-", "groups": [{"name": "Notlar", "id": "1XFHeawy6JKWCzhTCW8KeooRkhkNZy_at", "items": [{"name": "Bölüm 1 - Sayısal Sistemler ve İkili Sayılar.pdf", "id": "1vkxjf2ay80-i2VvIiMPdYi5YRQYcROwJ"}, {"name": "Bölüm 2 - Boole Cebri ve Mantık Kapıları.pdf", "id": "12cibw-FB5eK0gLjtsgsUQ5N2Cr4xuLFx"}, {"name": "Hafta 02.pdf", "id": "1cI7Xl9S_lOFKWq2OpJOPvPf9C_QJSKT5"}, {"name": "Hafta 03.pdf", "id": "19rq5co3jh1woBpix3C7RgCIOAHpOkxLz"}, {"name": "Hafta 04.pdf", "id": "1zeQtzTdtR8lGVTSEMYZzSlGYjd8CRrGa"}, {"name": "Hafta 05.pdf", "id": "1zAKPdg9dEKrH44ukwXqPqcABAPhsIiwd"}, {"name": "Hafta 06.pdf", "id": "1_y2CXSeCnceanEEIWT3s_HJ4JFLZBFn-"}, {"name": "Hafta 06-07.pdf", "id": "1OHV0aj70UZnesEuklCka9UTnzjKkoOB4"}, {"name": "Hafta 08-09.pdf", "id": "1lCboX_j0MKUtGeNb-SbP1j6vVkZTrsU-"}, {"name": "Hafta 10.pdf", "id": "1KGMOQuNFDX_YK5VYJ8hyqtwgQFvr-obh"}, {"name": "Hafta 11-12.pdf", "id": "1wVwC7d4yhR_NkS6jq1jvu5uS2XLs9c-O"}]}]},
+    {"name": "Mikroişlemci Mimarisi", "id": "1eJiEcUFXVxDXw0p46Um-9yPKhQXK7fBS", "groups": [{"name": "Notlar", "id": "1rjwOz_S4SoxAkZ5fskNSNYQgmHjKel4j", "items": [{"name": "14 Haftalık Ders Notu (RV32I ve 8086).pdf", "id": "1D_ZBSYOgiNoXPUT2IKPX3FzF40Q-S4zB"}, {"name": "Hafta 01.pdf", "id": "1T-2cFKyujBydclSg9_ZbU3xbPZ2xh9yp"}, {"name": "Hafta 02-03.pdf", "id": "1xRnku8CNnU6HcLmPdH4HJhjgcNIJF_u9"}, {"name": "Hafta 03-04.pdf", "id": "1z-fPpNCtwOsoAFKYtGkYuOM0MsWGl7wy"}, {"name": "Hafta 05.pdf", "id": "1xAKVZYuljAoVKND_X-WeEuIK_WrC8P46"}, {"name": "Hafta 06.pdf", "id": "1ROhTw6rBt-xOWzrBQruWGkYyvK69WMGA"}]}, {"name": "Başvuru Kaynakları", "id": "1f6P8u1FvP4th0yPfvGIdbrlIP-5nti7e", "items": [{"name": "8086 Komut Seti.pdf", "id": "1i0RUpOML5WDybEnePLVK_P5cGagkardk"}, {"name": "Intel 8255A.pdf", "id": "1dkvxJEXWRpFpFbd0vs7HOi_lLoWWKAIH"}]}, {"name": "Kodlar ve Devreler", "id": "1gWDNHXtUIHKzzb5w4yMpp_HiCc-wH93o", "items": [{"name": "Ders Kodları (17.12.2024).rar", "id": "1Oi_IrLFLcAzmMGk0nA8MCmtSfl-hq56C"}, {"name": "Derste Yazılan Kodlar.zip", "id": "1miYbbM2QIakk-I4BBrKvzU3u0hgFKK35"}, {"name": "İlk Uygulama.rar", "id": "1PWsELR3LUevzYHY9CrX5WbrXh5ijXE_o"}, {"name": "LCD Arayüzü.zip", "id": "16Tb7HTVsLbP_5FltJYbnflnI684AG3_E"}, {"name": "Proteus Devreleri.zip", "id": "194NB16DCJfXy9ZcL7AU16J6EgnopMLgx"}, {"name": "Proteus Örnekleri.rar", "id": "1-ibfvPIAGuwq1rKsSyXvvR0FSxeDEdUX"}]}]},
+    {"name": "Mobil Yazılım", "id": "1GoXP9d8MXndh3obicTgIhTDqHZDqjl7_", "groups": [{"name": "Notlar", "id": "1wFztuRWj8OZNf8f3aPs-ioxzxSEeKcVo", "items": [{"name": "Hafta 01 - Giriş.pdf", "id": "1aRUKsmfbRcbHikjPAk9sRPtbg98kc1GZ"}, {"name": "Hafta 02-03 - Kotlin 1.pdf", "id": "1bgAYkRn--kdZV2f0Md3aH5gzfHjzV9_8"}, {"name": "Hafta 03-04 - Fonksiyonlar.pdf", "id": "18Z7sn-93SsSBZPEBayd20yZn26Qv68Ch"}, {"name": "Hafta 05 - Sınıflar ve Nesneler.pdf", "id": "1KBLRptNzPCgYQrTm1EW_V36kbBkuLxQW"}, {"name": "Hafta 06 - Modern Android ve Compose.pdf", "id": "1lASKOidt9nbeb-7bapemzofH_LIlySs-"}, {"name": "Android Uygulama Atölyesi.pdf", "id": "1fg5q41E0LU7ApkSFwdaaRKHtmBE93qMv"}]}, {"name": "Örnek Projeler", "id": "1i4akUjqzkZ5MaojcxmoV1hsi37R31yIt", "items": [{"name": "Android Projeleri.zip", "id": "19bu2Ny0bgwcE_-D9gV2ohPfwyrMm1bsU"}]}]},
+    {"name": "Nesne Yönelimli Programlama", "id": "12skevBuZlHbl3fCf-DReUb7puMC5xWJW", "groups": [{"name": "Notlar", "id": "1RHNoo74j277iDkWPHcAle6zLCFfLHJGj", "items": [{"name": "Nesne Yönelimli Programlama.pdf", "id": "15H-ewVt5_HsbR6fBw0lwfPQGBfk1yAHS"}]}, {"name": "Örnek Projeler", "id": "1Q0EUSK8SUGjGXMZp9nV5oB0I3C3XmJwb", "items": [{"name": "Hayvanlar (Kurucu, Kalıtım, Polimorfizm).zip", "id": "1GHAipWowl5BVKyEptotWfIyfegE6XEac"}, {"name": "Kalıtım Örneği.txt", "id": "1Zv3CZv2ecUkuWrIS-BrJqU9gxuRirUu5"}, {"name": "Spagetti Kod (Dönüşüm Öncesi).zip", "id": "1UdLM826Pn3ecvVm3LhNqMAKOiDEKZd6M"}, {"name": "Nesne Yönelimli Dönüşüm (Sonrası).zip", "id": "1cqF0RcxkEtrHqRRv9N80Wo6KZpm-8ng9"}]}]},
+    {"name": "Veri Görselleştirme", "id": "1dKPxyKwQcsSHqpN6NGo4xrHXgVMNhPbm", "groups": [{"name": "Notlar", "id": "1OTTr6U-eqm1BJCR1lhDBe0tYH9hrRE_-", "items": [{"name": "Hafta 02.pdf", "id": "1nv5o93TR7u7H1kyvL7guDpPjKHuMB0L1"}, {"name": "Hafta 03.pdf", "id": "11fpMaT2CK2Bfr-yJK2S1NgGl1hHmAEyy"}, {"name": "Hafta 04.pdf", "id": "1xMBwm9z-ZCcf_KoKTNMY_YGEH9VmOHu4"}, {"name": "Hafta 05.pdf", "id": "13Al6lGAFVJ8FRUPydQpUdn8iItPYx4fX"}, {"name": "Hafta 06.pdf", "id": "1r4Q1JqSdWGX6TmrDcdWV3J3iftBQ50Mu"}, {"name": "Hafta 07.pdf", "id": "1HYsUVBUq5WvWlBqIKTo74SfmQ0WF7HHt"}, {"name": "Hafta 08.pdf", "id": "1zWD0K3kWGLEo_bAMrH7Yi_Fmk_qKm6ak"}, {"name": "Hafta 09.pdf", "id": "1TtFnv8SQ9IC6Tdf5XCKu_XRJAUkdWhL6"}, {"name": "Hafta 10.pdf", "id": "1YvYHCt5Ygpya7y3tYaP3hDrr769dI7Q2"}, {"name": "Hafta 11.pdf", "id": "1YdcuZ0SKCkmMCLXoxHVeQczA1MSgpxcZ"}, {"name": "Hafta 12.pdf", "id": "1jwhzjoFr4OVwAIbLKz56I8oZbTuXJ5oN"}]}, {"name": "Görseller", "id": "132UlwC5h2twGG9Wo2JyED5clNiYS6qSn", "items": [{"name": "4G LTE.png", "id": "1kz1kF0MN038hafz_DSvhhTedXBPBLXTR"}, {"name": "Resimler.zip", "id": "1KgND1xZkyaSr1lfJBqj79DJ8ezON0RVU"}]}]}
   ],
-  "extras": [
-    {"name": "MainForm.zip", "id": "1HmItpw4DjQbN-F5p98ExFetnVg8n1tKd"}
-  ]
+  "extras": []
 }
   </script>
   <script>
@@ -554,6 +411,17 @@
         }
       }
       for (const item of data.extras || []) filesById.set(item.id, { item, course: null });
+
+      // Ders satırlarındaki ve girişteki dosya sayıları veriden hesaplanır; dosya eklenince elle güncellemek gerekmez.
+      let totalFiles = (data.extras || []).length;
+      for (const course of courses) {
+        const count = course.groups.reduce((total, group) => total + group.items.length, 0);
+        totalFiles += count;
+        const label = cards.get(course.id).querySelector('.course-count');
+        if (label) label.innerHTML = `${count}<span class="count-label"> dosya</span>`;
+      }
+      const total = document.querySelector('[data-total-files]');
+      if (total) total.textContent = totalFiles;
 
       // Names are rendered as text; only IDs enter the fixed Drive URL templates.
       function element(tag, className, text) {
@@ -721,6 +589,27 @@
     })();
   </script>
   <script>
+    // İmleç spot ışığı: imlecin her karta göre konumunu --mx/--my olarak yazar (bir karede bir kez).
+    (() => {
+      const grid = document.querySelector('.courses');
+      if (!grid || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+      const cards = Array.from(grid.querySelectorAll('.course'));
+      let x = 0, y = 0, queued = false;
+      const paint = () => {
+        queued = false;
+        for (const card of cards) {
+          const r = card.getBoundingClientRect();
+          card.style.setProperty('--mx', `${x - r.left}px`);
+          card.style.setProperty('--my', `${y - r.top}px`);
+        }
+      };
+      grid.addEventListener('pointermove', e => {
+        x = e.clientX; y = e.clientY;
+        if (!queued) { queued = true; requestAnimationFrame(paint); }
+      });
+    })();
+  </script>
+  <script>
     // Mor sis arka planı: görsel yerine kodla üretilen, sürekli akan, ara ara belirip kaybolan duman (domain-warped fbm).
     // Tuval nokta boyutunda (2 CSS px) düşük çözünürlükte çizilir, CSS ile keskin büyütülür: hem 2 px Bayer noktaları
     // net kalır hem de maliyet ~16 kat azalır. ~30 fps; sekme gizliyken durur; "hareketi azalt" açıksa sabit tek kare.
@@ -752,12 +641,15 @@
           vec2 uv = gl_FragCoord.xy / res;
           vec2 p = (gl_FragCoord.xy - 0.5 * res) / res.y * 0.75; // küçük sayı = büyük, yumuşak kıvrımlar
           float s = t * 0.045;
+          // Desen yavaşça kayar (~75 sn'de ekranı geçer). Kaymazsa parlak kıvrımlar ekranda sabit bir yere
+          // kilitleniyordu: ölçümde sisin ~%70'i sağ üçte birdeydi. Kaydırınca sol/orta/sağ ~%32/36/32.
+          p += vec2(0.018, 0.006) * t;
 
           // Domain warping: gürültüyü kendi gürültüsüyle bük, iç içe kıvrılan duman/sıvı akışı çıkar.
           vec2 q = vec2(fbm(p + vec2(0.0, s)), fbm(p + vec2(5.2, 1.3) - s * 0.7));
           vec2 r = vec2(fbm(p + 2.4 * q + vec2(1.7, 9.2) + s * 1.3), fbm(p + 2.4 * q + vec2(8.3, 2.8) - s));
           float f = fbm(p + 2.2 * r);
-          f = smoothstep(0.22, 0.55, f); // fbm burada ~0.2–0.6 aralığında; 0–1'e yayılır // kontrast: geniş karanlık alanlar, belirgin ışık kıvrımları
+          f = smoothstep(0.30, 0.62, f); // fbm burada ~0.2–0.6 aralığında; 0–1'e yayılır // kontrast: geniş karanlık alanlar, belirgin ışık kıvrımları
 
           // Renk: mor sis. Tam renkli değil; koyu zeminde yarı saydam, soluk mor duman.
           vec3 col = mix(vec3(0.016, 0.014, 0.03), vec3(0.17, 0.07, 0.34), smoothstep(0.25, 0.8, f));
@@ -771,6 +663,10 @@
                           fbm(p * 0.5 + vec2(-t * 0.04, t * 0.02) + 37.0));
           fog = smoothstep(0.26, 0.5, fog);
           col *= mix(0.25, 0.95, fog);
+          // Sis cepleri: ekrandan küçük lekeler. Sis yalnız bunların içinde tam görünür; böylece desen kayarken
+          // bile bir anda tüm ekranı kaplayamaz (ölçüm: ortalama kaplama ~%20, en kötü an ~%70; cepsiz %45 / %100).
+          float patch = smoothstep(0.36, 0.52, fbm(p * 1.8 + vec2(-t * 0.02, t * 0.025) + 53.0));
+          col *= mix(0.25, 1.0, patch);
 
           // Yön yok: sis ekranın her yerinde eşit gezer. Yalnız kenarlarda hafif kararma (vinyet) var.
           float vig = 1.0 - smoothstep(0.35, 0.95, length((uv - 0.5) * vec2(1.1, 1.0)));
@@ -778,7 +674,11 @@
 
           float levels = 7.0;
           vec3 qd = floor(col * (levels - 1.0) + bayer8(gl_FragCoord.xy)) / (levels - 1.0);
-          gl_FragColor = vec4(max(vec3(0.043, 0.051, 0.063), qd), 1.0);
+          // Sisin olmadığı karanlık yerlerde nokta deseni yok: düz zemin. Noktalar yalnız sis belirdikçe ortaya çıkar.
+          vec3 base = vec3(0.043, 0.051, 0.063);
+          float lum = dot(col, vec3(0.299, 0.587, 0.114));
+          float show = smoothstep(0.035, 0.09, lum);
+          gl_FragColor = vec4(mix(base, max(base, qd), show), 1.0);
         }`;
 
       function shader(type, src) {
