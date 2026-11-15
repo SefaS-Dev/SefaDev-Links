@@ -141,6 +141,9 @@
     .prep-group-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0 12px 10px; font-size: .9375rem; }
     .prep-group-title span { color: var(--muted); font-size: .75rem; font-weight: 400; font-variant-numeric: tabular-nums; }
     .prep-list { margin: 0; padding: 0; list-style: none; }
+    .prep-list li { display: flex; align-items: center; gap: 4px; }
+    .prep-list li > a:first-child { flex: 1; min-width: 0; }
+    .prep-list a.prep-mp4 { flex: none; min-height: 40px; padding: 0 12px; border: 1px solid rgb(184 164 244 / 30%); border-radius: 999px; color: var(--accent); font-size: .75rem; font-weight: 600; }
     .prep-list a { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px; border-radius: 12px; text-decoration: none; transition: background-color 160ms ease; }
     .prep-kind { flex: none; width: 46px; padding: 3px 0; border-radius: 999px; border: 1px solid var(--glass-border); color: var(--muted); font-size: .6875rem; text-align: center; }
     .prep-kind.quiz { border-color: rgb(184 164 244 / 40%); color: var(--accent); }
@@ -417,18 +420,18 @@
             <h3 class="prep-group-title">Veri Görselleştirme <span>16 Kasım</span></h3>
             <ul class="prep-list">
               <li><a href="vize/vg-vize-provasi.html" target="_blank" rel="noopener"><span class="prep-kind quiz">Test</span><span class="prep-name">Vize Provası<small>40 soru, 4 şık; arkadaşlarla sırayla çözülür</small></span><span class="arrow" aria-hidden="true">↗</span></a></li>
-              <li><a href="vize/vg-1-cizgi-grafigi-csv.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Çizgi grafiği ve CSV<small>verigors2</small></span><span class="arrow" aria-hidden="true">↗</span></a></li>
-              <li><a href="vize/vg-2-bar-histogram.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Bar ve histogram<small>verigors3</small></span><span class="arrow" aria-hidden="true">↗</span></a></li>
-              <li><a href="vize/vg-3-scatter.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Scatter grafiği<small>verigors4</small></span><span class="arrow" aria-hidden="true">↗</span></a></li>
-              <li><a href="vize/vg-4-pasta-grafigi.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Pasta grafiği<small>verigors5</small></span><span class="arrow" aria-hidden="true">↗</span></a></li>
+              <li><a href="vize/vg-1-cizgi-grafigi-csv.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Çizgi grafiği ve CSV<small>verigors2</small></span><span class="arrow" aria-hidden="true">↗</span></a><a class="prep-mp4" href="vize/vg-1-cizgi-grafigi-csv.mp4" aria-label="MP4 olarak aç">MP4</a></li>
+              <li><a href="vize/vg-2-bar-histogram.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Bar ve histogram<small>verigors3</small></span><span class="arrow" aria-hidden="true">↗</span></a><a class="prep-mp4" href="vize/vg-2-bar-histogram.mp4" aria-label="MP4 olarak aç">MP4</a></li>
+              <li><a href="vize/vg-3-scatter.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Scatter grafiği<small>verigors4</small></span><span class="arrow" aria-hidden="true">↗</span></a><a class="prep-mp4" href="vize/vg-3-scatter.mp4" aria-label="MP4 olarak aç">MP4</a></li>
+              <li><a href="vize/vg-4-pasta-grafigi.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Pasta grafiği<small>verigors5</small></span><span class="arrow" aria-hidden="true">↗</span></a><a class="prep-mp4" href="vize/vg-4-pasta-grafigi.mp4" aria-label="MP4 olarak aç">MP4</a></li>
             </ul>
           </div>
           <div class="prep-group">
             <h3 class="prep-group-title">Mantıksal Tasarım <span>17 Kasım</span></h3>
             <ul class="prep-list">
-              <li><a href="vize/mantiksal-bolum-1.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Bölüm 1: Sayısal sistemler<small>Taban dönüşümleri, tümleyenler, kodlar</small></span><span class="arrow" aria-hidden="true">↗</span></a></li>
+              <li><a href="vize/mantiksal-bolum-1.html" target="_blank" rel="noopener"><span class="prep-kind">Video</span><span class="prep-name">Bölüm 1: Sayısal sistemler<small>Taban dönüşümleri, tümleyenler, kodlar</small></span><span class="arrow" aria-hidden="true">↗</span></a><a class="prep-mp4" href="vize/mantiksal-bolum-1.mp4" aria-label="MP4 olarak aç">MP4</a></li>
             </ul>
-            <p class="prep-tip">Videolar tarayıcıda oynar; her bölüm MP4 olarak da indirilebilir. Dosyalar büyük, açılması birkaç saniye sürebilir.</p>
+            <p class="prep-tip">Telefonda MP4 düğmesini kullan (5–8 MB). Başlığa tıklarsan etkileşimli sürüm açılır; o dosyalar büyük.</p>
           </div>
         </div>
       </section>
