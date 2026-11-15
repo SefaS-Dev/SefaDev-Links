@@ -1,0 +1,2786 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veri Görselleştirme • Vize Provası</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F3ED;
+    --ink: #24372D;
+    --muted: #7C8A7E;
+    --sage: #9CC29A;
+    --lavender: #B6A2DB;
+    --terracotta: #CF8A68;
+    --sand: #E3C9A0;
+    --ice: #9FC3D6;
+    --correct: #3E8E4E;
+    --wrong: #CF8A68;
+    --card: #FFFFFF;
+    --code-bg: #F7F8F3;
+    --shadow: 0 6px 24px rgba(36, 55, 45, 0.055);
+    --radius: 22px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle seeded paper texture */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.14  0 0 0 0 0.22  0 0 0 0 0.18  0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 18px 22px 42px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Hand-drawn SVG overlay container */
+  .boil-box {
+    position: relative;
+  }
+
+  .boil-svg {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    pointer-events: none;
+    overflow: visible;
+    z-index: 2;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+
+  /* Typography */
+  .serif-title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .hand-note {
+    font-family: 'Caveat', cursive;
+    font-weight: 600;
+  }
+
+  /* Top utility bar */
+  .global-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .brand-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .brand-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--sage);
+    display: inline-block;
+  }
+
+  .utility-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Buttons */
+  .btn {
+    appearance: none;
+    border: none;
+    background: var(--card);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(36, 55, 45, 0.05);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.14s ease, background-color 0.15s ease;
+    position: relative;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: #F2F3ED;
+    padding: 13px 26px;
+    font-size: 16px;
+    border-radius: 18px;
+  }
+
+  .btn-accent {
+    background: var(--sage);
+    color: var(--ink);
+    padding: 13px 24px;
+    font-size: 16px;
+    border-radius: 18px;
+  }
+
+  .btn-soft {
+    background: #EAEDE4;
+    color: var(--ink);
+  }
+
+  /* Start Screen */
+  .start-wrap {
+    max-width: 780px;
+    margin: 10px auto 0;
+    width: 100%;
+  }
+
+  .start-card {
+    padding: 34px 36px;
+  }
+
+  .start-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .start-header h1 {
+    font-size: clamp(36px, 5vw, 52px);
+    margin: 0 0 6px;
+    line-height: 1.08;
+  }
+
+  .start-subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin-bottom: 24px;
+  }
+
+  .setup-section {
+    background: #F9FAF6;
+    border-radius: 18px;
+    padding: 18px 20px;
+  }
+
+  .setup-section.full {
+    grid-column: 1 / -1;
+  }
+
+  .setup-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    appearance: none;
+    border: 1.5px solid #D8DFD2;
+    background: #FFFFFF;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background-color 0.14s ease, border-color 0.14s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chip.active {
+    background: var(--sage);
+    border-color: var(--ink);
+    font-weight: 600;
+  }
+
+  .chip.star-chip.active {
+    background: var(--sand);
+  }
+
+  .team-count-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .team-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .team-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFFFFF;
+    border: 1.5px solid #D8DFD2;
+    border-radius: 14px;
+    padding: 6px 12px;
+  }
+
+  .team-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.5px solid var(--ink);
+  }
+
+  .team-input-wrap input {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .start-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-top: 6px;
+  }
+
+  .match-count {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .match-count strong {
+    color: var(--ink);
+  }
+
+  /* Quiz Screen */
+  .quiz-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .progress-area {
+    flex: 1 1 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .progress-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .sunum-pill {
+    background: #EAEDE4;
+    color: var(--ink);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .progress-track {
+    position: relative;
+    height: 18px;
+    width: 100%;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .scoreboard {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .score-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #FFFFFF;
+    padding: 6px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(36, 55, 45, 0.05);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+
+  .score-pill.active-team {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+
+  .score-pill.picked-mark::after {
+    content: "✓";
+    font-size: 11px;
+    color: var(--correct);
+    font-weight: 700;
+  }
+
+  .timer-box {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .timer-box svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* Question Card */
+  .question-card {
+    padding: 26px 30px;
+    margin-bottom: 18px;
+  }
+
+  .q-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+
+  .q-text {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-style: italic;
+    font-size: clamp(30px, 2.7vw, 38px);
+    line-height: 1.22;
+    margin: 0;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  /* Star Badge + Tooltip */
+  .star-badge-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .star-badge {
+    background: #FFF9F5;
+    border: 2px solid var(--terracotta);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .star-tooltip {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: max-content;
+    max-width: 290px;
+    background: #FFFFFF;
+    color: var(--ink);
+    border: 1.5px solid var(--terracotta);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 8px 24px rgba(36, 55, 45, 0.12);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 20;
+  }
+
+  .star-badge-wrap:hover .star-tooltip,
+  .star-badge-wrap:focus-within .star-tooltip,
+  .star-badge-wrap.open .star-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* Code Card */
+  .code-card {
+    margin-top: 16px;
+    background: var(--code-bg);
+    border: 1.5px solid #DFE5D8;
+    border-radius: 16px;
+    padding: 15px 18px;
+    overflow-x: auto;
+  }
+
+  .code-card pre {
+    margin: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(14px, 1.35vw, 17px);
+    line-height: 1.55;
+    color: var(--ink);
+    white-space: pre;
+  }
+
+  .py-kw { color: #7459A8; font-weight: 500; }
+  .py-str { color: #367D45; }
+  .py-num { color: #B46542; }
+  .py-com { color: #7C8A7E; font-style: italic; }
+
+  /* Active Team Switcher Banner (multi-team) */
+  .team-turn-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .team-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .team-tab {
+    appearance: none;
+    border: 1.5px solid #D8DFD2;
+    background: #FFFFFF;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 13px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .team-tab.active {
+    border-color: var(--ink);
+    box-shadow: 0 2px 10px rgba(36, 55, 45, 0.08);
+  }
+
+  .turn-hint {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* Options Grid */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .option-card {
+    position: relative;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+    cursor: pointer;
+    text-align: left;
+    border: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    transition: transform 0.14s ease, background-color 0.2s ease;
+    min-height: 76px;
+  }
+
+  .option-card:hover:not(.locked) {
+    transform: translateY(-2px);
+  }
+
+  .option-card.locked {
+    cursor: default;
+  }
+
+  .option-card.is-selected {
+    background: #F6F8F2;
+  }
+
+  .option-card.is-correct {
+    background: #EDF7EE;
+  }
+
+  .option-card.is-wrong {
+    background: #FBF1EB;
+  }
+
+  .option-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: #EFF2EA;
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .option-card.is-correct .option-badge {
+    background: var(--correct);
+    color: #FFFFFF;
+  }
+
+  .option-card.is-wrong .option-badge {
+    background: var(--wrong);
+    color: #FFFFFF;
+  }
+
+  .option-text {
+    font-size: 17px;
+    line-height: 1.42;
+    font-weight: 500;
+    padding-top: 3px;
+    flex: 1;
+  }
+
+  /* Team selection markers on top of option */
+  .team-markers {
+    position: absolute;
+    top: -12px;
+    right: 16px;
+    display: flex;
+    gap: 6px;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .team-marker {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .team-marker svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .team-marker span {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Focus ring ("zınk") SVG */
+  .focus-ring-svg {
+    position: absolute;
+    inset: -10px -12px;
+    width: calc(100% + 24px);
+    height: calc(100% + 20px);
+    pointer-events: none;
+    overflow: visible;
+    z-index: 5;
+    transform-origin: center center;
+  }
+
+  @keyframes zinkBounce {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  .zink-bounce {
+    animation: zinkBounce 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* Quiz Controls */
+  .quiz-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .nav-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Explanation Card */
+  .explanation-card {
+    padding: 20px 26px 24px;
+    background: #FFFFFF;
+    margin-bottom: 14px;
+  }
+
+  .exp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .exp-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--correct);
+  }
+
+  .exp-slide {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--muted);
+    line-height: 1;
+  }
+
+  .exp-text {
+    margin: 0;
+    font-size: 16.5px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  /* Results Screen */
+  .results-wrap {
+    max-width: 860px;
+    margin: 6px auto 0;
+    width: 100%;
+    position: relative;
+  }
+
+  .results-card {
+    padding: 32px 34px;
+    margin-bottom: 20px;
+  }
+
+  .results-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .results-header h2 {
+    font-size: clamp(34px, 4.5vw, 46px);
+    margin: 0 0 6px;
+  }
+
+  .solo-score-big {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 48px;
+    color: var(--ink);
+    margin: 6px 0 4px;
+  }
+
+  .solo-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 18px 0 24px;
+  }
+
+  .sunum-stat {
+    background: #F8F9F4;
+    border-radius: 16px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .sunum-stat-name {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .sunum-stat-val {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  /* Hand-drawn Bar Chart for Teams */
+  .bar-chart-wrap {
+    margin: 18px 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 150px 1fr 64px;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .bar-team-name {
+    font-weight: 600;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    position: relative;
+    height: 30px;
+    width: 100%;
+  }
+
+  .bar-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    text-align: right;
+  }
+
+  .results-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  /* Wrong questions list */
+  .wrong-section {
+    padding: 24px 28px;
+  }
+
+  .wrong-section h3 {
+    font-size: 28px;
+    margin: 0 0 14px;
+  }
+
+  .wrong-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .wrong-item {
+    appearance: none;
+    border: 1.5px solid #E5E9DF;
+    background: #FAFAF7;
+    border-radius: 16px;
+    padding: 13px 16px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    transition: background-color 0.14s ease, transform 0.12s ease;
+  }
+
+  .wrong-item:hover {
+    background: #F3F5EE;
+    transform: translateX(2px);
+  }
+
+  .wrong-item-title {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .wrong-item-meta {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* Modal (Resume prompt) */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(36, 55, 45, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 50;
+  }
+
+  .modal-card {
+    max-width: 440px;
+    width: 100%;
+    padding: 28px 30px;
+    text-align: center;
+  }
+
+  .modal-card h3 {
+    font-size: 32px;
+    margin: 0 0 8px;
+  }
+
+  .modal-card p {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Confetti Canvas */
+  #confettiCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 60;
+  }
+
+  /* Responsive */
+  @media (max-width: 767px) {
+    .app {
+      padding: 14px 14px 36px;
+    }
+    .start-card {
+      padding: 22px 18px;
+    }
+    .setup-grid {
+      grid-template-columns: 1fr;
+    }
+    .question-card {
+      padding: 20px 18px;
+    }
+    .q-header-row {
+      flex-direction: column-reverse;
+      gap: 10px;
+    }
+    .options-grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .bar-row {
+      grid-template-columns: 110px 1fr 54px;
+      gap: 10px;
+    }
+    .results-card {
+      padding: 22px 18px;
+    }
+    .wrong-section {
+      padding: 20px 18px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="global-bar">
+    <div class="brand-mini">
+      <span class="brand-dot"></span>
+      <span>Veri Görselleştirme • verigors2–5</span>
+    </div>
+    <div class="utility-actions">
+      <button type="button" id="sfxToggleBtn" class="btn btn-soft" aria-pressed="true">SFX: Açık</button>
+      <button type="button" id="homeBtn" class="btn btn-soft hidden">Ana Ekran</button>
+    </div>
+  </div>
+
+  <!-- 1. START SCREEN -->
+  <section id="startScreen" class="start-wrap">
+    <div class="card boil-box start-card" data-boil="card" data-boil-radius="22">
+      <div class="start-header">
+        <h1 class="serif-title">Veri Görselleştirme • Vize Provası</h1>
+        <p class="start-subtitle">verigors2–5 • 40 soru</p>
+      </div>
+
+      <div class="setup-grid">
+        <div class="setup-section">
+          <div class="setup-label"><span>Sunum Filtresi</span></div>
+          <div class="chip-group" id="sunumFilters">
+            <button type="button" class="chip active" data-sunum="2">Sunum 2</button>
+            <button type="button" class="chip active" data-sunum="3">Sunum 3</button>
+            <button type="button" class="chip active" data-sunum="4">Sunum 4</button>
+            <button type="button" class="chip active" data-sunum="5">Sunum 5</button>
+          </div>
+        </div>
+
+        <div class="setup-section">
+          <div class="setup-label"><span>Seçenekler</span></div>
+          <div class="chip-group" style="margin-bottom: 10px;">
+            <button type="button" class="chip star-chip" id="starOnlyBtn">⭐ Sadece yıldızlılar</button>
+            <button type="button" class="chip" id="shuffleBtn">Soruları karıştır</button>
+          </div>
+          <div class="chip-group" id="timerOptions">
+            <button type="button" class="chip active" data-timer="0">Süre: Kapalı</button>
+            <button type="button" class="chip" data-timer="30">30 sn</button>
+            <button type="button" class="chip" data-timer="45">45 sn</button>
+          </div>
+        </div>
+
+        <div class="setup-section full">
+          <div class="setup-label">
+            <span>Takım / Kişi Modu</span>
+            <span class="hand-note" style="font-size:19px; text-transform:none; color:var(--muted);">2–4 kişide sorular sırayla herkese gelir</span>
+          </div>
+          <div class="team-count-row" id="teamCountGroup">
+            <button type="button" class="chip active" data-count="1">1 (Tek)</button>
+            <button type="button" class="chip" data-count="2">2 Kişi</button>
+            <button type="button" class="chip" data-count="3">3 Kişi</button>
+            <button type="button" class="chip" data-count="4">4 Kişi</button>
+          </div>
+          <div class="team-inputs" id="teamInputs"></div>
+        </div>
+      </div>
+
+      <div class="start-footer">
+        <div class="match-count" id="matchCountText">Seçilen: <strong>40</strong> soru</div>
+        <button type="button" id="startBtn" class="btn btn-primary boil-box" data-boil="card" data-boil-radius="18" data-boil-stroke="#24372D">Başla</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. QUESTION SCREEN -->
+  <section id="quizScreen" class="hidden">
+    <div class="quiz-topbar">
+      <div class="progress-area">
+        <div class="progress-meta">
+          <span id="qCounter">Soru 1 / 40</span>
+          <span class="sunum-pill" id="qSunumTag">verigors2 • s.20</span>
+        </div>
+        <div class="progress-track" id="progressTrack"></div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="scoreboard" id="scoreboard"></div>
+        <div class="timer-box hidden" id="timerBox">
+          <svg id="timerSvg" viewBox="0 0 50 50"></svg>
+          <span id="timerText">30</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card boil-box question-card" id="questionCard" data-boil="card" data-boil-radius="22">
+      <div class="q-header-row">
+        <h2 class="q-text" id="questionText"></h2>
+        <div class="star-badge-wrap hidden" id="starBadgeWrap" tabindex="0">
+          <div class="star-badge" id="starBadgeText"></div>
+          <div class="star-tooltip" id="starTooltip"></div>
+        </div>
+      </div>
+      <div class="code-card hidden" id="codeCard"><pre id="codeBlock"></pre></div>
+    </div>
+
+    <div class="team-turn-bar hidden" id="teamTurnBar">
+      <div class="team-tabs" id="teamTabs"></div>
+      <div class="turn-hint">Sırası gelen cevaplar • Şık seç: <strong>A–D / 1–4</strong></div>
+    </div>
+
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <div class="quiz-controls">
+      <div class="nav-group">
+        <button type="button" id="prevBtn" class="btn btn-soft boil-box" data-boil="card" data-boil-radius="16">
+          <span class="arrow-slot" data-arrow="left"></span>
+          <span>Önceki</span>
+        </button>
+        <button type="button" id="backToResultsBtn" class="btn btn-soft hidden">Sonuçlara dön</button>
+      </div>
+
+      <div class="nav-group">
+        <button type="button" id="revealBtn" class="btn btn-primary boil-box" data-boil="card" data-boil-radius="18" data-boil-stroke="#24372D">Cevabı göster (Space)</button>
+        <button type="button" id="nextBtn" class="btn btn-accent boil-box hidden" data-boil="card" data-boil-radius="18" data-boil-stroke="#24372D">
+          <span id="nextBtnLabel">Sonraki</span>
+          <span class="arrow-slot" data-arrow="right"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card boil-box explanation-card hidden" id="explanationCard" data-boil="card" data-boil-radius="22" data-boil-stroke="#3E8E4E">
+      <div class="exp-header">
+        <span class="exp-title">Açıklama</span>
+        <span class="exp-slide" id="expSlide"></span>
+      </div>
+      <p class="exp-text" id="expText"></p>
+    </div>
+  </section>
+
+  <!-- 3. RESULTS SCREEN -->
+  <section id="resultsScreen" class="results-wrap hidden">
+    <div class="card boil-box results-card" data-boil="card" data-boil-radius="22">
+      <div class="results-header">
+        <h2 class="serif-title">Vize Provası Tamamlandı</h2>
+        <div id="resultsSummary"></div>
+      </div>
+
+      <div id="resultsVisual"></div>
+
+      <div class="results-actions">
+        <button type="button" id="retryWrongBtn" class="btn btn-accent boil-box hidden" data-boil="card" data-boil-radius="18" data-boil-stroke="#24372D">Sadece yanlışları tekrar çöz</button>
+        <button type="button" id="restartBtn" class="btn btn-primary boil-box" data-boil="card" data-boil-radius="18" data-boil-stroke="#24372D">Baştan başla</button>
+      </div>
+    </div>
+
+    <div class="card boil-box wrong-section hidden" id="wrongSection" data-boil="card" data-boil-radius="22" data-boil-stroke="#CF8A68">
+      <h3 class="serif-title">Yanlış yapılanlar</h3>
+      <div class="wrong-list" id="wrongList"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Resume Modal -->
+<div class="modal-backdrop hidden" id="resumeModal">
+  <div class="card boil-box modal-card" data-boil="card" data-boil-radius="22">
+    <h3 class="serif-title">Kaldığın yerden devam et?</h3>
+    <p id="resumeDesc">Önceki oturumun kaydedilmiş görünüyor.</p>
+    <div class="modal-actions">
+      <button type="button" id="resumeContinueBtn" class="btn btn-primary">Devam et</button>
+      <button type="button" id="resumeFreshBtn" class="btn btn-soft">Yeni başla</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confettiCanvas" class="hidden"></canvas>
+
+<script type="application/json" id="sorular">
+[
+ {"id":1,"sunum":2,"slayt":"s.20","yildiz":"kayıt","kaynak":"Hoca 08.10: \"xticks, grid, legend genelde sorduklarımdan, buradan puan alın diye soruyorum.\"",
+  "soru":"plt.xticks(rotation=25) ne yapar?",
+  "kod":"plt.xticks(rotation = 25)",
+  "siklar":["Y eksenindeki sayıları 25° döndürür","X eksenindeki etiket yazılarını 25° döndürür","Bütün grafiği 25° döndürür","X ekseninin üst sınırını 25 yapar"],
+  "dogru":1,"aciklama":"xticks yalnız x eksenindeki tik yazılarını (isimleri) döndürür. 90 → dik, 180 → ters. y eksenindekiler için yticks kullanılır."},
+ {"id":2,"sunum":2,"slayt":"s.20","yildiz":"kayıt","kaynak":"Hoca 08.10: xticks / grid / legend",
+  "soru":"Grafiğe ızgara (kılavuz) çizgilerini hangi komut ekler?",
+  "kod":"",
+  "siklar":["plt.grid()","plt.legend()","plt.xticks()","plt.axis()"],
+  "dogru":0,"aciklama":"grid() ızgarayı ekler. Tuzak: grid rengi belirlemez; çizginin rengini color='g' belirler."},
+ {"id":3,"sunum":2,"slayt":"s.20","yildiz":"kayıt","kaynak":"Hoca 08.10: \"Yaş Oranları yazan yeri neyle elde ettim? — Label'la.\"",
+  "soru":"Açıklama kutusunda görünen \"Yaş Oranları\" yazısı koddaki hangi parametreden gelir?",
+  "kod":"plt.plot(x, y, color='g', linestyle='dashed', marker='o', label=\"Yaş Oranları\")\nplt.legend()",
+  "siklar":["plt.title('Yaş Oranları')","plt.ylabel('Yaş')","label=\"Yaş Oranları\"","plt.xlabel('Ad')"],
+  "dogru":2,"aciklama":"label çizgiye isim verir; legend() bu isimleri kutuda gösterir."},
+ {"id":4,"sunum":2,"slayt":"s.5","yildiz":"kayıt","kaynak":"Hoca 08.10: label ↔ legend",
+  "soru":"Her plot çağrısına label yazdın ama grafikte açıklama kutusu çıkmıyor. Eksik olan nedir?",
+  "kod":"plt.plot(x1, y1, label=\"Durum 1\")\nplt.plot(x2, y2, label=\"Durum 2\")\nplt.show()",
+  "siklar":["plt.grid()","plt.label()","plt.title()","plt.legend()"],
+  "dogru":3,"aciklama":"label tek başına kutu açmaz; kutuyu legend() gösterir."},
+ {"id":5,"sunum":2,"slayt":"s.20","yildiz":"kayıt","kaynak":"Hoca 08.10: \"g dediğim şey kısaltma, green.\"",
+  "soru":"color='g' ne anlama gelir?",
+  "kod":"plt.plot(x, y, color='g')",
+  "siklar":["Yeşil (green)","Gri (gray)","Izgara (grid) rengi","Altın (gold)"],
+  "dogru":0,"aciklama":"'g' green'in kısaltması. Diğer kısaltmalar: 'r' kırmızı, 'b' mavi, 'y' sarı."},
+ {"id":6,"sunum":2,"slayt":"s.20","yildiz":"kayıt","kaynak":"Hoca 08.10: \"Integer hatası alıyorsanız delimiter'ınız virgül değil, noktalı virgül deneyin.\"",
+  "soru":"CSV'yi okurken int() satırında hata alıyorsun. Hocanın önerdiği ilk değişiklik nedir?",
+  "kod":"lines = csv.reader(csvfile, delimiter=',')\nfor row in lines:\n    y.append(int(row[1]))",
+  "siklar":["int yerine str kullanmak","delimiter=';' yapmak","row[1] yerine row[0] yazmak","dosyayı 'w' ile açmak"],
+  "dogru":1,"aciklama":"Satırlar noktalı virgülle ayrılmışsa virgülle bölünmez, row[1] oluşmaz ve sayı çevrilemez. delimiter=';' ile düzelir."},
+ {"id":7,"sunum":2,"slayt":"s.20","yildiz":"","kaynak":"",
+  "soru":"y.append(int(row[1])) satırında int() neden kullanılır?",
+  "kod":"x.append(row[0])\ny.append(int(row[1]))",
+  "siklar":["İsimleri büyük harfe çevirmek için","Satırı ikiye bölmek için","CSV'den gelen metni sayıya çevirmek için (grafik için sayı gerekir)","Boş satırları atlamak için"],
+  "dogru":2,"aciklama":"csv.reader her değeri metin olarak verir ('30'). Grafikte y değeri sayı olmalı; int() '30'u 30 yapar."},
+ {"id":8,"sunum":2,"slayt":"s.2","yildiz":"","kaynak":"",
+  "soru":"x = [1, 2, 3] ve y = [2, 4, 1] ile plt.plot(x, y) çizilince hangi nokta grafikte YOKTUR?",
+  "kod":"x = [1, 2, 3]\ny = [2, 4, 1]\nplt.plot(x, y)",
+  "siklar":["(1, 2)","(2, 4)","(3, 1)","(2, 1)"],
+  "dogru":3,"aciklama":"Listeler sırayla eşleşir: (1,2), (2,4), (3,1). (2,1) diye bir çift yok."},
+ {"id":9,"sunum":2,"slayt":"s.13","yildiz":"","kaynak":"",
+  "soru":"Aşağıdaki kodda çizgi ve noktalar hangi renkte olur?",
+  "kod":"plt.plot(x, y, color='green', marker='o', markerfacecolor='blue')",
+  "siklar":["Çizgi mavi, noktaların içi yeşil","Çizgi yeşil, noktaların içi mavi","Her şey mavi","Her şey yeşil"],
+  "dogru":1,"aciklama":"color çizginin rengi; markerfacecolor yalnız noktanın (marker) içini boyar."},
+ {"id":10,"sunum":2,"slayt":"s.11, s.16","yildiz":"","kaynak":"",
+  "soru":"linestyle='dashed' ile aynı sonucu veren kısa yazım hangisidir?",
+  "kod":"",
+  "siklar":["':'","'-.'","'--'","'-'"],
+  "dogru":2,"aciklama":"'--' kesikli (dashed), ':' noktalı (dotted), '-.' çizgi-nokta (dashdot), '-' düz (solid)."},
+ {"id":11,"sunum":3,"slayt":"s.2–3","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (15.10)",
+  "soru":"Aşağıdaki iki kod için hangisi doğrudur?",
+  "kod":"# 1\nfig, ax = plt.subplots()\nax.bar(x=x, height=y)\n# 2\nplt.bar(x=x, height=y)",
+  "siklar":["İkisi aynı grafiği çizer","1. kod yatay çubuk çizer","2. kod hata verir","1. kodun çubukları daha kalın olur"],
+  "dogru":0,"aciklama":"ax.bar ve plt.bar aynı grafiği çizer; plt kısa yol, ax ise grafiğin kendisi."},
+ {"id":12,"sunum":3,"slayt":"s.12–13","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (15.10)",
+  "soru":"alpha=0.25 çubuğa ne yapar?",
+  "kod":"plt.bar(x=x, height=y, color=\"darkseagreen\", alpha=0.25)",
+  "siklar":["Çubuk genişliğini %25 yapar","Çubuğu saydam (soluk) yapar","Rengi koyulaştırır","Çubuk yüksekliğini %25 azaltır"],
+  "dogru":1,"aciklama":"alpha saydamlıktır: 0 görünmez, 1 tam opak. 0.25 soluk, 0.9 neredeyse koyu."},
+ {"id":13,"sunum":3,"slayt":"s.12–13","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (15.10)",
+  "soru":"alpha hangi değerde çubuk TAMAMEN görünmez olur?",
+  "kod":"",
+  "siklar":["1","0.5","0","100"],
+  "dogru":2,"aciklama":"alpha 0 ile 1 arasındadır: 0 = görünmez, 1 = tam opak."},
+ {"id":14,"sunum":3,"slayt":"s.15","yildiz":"","kaynak":"",
+  "soru":"Yatay çubuk grafiğinde (barh) çubuğun uzunluğunu hangi parametre verir?",
+  "kod":"plt.barh(x, ??? = y)",
+  "siklar":["height","left","bottom","width"],
+  "dogru":3,"aciklama":"barh'ta uzunluk yataydır, bu yüzden width kullanılır. Dikey bar'da height."},
+ {"id":15,"sunum":3,"slayt":"s.18","yildiz":"","kaynak":"",
+  "soru":"Bu kodda A çubuğu x ekseninde nerede biter?",
+  "kod":"x = [\"A\", \"B\", \"C\"]\ny = [3, 5, 1]\nplt.barh(x, width=y, left=[2, 3, 0])",
+  "siklar":["3'te","5'te","2'de","6'da"],
+  "dogru":1,"aciklama":"left başlangıç, width uzunluk: 2 + 3 = 5. (B: 3+5 = 8, C: 0+1 = 1)"},
+ {"id":16,"sunum":3,"slayt":"s.16","yildiz":"","kaynak":"",
+  "soru":"Slayttaki yatay grafikte A'yı en üste almak için hangi satır kullanılır?",
+  "kod":"fig, ax = plt.subplots()\nax.barh(x, width=y)\n???",
+  "siklar":["ax.invert_yaxis()","ax.invert_xaxis()","plt.grid()","ax.set_ylim(0, 3)"],
+  "dogru":0,"aciklama":"invert_yaxis y eksenini ters çevirir; barh'ta kategori sırası döner, A üste çıkar. invert_xaxis çubukları sağdan sola uzatır."},
+ {"id":17,"sunum":3,"slayt":"s.20–24","yildiz":"","kaynak":"",
+  "soru":"Hata çubuklu grafikte capsize=25 neyi değiştirir?",
+  "kod":"plt.bar(x=x, height=y, yerr=error, capsize=25)",
+  "siklar":["Hata miktarını","Çubuk genişliğini","Hata çizgisinin ucundaki kapağın genişliğini","Hata çizgisinin rengini"],
+  "dogru":2,"aciklama":"capsize uç kapağın genişliğidir. yerr hata miktarı (dikey), ecolor hata çizgisinin rengi."},
+ {"id":18,"sunum":3,"slayt":"s.26","yildiz":"","kaynak":"",
+  "soru":"5 çubuk var, color=['red', 'green'] verildi. Çubuklar nasıl boyanır?",
+  "kod":"plt.bar(left, height, tick_label=etiketler, width=0.8, color=['red', 'green'])",
+  "siklar":["Hepsi kırmızı","İlki kırmızı, gerisi yeşil","Kod hata verir","Kırmızı, yeşil, kırmızı, yeşil, kırmızı (sırayla tekrar)"],
+  "dogru":3,"aciklama":"Renk listesi çubuk sayısından kısaysa renkler sırayla tekrar eder."},
+ {"id":19,"sunum":3,"slayt":"s.31","yildiz":"","kaynak":"",
+  "soru":"Bar grafiği ile histogram arasındaki temel fark nedir?",
+  "kod":"",
+  "siklar":["Histogramda x ekseni süreklidir ve değerler bin kutularına sayılarak toplanır","Histogram yalnız yatay çizilir","Bar grafiği yalnız sayılarla çalışır","Histogramda renk verilemez"],
+  "dogru":0,"aciklama":"Barda x ayrık kategorilerdir ve yüksekliği sen verirsin; histogramda x süreklidir, hist() değerleri aralıklara (bin) sayar."},
+ {"id":20,"sunum":3,"slayt":"s.32","yildiz":"","kaynak":"",
+  "soru":"plt.hist(frequency, bins=6, range=(0, 100)) için her kutunun genişliği yaklaşık kaçtır?",
+  "kod":"range = (0, 100)\nbins = 6\nplt.hist(frequency, bins, range, color='green', histtype='bar', rwidth=0.8)",
+  "siklar":["6","10","100","16,7"],
+  "dogru":3,"aciklama":"100 / 6 ≈ 16,7. bins kutu sayısı, range kapsanan aralık, rwidth çubuğun kutu içindeki genişlik oranı."},
+ {"id":21,"sunum":3,"slayt":"s.36","yildiz":"","kaynak":"",
+  "soru":"CSV'den bar çizerken y.append(int(row[2])) yazılmış. y değerleri hangi sütundan gelir?",
+  "kod":"x.append(row[0])\ny.append(int(row[2]))",
+  "siklar":["1. sütun","3. sütun","2. sütun","Son satırdan"],
+  "dogru":1,"aciklama":"Python'da sayma 0'dan başlar: row[0] 1. sütun, row[1] 2. sütun, row[2] 3. sütun."},
+ {"id":22,"sunum":4,"slayt":"s.15–17, s.36","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (22.10)",
+  "soru":"scatter'da s parametresi neyi belirler?",
+  "kod":"plt.scatter(x, y, c=\"orange\", s=150)",
+  "siklar":["Noktaların rengini","Noktaların boyutunu","Noktaların şeklini","Saydamlığı"],
+  "dogru":1,"aciklama":"s = size, nokta boyutu. s=y*10 gibi bir dizi verilirse her nokta kendi değerine göre büyür."},
+ {"id":23,"sunum":4,"slayt":"s.11","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (22.10)",
+  "soru":"Bu kod noktaları neye göre renklendirir?",
+  "kod":"plt.scatter(x, y, c=np.sqrt(x ** 2 + y ** 2))",
+  "siklar":["Her noktanın orijine (0,0) uzaklığına göre","Rastgele","Yalnız x değerine göre","Noktaların sırasına göre"],
+  "dogru":0,"aciklama":"√(x²+y²) noktanın orijine uzaklığıdır. c'ye değer dizisi verilince renk bu değere göre geçiş yapar (yakın mor, uzak sarı)."},
+ {"id":24,"sunum":4,"slayt":"s.36","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (22.10)",
+  "soru":"patches.Circle((40, 60), 20, ...) ifadesinde 20 nedir?",
+  "kod":"ax.add_patch(patches.Circle((40, 60), 20, alpha=0.3, edgecolor='red', facecolor='yellowgreen'))",
+  "siklar":["Merkezin x koordinatı","Saydamlık","Yarıçap","Kenar kalınlığı"],
+  "dogru":2,"aciklama":"İlk parametre (40, 60) merkezin x,y koordinatı, ikincisi (20) yarıçap."},
+ {"id":25,"sunum":4,"slayt":"s.36","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (22.10)",
+  "soru":"Aynı dairede kenar çizgisinin rengini hangi parametre belirler?",
+  "kod":"patches.Circle((40, 60), 20, edgecolor='red', facecolor='yellowgreen')",
+  "siklar":["facecolor","color","edgecolor","linewidth"],
+  "dogru":2,"aciklama":"edgecolor kenar rengi (kırmızı), facecolor iç dolgu (sarı-yeşil), linewidth kenar kalınlığı."},
+ {"id":26,"sunum":4,"slayt":"s.36","yildiz":"foto","kaynak":"Derste fotoğraflanan slayt (22.10)",
+  "soru":"Daireyi grafiğe hangi komut ekler?",
+  "kod":"fig, ax = plt.subplots()\nax.scatter(x, y)\n???",
+  "siklar":["plt.circle(...)","ax.add_patch(patches.Circle(...))","ax.scatter(patches.Circle(...))","plt.legend(patches.Circle(...))"],
+  "dogru":1,"aciklama":"Şekiller ax.add_patch(...) ile eklenir; bunun için import matplotlib.patches as patches gerekir."},
+ {"id":27,"sunum":4,"slayt":"s.8","yildiz":"","kaynak":"",
+  "soru":"x = 3 olan nokta hangi renkte olur?",
+  "kod":"color = np.where(x < 5, \"orange\", \"blue\")\nplt.scatter(x, y, c=color)",
+  "siklar":["Turuncu","Mavi","Siyah","Renksiz"],
+  "dogru":0,"aciklama":"np.where(koşul, doğruysa, yanlışsa): 3 < 5 doğru → turuncu."},
+ {"id":28,"sunum":4,"slayt":"s.19–21","yildiz":"","kaynak":"",
+  "soru":"plt.legend(loc=\"best\") ne yapar?",
+  "kod":"",
+  "siklar":["Açıklama kutusunu her zaman sağ üste koyar","Açıklama kutusunu gizler","Açıklama kutusunu verilerle en az çakışan yere koyar","Kutuyu ortalar"],
+  "dogru":2,"aciklama":"'best' en uygun yeri kendisi seçer. Elle: 'upper right', 'lower left', 'center' vb."},
+ {"id":29,"sunum":4,"slayt":"s.13","yildiz":"","kaynak":"",
+  "soru":"Aşağıdaki kodda noktaların İÇİ hangi renktir?",
+  "kod":"plt.scatter(x, y, c=\"orange\", edgecolors=\"navy\", linewidths=2.5)",
+  "siklar":["Lacivert","Turuncu","Beyaz","Lacivert ve turuncu karışık"],
+  "dogru":1,"aciklama":"c iç rengi verir (turuncu), edgecolors kenar rengi (lacivert)."},
+ {"id":30,"sunum":5,"slayt":"s.11","yildiz":"kayıt","kaynak":"Hoca 05.11: \"Sorarım.\" (fotoğraf da var)",
+  "soru":"degerler = [13, 21, 23, 43, 54] için autopct='%1.2f%%' ile 43'ün dilimine ne yazar?",
+  "kod":"plt.pie(degerler, labels=etiketler, autopct='%1.2f%%')",
+  "siklar":["27.9%","28%","27.92%","43%"],
+  "dogru":2,"aciklama":"Toplam 154; 43/154 = %27,92. '%1.2f' virgülden sonra 2 basamak. '%1.1f%%' olsaydı 27.9% yazardı."},
+ {"id":31,"sunum":5,"slayt":"s.11","yildiz":"kayıt","kaynak":"Hoca 05.11: autopct",
+  "soru":"autopct='%1.2f%%' içindeki sondaki %% ne işe yarar?",
+  "kod":"",
+  "siklar":["Değeri yüzle çarpar","Ekrana tek bir % işareti basar","İki basamak gösterir","Yüzdeyi dilimin dışına taşır"],
+  "dogru":1,"aciklama":"% format karakteri olduğu için ekrana yazdırmak için %% yazılır."},
+ {"id":32,"sunum":5,"slayt":"s.12–13","yildiz":"","kaynak":"",
+  "soru":"pctdistance'ın varsayılan (standart) değeri kaçtır?",
+  "kod":"plt.pie(degerler, autopct='%1.1f%%', pctdistance=1.1)",
+  "siklar":["1.1","0.5","1.0","0.6"],
+  "dogru":3,"aciklama":"pctdistance yüzde yazısının merkezden uzaklığıdır, varsayılan 0.6. 1.1 ve 1.5'te yazı dilimin dışına çıkar."},
+ {"id":33,"sunum":5,"slayt":"s.12–14","yildiz":"","kaynak":"",
+  "soru":"pctdistance ile labeldistance arasındaki fark nedir?",
+  "kod":"",
+  "siklar":["pctdistance yüzde yazısının, labeldistance etiketin uzaklığıdır","İkisi de aynı işi yapar","pctdistance dilimi dışarı çıkarır","labeldistance yüzde yazısının uzaklığıdır"],
+  "dogru":0,"aciklama":"pctdistance → yüzde (varsayılan 0.6); labeldistance → etiket (varsayılan 1.1)."},
+ {"id":34,"sunum":5,"slayt":"s.8","yildiz":"","kaynak":"",
+  "soru":"Pasta grafiğinde bir dilimi dışarı ayırmak için hangi parametre kullanılır?",
+  "kod":"",
+  "siklar":["shadow","explode","radius","frame"],
+  "dogru":1,"aciklama":"explode=[0, 0, 0, 0.1, 0.2]: değer büyüdükçe dilim daha çok uzaklaşır."},
+ {"id":35,"sunum":5,"slayt":"s.4","yildiz":"","kaynak":"",
+  "soru":"degerler = [0.1, 0.05, 0.25, 0.1, 0.2] ve normalize=False verilirse ne olur?",
+  "kod":"plt.pie(degerler, labels=etiketler, normalize=False)",
+  "siklar":["Hata verir","Değerler toplama göre büyütülüp tam daire olur","Toplam 0.7 olduğu için 0.3'lük kısım boş kalır","Dilimler eşit olur"],
+  "dogru":2,"aciklama":"normalize=False ile değerler oran olarak kullanılır; 0.7 doldurulur, 0.3'lük boşluk kalır (kısmi pasta)."},
+ {"id":36,"sunum":5,"slayt":"s.17","yildiz":"","kaynak":"",
+  "soru":"Dilimlerin kenarlık ayarları wedgeprops'a nasıl verilir?",
+  "kod":"plt.pie(degerler, labels=etiketler, colors=renkler, wedgeprops = ???)",
+  "siklar":["Liste olarak: [2, 'red']","Metin olarak: '2 red'","İki ayrı parametreyle: linewidth=2, edgecolor='red'","Sözlük olarak: {'linewidth': 2, 'edgecolor': 'red'}"],
+  "dogru":3,"aciklama":"wedgeprops bir sözlük alır; hoca: \"sonradan yama olarak yapmışlar\"."},
+ {"id":37,"sunum":5,"slayt":"s.5–6","yildiz":"","kaynak":"",
+  "soru":"startangle=90 ne yapar?",
+  "kod":"plt.pie(degerler, labels=etiketler, startangle=90)",
+  "siklar":["İlk dilim 90° dönmüş konumdan (tepeden) başlar","Pasta 90 derece küçülür","90 dilim çizer","Etiketleri 90° döndürür"],
+  "dogru":0,"aciklama":"startangle ilk dilimin başlangıç açısıdır. Etiketleri döndüren rotatelabels=True."},
+ {"id":38,"sunum":5,"slayt":"s.3","yildiz":"","kaynak":"",
+  "soru":"counterclock=False verilirse dilimler nasıl dizilir?",
+  "kod":"",
+  "siklar":["Saat yönünün tersine","Saat yönünde","Rastgele","Büyükten küçüğe"],
+  "dogru":1,"aciklama":"Varsayılan saat yönünün tersidir; counterclock=False ile saat yönünde dizilir."},
+ {"id":39,"sunum":5,"slayt":"s.19","yildiz":"","kaynak":"",
+  "soru":"pie1.csv dosyasından okurken slayttaki kodda hangi ayırıcı kullanılır?",
+  "kod":"lines = csv.reader(csvfile, delimiter = ???)",
+  "siklar":["','","'\\t'","';'","' '"],
+  "dogru":2,"aciklama":"Slaytta delimiter=';' kullanılmış (verigors4 kandegeri.csv'de de ';')."},
+ {"id":40,"sunum":5,"slayt":"s.7","yildiz":"","kaynak":"",
+  "soru":"radius=0.5 pasta grafiğine ne yapar?",
+  "kod":"plt.pie(degerler, labels=etiketler, radius=0.5)",
+  "siklar":["Pastayı küçültür (yarıçap)","Yarısını çizer","Dilimleri yarı saydam yapar","Yüzdeleri yarıya böler"],
+  "dogru":0,"aciklama":"radius pastanın yarıçapıdır; 0.5 küçültür, 1.2 büyütür."}
+]
+</script>
+
+<script>
+(function() {
+  "use strict";
+
+  const ALL_QUESTIONS = JSON.parse(document.getElementById("sorular").textContent);
+  const STORAGE_KEY = "verigors_vize_quiz_v1";
+  const SFX_KEY = "verigors_vize_sfx_v1";
+  const TEAM_COLORS = ["#9CC29A", "#B6A2DB", "#CF8A68", "#9FC3D6"];
+  const LETTERS = ["A", "B", "C", "D"];
+  const REDUCED_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // --- Web Audio SFX ---
+  let audioCtx = null;
+  let sfxEnabled = localStorage.getItem(SFX_KEY) !== "false";
+
+  function ensureAudio() {
+    if (!sfxEnabled) return null;
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+  }
+
+  const sfx = {
+    tick() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(640, now);
+      osc.frequency.exponentialRampToValueAtTime(380, now + 0.045);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.055);
+    },
+    riser() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(510, now + 0.39);
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(900, now);
+      gain.gain.setValueAtTime(0.005, now);
+      gain.gain.linearRampToValueAtTime(0.085, now + 0.32);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.40);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.41);
+    },
+    ding() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      [523.25, 659.25].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        const t = now + i * 0.055;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.10, t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.44);
+      });
+    },
+    buzz() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(175, now);
+      osc.frequency.exponentialRampToValueAtTime(128, now + 0.17);
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(420, now);
+      gain.gain.setValueAtTime(0.085, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.19);
+    },
+    pop() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(610, now + 0.055);
+      gain.gain.setValueAtTime(0.065, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    }
+  };
+
+  // --- Seeded Noise & Hand-Drawn Line Boil Engine ---
+  let boilFrame = 0;
+  let boilSeedCounter = 1;
+
+  function hashFloat(a, b, c) {
+    let h = (a * 374761393 + b * 668265263 + c * 2147483647) | 0;
+    h = ((h ^ (h >> 13)) * 1274126177) | 0;
+    h = h ^ (h >> 16);
+    return ((h >>> 0) / 4294967295) * 2 - 1; // [-1, 1]
+  }
+
+  function jitter(seed, idx, amp = 1.25) {
+    return hashFloat(seed, idx, boilFrame) * amp;
+  }
+
+  function buildBoilRoundedRectPath(w, h, r, seed, amp = 1.2) {
+    const pad = 4;
+    const x0 = pad, y0 = pad;
+    const x1 = w + pad, y1 = h + pad;
+    const rr = Math.min(r, w / 2, h / 2);
+    const pts = [];
+    const stepsPerEdge = 5;
+
+    // Top edge
+    for (let i = 0; i <= stepsPerEdge; i++) {
+      const t = i / stepsPerEdge;
+      pts.push([x0 + rr + t * (w - 2 * rr), y0]);
+    }
+    // Top-right corner
+    pts.push([x1 - rr * 0.3, y0 + rr * 0.3]);
+    // Right edge
+    for (let i = 0; i <= stepsPerEdge; i++) {
+      const t = i / stepsPerEdge;
+      pts.push([x1, y0 + rr + t * (h - 2 * rr)]);
+    }
+    // Bottom-right corner
+    pts.push([x1 - rr * 0.3, y1 - rr * 0.3]);
+    // Bottom edge
+    for (let i = 0; i <= stepsPerEdge; i++) {
+      const t = i / stepsPerEdge;
+      pts.push([x1 - rr - t * (w - 2 * rr), y1]);
+    }
+    // Bottom-left corner
+    pts.push([x0 + rr * 0.3, y1 - rr * 0.3]);
+    // Left edge
+    for (let i = 0; i <= stepsPerEdge; i++) {
+      const t = i / stepsPerEdge;
+      pts.push([x0, y1 - rr - t * (h - 2 * rr)]);
+    }
+    // Top-left corner
+    pts.push([x0 + rr * 0.3, y0 + rr * 0.3]);
+
+    const jPts = pts.map((p, idx) => [
+      p[0] + jitter(seed, idx * 2, amp),
+      p[1] + jitter(seed, idx * 2 + 1, amp)
+    ]);
+
+    let d = `M ${jPts[0][0].toFixed(1)} ${jPts[0][1].toFixed(1)}`;
+    for (let i = 0; i < jPts.length; i++) {
+      const p1 = jPts[i];
+      const p2 = jPts[(i + 1) % jPts.length];
+      const mx = (p1[0] + p2[0]) / 2;
+      const my = (p1[1] + p2[1]) / 2;
+      d += ` Q ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+    }
+    return d + " Z";
+  }
+
+  function buildBoilLinePath(x1, y1, x2, y2, seed, segments = 10, amp = 1.15) {
+    let d = "";
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const x = x1 + (x2 - x1) * t + jitter(seed, i * 2, amp * 0.7);
+      const y = y1 + (y2 - y1) * t + jitter(seed, i * 2 + 1, amp);
+      d += (i === 0 ? "M " : " L ") + `${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    return d;
+  }
+
+  function buildBoilCirclePath(cx, cy, r, seed, segments = 18, amp = 1.1) {
+    const pts = [];
+    for (let i = 0; i < segments; i++) {
+      const a = (i / segments) * Math.PI * 2 - Math.PI / 2;
+      const jr = r + jitter(seed, i, amp);
+      pts.push([cx + Math.cos(a) * jr, cy + Math.sin(a) * jr]);
+    }
+    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length; i++) {
+      const p1 = pts[i];
+      const p2 = pts[(i + 1) % pts.length];
+      const mx = (p1[0] + p2[0]) / 2;
+      const my = (p1[1] + p2[1]) / 2;
+      d += ` Q ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+    }
+    return d + " Z";
+  }
+
+  function buildFocusEllipsePath(w, h, seed, amp = 1.35) {
+    const cx = w / 2 + 12;
+    const cy = h / 2 + 10;
+    const rx = w / 2 + 8;
+    const ry = h / 2 + 6;
+    const turns = 1.15;
+    const steps = 42;
+    const startAngle = -0.35;
+    let d = "";
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const ang = startAngle + t * Math.PI * 2 * turns;
+      const spiralOffset = (t - 0.5) * 3.2;
+      const x = cx + Math.cos(ang) * (rx + spiralOffset) + jitter(seed, i * 2, amp);
+      const y = cy + Math.sin(ang) * (ry + spiralOffset) + jitter(seed, i * 2 + 1, amp);
+      d += (i === 0 ? "M " : " L ") + `${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    return d;
+  }
+
+  function buildArrowPath(dir, seed, amp = 0.85) {
+    if (dir === "right") {
+      const shaft = buildBoilLinePath(2, 9, 17, 9, seed, 4, amp);
+      const head1 = buildBoilLinePath(11, 3, 17, 9, seed + 5, 3, amp);
+      const head2 = buildBoilLinePath(11, 15, 17, 9, seed + 9, 3, amp);
+      return `${shaft} ${head1} ${head2}`;
+    } else {
+      const shaft = buildBoilLinePath(18, 9, 3, 9, seed, 4, amp);
+      const head1 = buildBoilLinePath(9, 3, 3, 9, seed + 5, 3, amp);
+      const head2 = buildBoilLinePath(9, 15, 3, 9, seed + 9, 3, amp);
+      return `${shaft} ${head1} ${head2}`;
+    }
+  }
+
+  function syncBoilBoxes() {
+    document.querySelectorAll(".boil-box").forEach((el) => {
+      if (el.offsetParent === null) return;
+      if (!el.dataset.boilSeed) {
+        el.dataset.boilSeed = String(boilSeedCounter++);
+      }
+      const seed = parseInt(el.dataset.boilSeed, 10);
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      if (w < 10 || h < 10) return;
+      const r = parseFloat(el.dataset.boilRadius || "22");
+      const stroke = el.dataset.boilStroke || "#24372D";
+      const sw = el.dataset.boilWidth || "1.7";
+
+      let svg = el.querySelector(":scope > svg.boil-svg");
+      if (!svg) {
+        svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.classList.add("boil-svg");
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+        path.setAttribute("opacity", "0.72");
+        svg.appendChild(path);
+        el.appendChild(svg);
+      }
+      svg.setAttribute("viewBox", `0 0 ${w + 8} ${h + 8}`);
+      const path = svg.firstElementChild;
+      path.setAttribute("stroke", stroke);
+      path.setAttribute("stroke-width", sw);
+      path.setAttribute("d", buildBoilRoundedRectPath(w, h, r, seed, 1.15));
+    });
+
+    // Arrows
+    document.querySelectorAll(".arrow-slot").forEach((slot) => {
+      if (slot.offsetParent === null) return;
+      if (!slot.dataset.boilSeed) slot.dataset.boilSeed = String(boilSeedCounter++);
+      const seed = parseInt(slot.dataset.boilSeed, 10);
+      const dir = slot.dataset.arrow || "right";
+      let svg = slot.querySelector("svg");
+      if (!svg) {
+        svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "20");
+        svg.setAttribute("height", "18");
+        svg.setAttribute("viewBox", "0 0 20 18");
+        svg.style.display = "block";
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("fill", "none");
+        p.setAttribute("stroke", "currentColor");
+        p.setAttribute("stroke-width", "1.9");
+        p.setAttribute("stroke-linecap", "round");
+        p.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(p);
+        slot.appendChild(svg);
+      }
+      svg.firstElementChild.setAttribute("d", buildArrowPath(dir, seed));
+    });
+
+    // Progress bar boil
+    renderProgressBarBoil();
+
+    // Team markers boil
+    document.querySelectorAll(".team-marker").forEach((m) => {
+      if (!m.dataset.boilSeed) m.dataset.boilSeed = String(boilSeedCounter++);
+      const seed = parseInt(m.dataset.boilSeed, 10);
+      const color = m.dataset.color || "#9CC29A";
+      const path = m.querySelector("svg path");
+      if (path) {
+        path.setAttribute("fill", color);
+        path.setAttribute("stroke", "#24372D");
+        path.setAttribute("stroke-width", "1.5");
+        path.setAttribute("d", buildBoilCirclePath(13, 13, 11.5, seed, 14, 0.9));
+      }
+    });
+
+    // Focus ring boil
+    const focusSvg = document.querySelector(".focus-ring-svg");
+    if (focusSvg && focusSvg.parentElement) {
+      const p = focusSvg.querySelector("path");
+      if (p) {
+        const pw = focusSvg.parentElement.offsetWidth;
+        const ph = focusSvg.parentElement.offsetHeight;
+        focusSvg.setAttribute("viewBox", `0 0 ${pw + 24} ${ph + 20}`);
+        p.setAttribute("d", buildFocusEllipsePath(pw, ph, 777, 1.3));
+      }
+    }
+
+    // Timer ring boil
+    renderTimerRing();
+
+    // Results bar chart boil
+    document.querySelectorAll(".bar-track").forEach((track) => {
+      if (track.offsetParent === null) return;
+      if (!track.dataset.boilSeed) track.dataset.boilSeed = String(boilSeedCounter++);
+      const seed = parseInt(track.dataset.boilSeed, 10);
+      const pct = parseFloat(track.dataset.pct || "0");
+      const color = track.dataset.color || "#9CC29A";
+      const w = track.offsetWidth;
+      const h = track.offsetHeight;
+      if (w < 10) return;
+
+      let svg = track.querySelector("svg");
+      if (!svg) {
+        svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        svg.style.overflow = "visible";
+        const bgP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        bgP.setAttribute("fill", "#F4F6F0");
+        bgP.setAttribute("stroke", "#D7DFCE");
+        bgP.setAttribute("stroke-width", "1.4");
+        const fillP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        fillP.setAttribute("stroke", "#24372D");
+        fillP.setAttribute("stroke-width", "1.6");
+        svg.appendChild(bgP);
+        svg.appendChild(fillP);
+        track.appendChild(svg);
+      }
+      svg.setAttribute("viewBox", `0 0 ${w + 8} ${h + 8}`);
+      svg.children[0].setAttribute("d", buildBoilRoundedRectPath(w, h, 10, seed, 1.0));
+      const fillW = Math.max(pct > 0 ? 18 : 0, (w * pct) / 100);
+      if (fillW > 0) {
+        svg.children[1].setAttribute("fill", color);
+        svg.children[1].setAttribute("d", buildBoilRoundedRectPath(fillW, h, 10, seed + 33, 1.15));
+        svg.children[1].style.display = "block";
+      } else {
+        svg.children[1].style.display = "none";
+      }
+    });
+  }
+
+  if (!REDUCED_MOTION) {
+    setInterval(() => {
+      boilFrame = (boilFrame + 1) % 10000;
+      syncBoilBoxes();
+    }, 125); // 8 fps
+  }
+
+  window.addEventListener("resize", syncBoilBoxes);
+
+  // --- App State ---
+  let setupState = {
+    sunums: [2, 3, 4, 5],
+    starOnly: false,
+    shuffle: false,
+    timerSec: 0,
+    teamCount: 1,
+    teamNames: ["Takım 1", "Takım 2", "Takım 3", "Takım 4"]
+  };
+
+  let quizState = null;
+  let timerInterval = null;
+  let isRevealing = false;
+  let reviewReturnToResults = false;
+
+  // --- DOM Refs ---
+  const startScreen = document.getElementById("startScreen");
+  const quizScreen = document.getElementById("quizScreen");
+  const resultsScreen = document.getElementById("resultsScreen");
+  const sfxToggleBtn = document.getElementById("sfxToggleBtn");
+  const homeBtn = document.getElementById("homeBtn");
+  const sunumFiltersEl = document.getElementById("sunumFilters");
+  const starOnlyBtn = document.getElementById("starOnlyBtn");
+  const shuffleBtn = document.getElementById("shuffleBtn");
+  const timerOptionsEl = document.getElementById("timerOptions");
+  const teamCountGroup = document.getElementById("teamCountGroup");
+  const teamInputsEl = document.getElementById("teamInputs");
+  const matchCountText = document.getElementById("matchCountText");
+  const startBtn = document.getElementById("startBtn");
+
+  const qCounter = document.getElementById("qCounter");
+  const qSunumTag = document.getElementById("qSunumTag");
+  const progressTrack = document.getElementById("progressTrack");
+  const scoreboardEl = document.getElementById("scoreboard");
+  const timerBox = document.getElementById("timerBox");
+  const timerSvg = document.getElementById("timerSvg");
+  const timerText = document.getElementById("timerText");
+  const questionText = document.getElementById("questionText");
+  const starBadgeWrap = document.getElementById("starBadgeWrap");
+  const starBadgeText = document.getElementById("starBadgeText");
+  const starTooltip = document.getElementById("starTooltip");
+  const codeCard = document.getElementById("codeCard");
+  const codeBlock = document.getElementById("codeBlock");
+  const teamTurnBar = document.getElementById("teamTurnBar");
+  const teamTabsEl = document.getElementById("teamTabs");
+  const optionsGrid = document.getElementById("optionsGrid");
+  const prevBtn = document.getElementById("prevBtn");
+  const backToResultsBtn = document.getElementById("backToResultsBtn");
+  const revealBtn = document.getElementById("revealBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const nextBtnLabel = document.getElementById("nextBtnLabel");
+  const explanationCard = document.getElementById("explanationCard");
+  const expSlide = document.getElementById("expSlide");
+  const expText = document.getElementById("expText");
+
+  const resultsSummary = document.getElementById("resultsSummary");
+  const resultsVisual = document.getElementById("resultsVisual");
+  const retryWrongBtn = document.getElementById("retryWrongBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const wrongSection = document.getElementById("wrongSection");
+  const wrongList = document.getElementById("wrongList");
+
+  const resumeModal = document.getElementById("resumeModal");
+  const resumeDesc = document.getElementById("resumeDesc");
+  const resumeContinueBtn = document.getElementById("resumeContinueBtn");
+  const resumeFreshBtn = document.getElementById("resumeFreshBtn");
+  const confettiCanvas = document.getElementById("confettiCanvas");
+
+  // --- Helpers ---
+  function updateSfxBtn() {
+    sfxToggleBtn.textContent = sfxEnabled ? "SFX: Açık" : "SFX: Kapalı";
+    sfxToggleBtn.setAttribute("aria-pressed", String(sfxEnabled));
+  }
+
+  sfxToggleBtn.addEventListener("click", () => {
+    sfxEnabled = !sfxEnabled;
+    localStorage.setItem(SFX_KEY, String(sfxEnabled));
+    updateSfxBtn();
+    if (sfxEnabled) sfx.tick();
+  });
+
+  function turkishLocative(n) {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    let suf = "da";
+    if (mod10 === 0) {
+      if ([20, 50, 70, 80, 100].includes(mod100) || mod100 === 0) suf = (mod100 === 70 ? "te" : "de");
+      else if (mod100 === 40 || mod100 === 60) suf = "ta";
+      else suf = "da";
+    } else if ([1, 2, 7, 8].includes(mod10)) {
+      suf = "de";
+    } else if ([3, 4, 5].includes(mod10)) {
+      suf = "te";
+    } else {
+      suf = "da";
+    }
+    return `${n}'${suf}`;
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function highlightPython(code) {
+    const tokenRe = /(#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:import|as|from|for|in|if|else|elif|return|def|True|False|None|and|or|not|with|open|int|float|str|print|len|range)\b|\b\d+(?:\.\d+)?\b)/g;
+    let out = "";
+    let last = 0;
+    let match;
+    while ((match = tokenRe.exec(code)) !== null) {
+      if (match.index > last) {
+        out += escapeHtml(code.slice(last, match.index));
+      }
+      const tok = match[0];
+      if (tok.startsWith("#")) {
+        out += `<span class="py-com">${escapeHtml(tok)}</span>`;
+      } else if (tok.startsWith('"') || tok.startsWith("'")) {
+        out += `<span class="py-str">${escapeHtml(tok)}</span>`;
+      } else if (/^\d/.test(tok)) {
+        out += `<span class="py-num">${escapeHtml(tok)}</span>`;
+      } else {
+        out += `<span class="py-kw">${escapeHtml(tok)}</span>`;
+      }
+      last = tokenRe.lastIndex;
+    }
+    if (last < code.length) {
+      out += escapeHtml(code.slice(last));
+    }
+    return out;
+  }
+
+  function getFilteredQuestions() {
+    return ALL_QUESTIONS.filter((q) => {
+      if (!setupState.sunums.includes(q.sunum)) return false;
+      if (setupState.starOnly && !q.yildiz) return false;
+      return true;
+    });
+  }
+
+  function shuffleArray(arr) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function saveState() {
+    if (!quizState) {
+      localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(quizState));
+    } catch (e) {}
+  }
+
+  // --- Start Screen Rendering ---
+  function renderTeamInputs() {
+    teamInputsEl.innerHTML = "";
+    for (let i = 0; i < setupState.teamCount; i++) {
+      const wrap = document.createElement("div");
+      wrap.className = "team-input-wrap";
+      const dot = document.createElement("span");
+      dot.className = "team-color-dot";
+      dot.style.backgroundColor = TEAM_COLORS[i];
+      const inp = document.createElement("input");
+      inp.type = "text";
+      inp.maxLength = 20;
+      inp.value = setupState.teamNames[i];
+      inp.placeholder = `Kişi ${i + 1}`;
+      inp.setAttribute("aria-label", `Takım ${i + 1} adı`);
+      inp.addEventListener("input", (e) => {
+        setupState.teamNames[i] = e.target.value;
+      });
+      wrap.appendChild(dot);
+      wrap.appendChild(inp);
+      teamInputsEl.appendChild(wrap);
+    }
+  }
+
+  function updateStartUI() {
+    const matched = getFilteredQuestions();
+    matchCountText.innerHTML = `Seçilen: <strong>${matched.length}</strong> soru`;
+    startBtn.disabled = matched.length === 0;
+    requestAnimationFrame(syncBoilBoxes);
+  }
+
+  sunumFiltersEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-sunum]");
+    if (!btn) return;
+    sfx.tick();
+    const val = parseInt(btn.dataset.sunum, 10);
+    if (setupState.sunums.includes(val)) {
+      setupState.sunums = setupState.sunums.filter((s) => s !== val);
+      btn.classList.remove("active");
+    } else {
+      setupState.sunums.push(val);
+      btn.classList.add("active");
+    }
+    updateStartUI();
+  });
+
+  starOnlyBtn.addEventListener("click", () => {
+    sfx.tick();
+    setupState.starOnly = !setupState.starOnly;
+    starOnlyBtn.classList.toggle("active", setupState.starOnly);
+    updateStartUI();
+  });
+
+  shuffleBtn.addEventListener("click", () => {
+    sfx.tick();
+    setupState.shuffle = !setupState.shuffle;
+    shuffleBtn.classList.toggle("active", setupState.shuffle);
+  });
+
+  timerOptionsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-timer]");
+    if (!btn) return;
+    sfx.tick();
+    setupState.timerSec = parseInt(btn.dataset.timer, 10);
+    timerOptionsEl.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
+    btn.classList.add("active");
+  });
+
+  teamCountGroup.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-count]");
+    if (!btn) return;
+    sfx.tick();
+    setupState.teamCount = parseInt(btn.dataset.count, 10);
+    teamCountGroup.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
+    btn.classList.add("active");
+    renderTeamInputs();
+  });
+
+  startBtn.addEventListener("click", () => {
+    const filtered = getFilteredQuestions();
+    if (filtered.length === 0) return;
+    const ordered = setupState.shuffle ? shuffleArray(filtered) : filtered;
+    startQuizWithQuestions(ordered.map((q) => q.id));
+  });
+
+  function startQuizWithQuestions(questionIds) {
+    const teams = [];
+    for (let i = 0; i < setupState.teamCount; i++) {
+      const cleanName = (setupState.teamNames[i] || "").trim() || `Kişi ${i + 1}`;
+      teams.push({
+        name: cleanName,
+        color: TEAM_COLORS[i],
+        score: 0
+      });
+    }
+
+    quizState = {
+      questionIds,
+      currentIndex: 0,
+      teams,
+      activeTeam: 0,
+      timerSec: setupState.timerSec,
+      timeLeft: setupState.timerSec,
+      finished: false,
+      answers: {} // qId -> { picks: { teamIdx: optIdx }, revealed: bool, scored: bool }
+    };
+    reviewReturnToResults = false;
+    saveState();
+    showScreen("quiz");
+    sfx.pop();
+    renderQuestion();
+  }
+
+  // --- Screen Management ---
+  function showScreen(name) {
+    stopTimer();
+    startScreen.classList.toggle("hidden", name !== "start");
+    quizScreen.classList.toggle("hidden", name !== "quiz");
+    resultsScreen.classList.toggle("hidden", name !== "results");
+    homeBtn.classList.toggle("hidden", name === "start");
+    requestAnimationFrame(syncBoilBoxes);
+  }
+
+  homeBtn.addEventListener("click", () => {
+    stopTimer();
+    quizState = null;
+    saveState();
+    showScreen("start");
+    updateStartUI();
+  });
+
+  // --- Progress & Timer Rendering ---
+  function renderProgressBarBoil() {
+    if (!quizState || quizScreen.classList.contains("hidden")) return;
+    const w = progressTrack.offsetWidth;
+    if (w < 20) return;
+    const h = 18;
+    const total = quizState.questionIds.length;
+    const pct = (quizState.currentIndex + 1) / total;
+    const fillW = Math.max(12, w * pct);
+
+    let svg = progressTrack.querySelector("svg");
+    if (!svg) {
+      svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.style.width = "100%";
+      svg.style.height = "100%";
+      svg.style.overflow = "visible";
+      const trackP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      trackP.setAttribute("fill", "none");
+      trackP.setAttribute("stroke", "#D7DFCE");
+      trackP.setAttribute("stroke-width", "6");
+      trackP.setAttribute("stroke-linecap", "round");
+
+      const fillP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      fillP.setAttribute("fill", "none");
+      fillP.setAttribute("stroke", "#9CC29A");
+      fillP.setAttribute("stroke-width", "6.5");
+      fillP.setAttribute("stroke-linecap", "round");
+
+      const dotP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      dotP.setAttribute("fill", "#24372D");
+
+      svg.appendChild(trackP);
+      svg.appendChild(fillP);
+      svg.appendChild(dotP);
+      progressTrack.appendChild(svg);
+    }
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    svg.children[0].setAttribute("d", buildBoilLinePath(3, 9, w - 3, 9, 41, 14, 0.9));
+    svg.children[1].setAttribute("d", buildBoilLinePath(3, 9, fillW - 3, 9, 42, 12, 1.0));
+    svg.children[2].setAttribute("d", buildBoilCirclePath(Math.min(w - 6, Math.max(6, fillW - 3)), 9, 4.5, 43, 10, 0.5));
+  }
+
+  function renderTimerRing() {
+    if (!quizState || !quizState.timerSec || quizScreen.classList.contains("hidden")) return;
+    const total = quizState.timerSec;
+    const left = Math.max(0, quizState.timeLeft);
+    const r = 20;
+    const circ = 2 * Math.PI * r;
+
+    let bgP = timerSvg.querySelector(".t-bg");
+    let fgP = timerSvg.querySelector(".t-fg");
+    if (!bgP) {
+      bgP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      bgP.classList.add("t-bg");
+      bgP.setAttribute("fill", "none");
+      bgP.setAttribute("stroke", "#DFE5D8");
+      bgP.setAttribute("stroke-width", "3");
+
+      fgP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      fgP.classList.add("t-fg");
+      fgP.setAttribute("fill", "none");
+      fgP.setAttribute("stroke-width", "3.4");
+      fgP.setAttribute("stroke-linecap", "round");
+
+      timerSvg.appendChild(bgP);
+      timerSvg.appendChild(fgP);
+    }
+
+    bgP.setAttribute("d", buildBoilCirclePath(25, 25, r, 91, 20, 0.7));
+    fgP.setAttribute("d", buildBoilCirclePath(25, 25, r, 92, 20, 0.75));
+    fgP.setAttribute("stroke", left <= 7 ? "#CF8A68" : "#24372D");
+    fgP.setAttribute("stroke-dasharray", circ.toFixed(2));
+    fgP.setAttribute("stroke-dashoffset", ((1 - left / total) * circ).toFixed(2));
+    timerText.textContent = String(left);
+    timerText.style.color = left <= 7 ? "#CF8A68" : "#24372D";
+  }
+
+  function startTimer() {
+    stopTimer();
+    if (!quizState || !quizState.timerSec) {
+      timerBox.classList.add("hidden");
+      return;
+    }
+    const qId = quizState.questionIds[quizState.currentIndex];
+    const qAns = getQAnswer(qId);
+    timerBox.classList.remove("hidden");
+
+    if (qAns.revealed) {
+      renderTimerRing();
+      return;
+    }
+
+    renderTimerRing();
+    timerInterval = setInterval(() => {
+      if (!quizState) {
+        stopTimer();
+        return;
+      }
+      quizState.timeLeft -= 1;
+      renderTimerRing();
+      saveState();
+      if (quizState.timeLeft <= 0) {
+        stopTimer();
+        revealCurrentAnswer();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function turnOwner(){ return quizState ? quizState.currentIndex % quizState.teams.length : 0; }
+  function ownerOfQ(qId){ const i = quizState.questionIds.indexOf(qId); return i < 0 ? 0 : i % quizState.teams.length; }
+
+  function getQAnswer(qId) {
+    if (!quizState.answers[qId]) {
+      quizState.answers[qId] = { picks: {}, revealed: false, scored: false };
+    }
+    return quizState.answers[qId];
+  }
+
+  // --- Question Rendering ---
+  function getCurrentQuestion() {
+    const id = quizState.questionIds[quizState.currentIndex];
+    return ALL_QUESTIONS.find((q) => q.id === id);
+  }
+
+  function renderScoreboardAndTabs() {
+    quizState.activeTeam = turnOwner();
+    const q = getCurrentQuestion();
+    const qAns = getQAnswer(q.id);
+    const multi = quizState.teams.length > 1;
+
+    scoreboardEl.innerHTML = "";
+    quizState.teams.forEach((team, idx) => {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = "score-pill";
+      if (multi && idx === quizState.activeTeam && !qAns.revealed) {
+        pill.classList.add("active-team");
+      }
+      if (qAns.picks[idx] !== undefined) {
+        pill.classList.add("picked-mark");
+      }
+      pill.innerHTML = `
+        <span class="team-color-dot" style="background:${team.color}"></span>
+        <span>${escapeHtml(team.name)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;">${team.score}</span>
+      `;
+      pill.addEventListener("click", () => {
+        return;
+      });
+      scoreboardEl.appendChild(pill);
+    });
+
+    if (multi) {
+      teamTurnBar.classList.remove("hidden");
+      teamTabsEl.innerHTML = "";
+      quizState.teams.forEach((team, idx) => {
+        if (idx !== quizState.activeTeam) return;
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.className = "team-tab" + (idx === quizState.activeTeam ? " active" : "");
+        const picked = qAns.picks[idx];
+        const pickedTag = picked !== undefined ? ` (${LETTERS[picked]})` : "";
+        tab.innerHTML = `
+          <span class="team-color-dot" style="background:${team.color}"></span>
+          <span>Sıra: <strong>${escapeHtml(team.name)}</strong>${pickedTag}</span>
+        `;
+
+        teamTabsEl.appendChild(tab);
+      });
+    } else {
+      teamTurnBar.classList.add("hidden");
+    }
+  }
+
+  function renderQuestion(animateFocus = false) {
+    const q = getCurrentQuestion();
+    const qAns = getQAnswer(q.id);
+    const total = quizState.questionIds.length;
+
+    qCounter.textContent = `Soru ${quizState.currentIndex + 1} / ${total}`;
+    qSunumTag.textContent = `verigors${q.sunum} • ${q.slayt}`;
+    questionText.textContent = q.soru;
+
+    // Star badge
+    starBadgeWrap.classList.remove("open");
+    if (q.yildiz) {
+      starBadgeWrap.classList.remove("hidden");
+      starBadgeText.textContent = q.yildiz === "kayıt" ? "⭐ Hoca: kayıtta" : "⭐ Derste fotoğraflandı";
+      starTooltip.textContent = q.kaynak;
+    } else {
+      starBadgeWrap.classList.add("hidden");
+    }
+
+    // Code block
+    if (q.kod && q.kod.trim().length > 0) {
+      codeCard.classList.remove("hidden");
+      codeBlock.innerHTML = highlightPython(q.kod);
+    } else {
+      codeCard.classList.add("hidden");
+    }
+
+    renderScoreboardAndTabs();
+
+    // Options
+    optionsGrid.innerHTML = "";
+    const pickedValues = Object.values(qAns.picks);
+
+    q.siklar.forEach((optText, optIdx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "option-card boil-box";
+      btn.dataset.boil = "card";
+      btn.dataset.boilRadius = "22";
+
+      let strokeColor = "#24372D";
+
+      if (qAns.revealed) {
+        btn.classList.add("locked");
+        if (optIdx === q.dogru) {
+          btn.classList.add("is-correct");
+          strokeColor = "#3E8E4E";
+        } else if (pickedValues.includes(optIdx)) {
+          btn.classList.add("is-wrong");
+          strokeColor = "#CF8A68";
+        }
+      } else if (pickedValues.includes(optIdx)) {
+        btn.classList.add("is-selected");
+      }
+
+      btn.dataset.boilStroke = strokeColor;
+
+      // Team markers
+      const markerTeams = [];
+      quizState.teams.forEach((team, tIdx) => {
+        if (qAns.picks[tIdx] === optIdx) {
+          markerTeams.push({ team, tIdx });
+        }
+      });
+
+      if (markerTeams.length > 0) {
+        const markersWrap = document.createElement("div");
+        markersWrap.className = "team-markers";
+        markerTeams.forEach(({ team }) => {
+          const m = document.createElement("div");
+          m.className = "team-marker";
+          m.dataset.color = team.color;
+          const initial = (team.name.trim()[0] || "T").toUpperCase();
+          m.innerHTML = `<svg viewBox="0 0 26 26"><path></path></svg><span>${escapeHtml(initial)}</span>`;
+          markersWrap.appendChild(m);
+        });
+        btn.appendChild(markersWrap);
+      }
+
+      const badge = document.createElement("div");
+      badge.className = "option-badge";
+      badge.textContent = LETTERS[optIdx];
+
+      const txt = document.createElement("div");
+      txt.className = "option-text";
+      txt.textContent = optText;
+
+      btn.appendChild(badge);
+      btn.appendChild(txt);
+
+      // Focus ring ("zınk") on correct answer when revealed
+      if (qAns.revealed && optIdx === q.dogru) {
+        const fSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        fSvg.classList.add("focus-ring-svg");
+        const fPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        fPath.setAttribute("fill", "none");
+        fPath.setAttribute("stroke", "#CF8A68");
+        fPath.setAttribute("stroke-width", "2.6");
+        fPath.setAttribute("stroke-linecap", "round");
+        fPath.setAttribute("stroke-linejoin", "round");
+        fSvg.appendChild(fPath);
+        btn.appendChild(fSvg);
+
+        if (animateFocus && !REDUCED_MOTION) {
+          requestAnimationFrame(() => {
+            const len = fPath.getTotalLength ? fPath.getTotalLength() : 650;
+            fPath.style.strokeDasharray = `${len}`;
+            fPath.style.strokeDashoffset = `${len}`;
+            fPath.getBoundingClientRect();
+            fPath.style.transition = "stroke-dashoffset 350ms cubic-bezier(0.25, 0.8, 0.25, 1)";
+            fPath.style.strokeDashoffset = "0";
+            setTimeout(() => {
+              fSvg.classList.add("zink-bounce");
+            }, 350);
+          });
+        }
+      }
+
+      btn.addEventListener("click", () => handleOptionSelect(optIdx));
+      optionsGrid.appendChild(btn);
+    });
+
+    // Controls & Explanation
+    prevBtn.disabled = quizState.currentIndex === 0;
+    backToResultsBtn.classList.toggle("hidden", !reviewReturnToResults);
+
+    if (qAns.revealed) {
+      revealBtn.classList.add("hidden");
+      nextBtn.classList.remove("hidden");
+      nextBtnLabel.textContent = quizState.currentIndex === total - 1 ? "Sonuçları gör" : "Sonraki";
+      explanationCard.classList.remove("hidden");
+      expSlide.textContent = `slayt: ${q.slayt}`;
+      expText.textContent = q.aciklama;
+    } else {
+      revealBtn.classList.remove("hidden");
+      nextBtn.classList.add("hidden");
+      explanationCard.classList.add("hidden");
+    }
+
+    startTimer();
+    requestAnimationFrame(syncBoilBoxes);
+  }
+
+  starBadgeWrap.addEventListener("click", (e) => {
+    e.stopPropagation();
+    starBadgeWrap.classList.toggle("open");
+  });
+  document.addEventListener("click", () => {
+    starBadgeWrap.classList.remove("open");
+  });
+
+  function handleOptionSelect(optIdx) {
+    if (isRevealing) return;
+    const q = getCurrentQuestion();
+    const qAns = getQAnswer(q.id);
+    if (qAns.revealed) return;
+
+    sfx.tick();
+    quizState.activeTeam = turnOwner();
+    qAns.picks = {};
+    qAns.picks[quizState.activeTeam] = optIdx;
+    saveState();
+    renderQuestion(false);
+  }
+
+  function revealCurrentAnswer() {
+    if (isRevealing) return;
+    const q = getCurrentQuestion();
+    const qAns = getQAnswer(q.id);
+    if (qAns.revealed) return;
+
+    stopTimer();
+    isRevealing = true;
+    revealBtn.disabled = true;
+    sfx.riser();
+
+    setTimeout(() => {
+      isRevealing = false;
+      revealBtn.disabled = false;
+      if (!quizState) return;
+
+      qAns.revealed = true;
+      if (!qAns.scored) {
+        quizState.teams.forEach((team, idx) => {
+          if (qAns.picks[idx] === q.dogru) {
+            team.score += 1;
+          }
+        });
+        qAns.scored = true;
+      }
+
+      const picks = Object.values(qAns.picks);
+      const anyWrong = picks.some((p) => p !== q.dogru);
+      const anyRight = picks.some((p) => p === q.dogru);
+
+      if (quizState.teams.length === 1) {
+        if (picks.length === 0 || anyRight) {
+          sfx.ding();
+        } else {
+          sfx.buzz();
+        }
+      } else {
+        sfx.ding();
+        if (anyWrong) {
+          setTimeout(() => sfx.buzz(), 140);
+        }
+      }
+
+      saveState();
+      renderQuestion(true);
+    }, 400);
+  }
+
+  revealBtn.addEventListener("click", revealCurrentAnswer);
+
+  function goNext() {
+    if (isRevealing || !quizState) return;
+    if (quizState.currentIndex < quizState.questionIds.length - 1) {
+      quizState.currentIndex += 1;
+      quizState.timeLeft = quizState.timerSec;
+      quizState.activeTeam = 0;
+      sfx.pop();
+      saveState();
+      renderQuestion(false);
+    } else {
+      quizState.finished = true;
+      saveState();
+      showResults();
+    }
+  }
+
+  function goPrev() {
+    if (isRevealing || !quizState || quizState.currentIndex === 0) return;
+    quizState.currentIndex -= 1;
+    quizState.activeTeam = 0;
+    sfx.pop();
+    saveState();
+    renderQuestion(false);
+  }
+
+  nextBtn.addEventListener("click", goNext);
+  prevBtn.addEventListener("click", goPrev);
+
+  backToResultsBtn.addEventListener("click", () => {
+    reviewReturnToResults = false;
+    showResults();
+  });
+
+  // --- Results Screen ---
+  function getWrongQuestionIds() {
+    const wrongIds = [];
+    quizState.questionIds.forEach((qId) => {
+      const q = ALL_QUESTIONS.find((item) => item.id === qId);
+      const qAns = getQAnswer(qId);
+      const hasWrongOrMissing = qAns.picks[ownerOfQ(qId)] !== q.dogru;
+      if (hasWrongOrMissing) {
+        wrongIds.push(qId);
+      }
+    });
+    return wrongIds;
+  }
+
+  function showResults() {
+    showScreen("results");
+    const total = quizState.questionIds.length;
+    const isSolo = quizState.teams.length === 1;
+    const wrongIds = getWrongQuestionIds();
+
+    resultsVisual.innerHTML = "";
+    resultsSummary.innerHTML = "";
+
+    if (isSolo) {
+      const score = quizState.teams[0].score;
+      const pct = Math.round((score / total) * 100);
+      resultsSummary.innerHTML = `
+        <div class="solo-score-big">${turkishLocative(total)} ${score}</div>
+        <p style="margin:0; color:var(--muted); font-weight:500;">Başarı oranı: %${pct}</p>
+      `;
+
+      const breakdown = document.createElement("div");
+      breakdown.className = "solo-breakdown";
+
+      [2, 3, 4, 5].forEach((sunumNum) => {
+        const subIds = quizState.questionIds.filter((id) => ALL_QUESTIONS.find((q) => q.id === id).sunum === sunumNum);
+        if (subIds.length === 0) return;
+        let subCorrect = 0;
+        subIds.forEach((id) => {
+          const q = ALL_QUESTIONS.find((item) => item.id === id);
+          const qAns = getQAnswer(id);
+          if (qAns.picks[0] === q.dogru) subCorrect += 1;
+        });
+        const card = document.createElement("div");
+        card.className = "sunum-stat";
+        card.innerHTML = `
+          <div class="sunum-stat-name">Sunum ${sunumNum}</div>
+          <div class="sunum-stat-val">${subCorrect} / ${subIds.length}</div>
+          <div style="font-size:13px; color:var(--muted);">%${Math.round((subCorrect / subIds.length) * 100)}</div>
+        `;
+        breakdown.appendChild(card);
+      });
+      resultsVisual.appendChild(breakdown);
+      if (pct >= 60) launchConfetti();
+    } else {
+      const sorted = quizState.teams
+        .map((t, i) => ({ ...t, idx: i }))
+        .sort((a, b) => b.score - a.score);
+
+      const topScore = sorted[0].score;
+      const winners = sorted.filter((t) => t.score === topScore);
+      const winText = winners.length === 1
+        ? `Kazanan: ${winners[0].name}!`
+        : `Beraberlik: ${winners.map((w) => w.name).join(" & ")}`;
+
+      resultsSummary.innerHTML = `<p class="hand-note" style="font-size:28px; margin:4px 0 0; color:var(--ink);">${escapeHtml(winText)}</p>`;
+
+      const chart = document.createElement("div");
+      chart.className = "bar-chart-wrap";
+      sorted.forEach((t) => {
+        const own = quizState.questionIds.filter((_, i) => i % quizState.teams.length === t.idx).length;
+        const pct = own > 0 ? (t.score / own) * 100 : 0;
+        const row = document.createElement("div");
+        row.className = "bar-row";
+        row.innerHTML = `
+          <div class="bar-team-name">
+            <span class="team-color-dot" style="background:${t.color}"></span>
+            <span>${escapeHtml(t.name)}</span>
+          </div>
+          <div class="bar-track" data-pct="${pct.toFixed(1)}" data-color="${t.color}"></div>
+          <div class="bar-score">${t.score}/${own}</div>
+        `;
+        chart.appendChild(row);
+      });
+      resultsVisual.appendChild(chart);
+      if (topScore > 0) launchConfetti();
+    }
+
+    // Wrong questions list
+    wrongList.innerHTML = "";
+    if (wrongIds.length > 0) {
+      wrongSection.classList.remove("hidden");
+      retryWrongBtn.classList.remove("hidden");
+      wrongIds.forEach((qId) => {
+        const q = ALL_QUESTIONS.find((item) => item.id === qId);
+        const qIdx = quizState.questionIds.indexOf(qId);
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "wrong-item";
+        item.innerHTML = `
+          <span class="wrong-item-title">${escapeHtml(q.soru)}</span>
+          <span class="wrong-item-meta">verigors${q.sunum} • ${q.slayt} →</span>
+        `;
+        item.addEventListener("click", () => {
+          quizState.currentIndex = qIdx;
+          reviewReturnToResults = true;
+          showScreen("quiz");
+          renderQuestion(false);
+        });
+        wrongList.appendChild(item);
+      });
+    } else {
+      wrongSection.classList.add("hidden");
+      retryWrongBtn.classList.add("hidden");
+    }
+
+    requestAnimationFrame(syncBoilBoxes);
+  }
+
+  retryWrongBtn.addEventListener("click", () => {
+    const wrongIds = getWrongQuestionIds();
+    if (wrongIds.length === 0) return;
+    startQuizWithQuestions(wrongIds);
+  });
+
+  restartBtn.addEventListener("click", () => {
+    quizState = null;
+    saveState();
+    showScreen("start");
+    updateStartUI();
+  });
+
+  // --- Confetti (seeded, restrained, short) ---
+  function launchConfetti() {
+    if (REDUCED_MOTION) return;
+    const canvas = confettiCanvas;
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.classList.remove("hidden");
+
+    const colors = ["#9CC29A", "#B6A2DB", "#CF8A68", "#E3C9A0", "#9FC3D6"];
+    const pieces = [];
+    for (let i = 0; i < 42; i++) {
+      const s = i + 1;
+      const rx = (hashFloat(s, 1, 7) + 1) / 2;
+      const vx = hashFloat(s, 2, 13) * 2.1;
+      const vy = 2.2 + ((hashFloat(s, 3, 19) + 1) / 2) * 3.0;
+      pieces.push({
+        x: rx * canvas.width,
+        y: -20 - ((hashFloat(s, 4, 29) + 1) / 2) * 140,
+        w: 7 + ((hashFloat(s, 5, 31) + 1) / 2) * 5,
+        h: 5 + ((hashFloat(s, 6, 37) + 1) / 2) * 4,
+        vx,
+        vy,
+        rot: rx * Math.PI * 2,
+        vrot: hashFloat(s, 7, 41) * 0.12,
+        color: colors[i % colors.length]
+      });
+    }
+
+    const start = performance.now();
+    function frame(now) {
+      const elapsed = now - start;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const alpha = elapsed > 1600 ? Math.max(0, 1 - (elapsed - 1600) / 600) : 1;
+      ctx.globalAlpha = alpha;
+      pieces.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vrot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      if (elapsed < 2200) {
+        requestAnimationFrame(frame);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.classList.add("hidden");
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // --- Keyboard Shortcuts ---
+  document.addEventListener("keydown", (e) => {
+    if (!resumeModal.classList.contains("hidden")) return;
+    if (quizScreen.classList.contains("hidden") || !quizState) return;
+    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+
+    const q = getCurrentQuestion();
+    const qAns = getQAnswer(q.id);
+    const key = e.key.toLowerCase();
+
+    if (key === "tab" && quizState.teams.length > 1) { e.preventDefault(); return; }
+
+    if (!qAns.revealed) {
+      const map = { a: 0, "1": 0, b: 1, "2": 1, c: 2, "3": 2, d: 3, "4": 3 };
+      if (key in map) {
+        e.preventDefault();
+        handleOptionSelect(map[key]);
+        return;
+      }
+    }
+
+    if (e.key === " " || e.key === "Enter") {
+      if (!qAns.revealed) {
+        e.preventDefault();
+        revealCurrentAnswer();
+        return;
+      }
+    }
+
+    if ((e.key === "ArrowRight" || key === "n") && qAns.revealed) {
+      e.preventDefault();
+      goNext();
+      return;
+    }
+
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goPrev();
+    }
+  });
+
+  // --- Init & Resume Check ---
+  function init() {
+    updateSfxBtn();
+    renderTeamInputs();
+    updateStartUI();
+
+    const savedRaw = localStorage.getItem(STORAGE_KEY);
+    if (savedRaw) {
+      try {
+        const parsed = JSON.parse(savedRaw);
+        if (parsed && Array.isArray(parsed.questionIds) && parsed.questionIds.length > 0) {
+          resumeDesc.textContent = parsed.finished
+            ? `Tamamlanmış bir oturum var (${parsed.questionIds.length} soru). Sonuçlara dönmek ister misin?`
+            : `${parsed.questionIds.length} soruluk oturumda Soru ${parsed.currentIndex + 1}'de kalmıştın.`;
+          resumeModal.classList.remove("hidden");
+          requestAnimationFrame(syncBoilBoxes);
+
+          resumeContinueBtn.onclick = () => {
+            resumeModal.classList.add("hidden");
+            quizState = parsed;
+            if (quizState.finished) {
+              showResults();
+            } else {
+              showScreen("quiz");
+              renderQuestion(false);
+            }
+          };
+
+          resumeFreshBtn.onclick = () => {
+            resumeModal.classList.add("hidden");
+            localStorage.removeItem(STORAGE_KEY);
+          };
+        }
+      } catch (err) {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
