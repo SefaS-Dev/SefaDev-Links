@@ -1,0 +1,4024 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mantıksal Tasarım 2A — Boole Cebri ve Sadeleştirme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+<style>
+  :root {
+    --bg: #F2F3ED;
+    --card: #FFFFFF;
+    --ink: #24372D;
+    --muted: #7C8A7E;
+    --sage: #9CC29A;
+    --lavender: #B6A2DB;
+    --terracotta: #CF8A68;
+    --sand: #E3C9A0;
+    --ice: #9FC3D6;
+    --border: rgba(36, 55, 45, 0.09);
+    --shadow: 0 10px 30px rgba(36, 55, 45, 0.06), 0 2px 8px rgba(36, 55, 45, 0.04);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px 20px 42px;
+  }
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .brand-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--ink);
+    margin: 0;
+  }
+  .topbar-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .stage-shell {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #F2F3ED;
+  }
+  canvas#stage {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+  }
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: #F7F8F3;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 13px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+  }
+  .btn:hover { background: #ECEFE4; border-color: rgba(36, 55, 45, 0.18); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary {
+    background: var(--ink);
+    color: #F2F3ED;
+    border-color: var(--ink);
+  }
+  .btn.primary:hover { background: #2F473B; }
+  .btn.active-pill {
+    background: rgba(156, 194, 154, 0.35);
+    border-color: rgba(36, 55, 45, 0.25);
+  }
+  .btn.export-btn {
+    background: rgba(227, 201, 160, 0.35);
+  }
+  .btn.export-btn:hover {
+    background: rgba(227, 201, 160, 0.58);
+  }
+  .time-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 0 6px;
+    min-width: 112px;
+    text-align: center;
+  }
+  .chapter-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  @media (max-width: 960px) {
+    .chapter-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px) {
+    .chapter-strip { grid-template-columns: 1fr; }
+  }
+  .ch-card {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 13px 14px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+  }
+  .ch-card.active {
+    border-color: var(--terracotta);
+    background: #FFFFFF;
+  }
+  .ch-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ch-num {
+    background: #F2F3ED;
+    color: var(--ink);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .ch-card.active .ch-num {
+    background: rgba(207, 138, 104, 0.22);
+    color: #8E4B2D;
+  }
+  .ch-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .ch-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .ch-actions .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 6px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+  .kbd-hint {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(36, 55, 45, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 22px 24px;
+    box-shadow: 0 24px 60px rgba(36, 55, 45, 0.22);
+    border: 1px solid var(--border);
+  }
+  .modal h3 {
+    margin: 0 0 6px;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--ink);
+  }
+  .modal p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .prog-track {
+    height: 10px;
+    background: #ECEFE4;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 14px 0 10px;
+  }
+  .prog-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--terracotta);
+    border-radius: 999px;
+    transition: width 0.08s linear;
+  }
+  .modal-stats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .modal-note {
+    background: #F6F7F1;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink);
+    margin: 10px 0 14px;
+    border: 1px solid var(--border);
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink);
+    color: #F2F3ED;
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 120;
+    box-shadow: 0 8px 24px rgba(36,55,45,0.2);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .selftest-err {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: #C55A4B;
+    color: #FFFFFF;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    z-index: 200;
+    box-shadow: 0 6px 18px rgba(197, 90, 75, 0.3);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-kicker">MANTIKSAL TASARIM • BÖLÜM 2 • KISIM 1/2</span>
+      <h1 class="brand-title">Boole Cebri ve Sadeleştirme</h1>
+    </div>
+    <div class="topbar-meta" id="fontStatus">Yazı tipleri hazırlanıyor…</div>
+  </div>
+
+  <div class="stage-shell">
+    <div class="canvas-wrap">
+      <canvas id="stage" width="1280" height="720"></canvas>
+    </div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <button class="btn primary" id="btnPlay">▶ Oynat</button>
+      <button class="btn" id="btnBack">↺ -5 sn</button>
+      <button class="btn" id="btnFwd">+5 sn ↻</button>
+      <span class="time-readout" id="timeReadout">00:00 / 00:00</span>
+      <button class="btn" id="btnSpeed">1×</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="btn" id="btnNar">🗣️ Anlatım: Kapalı</button>
+      <button class="btn active-pill" id="btnSfx">🔊 SFX: Açık</button>
+      <button class="btn active-pill" id="btnSub">💬 Altyazı: Açık</button>
+      <button class="btn export-btn" id="btnExportFull">⬇ Tam Video MP4</button>
+      <button class="btn export-btn" id="btnExportAll">⬇ Tümünü İndir (4 MP4)</button>
+    </div>
+  </div>
+
+  <div class="chapter-strip" id="chapterStrip"></div>
+
+  <div class="kbd-hint">
+    Kısayollar: [Space] Oynat/Duraklat • [← / →] ±5 sn • [5–8] Bölüme atla • [N] Anlatım • [M] SFX • [C] Altyazı
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportModal">
+  <div class="modal">
+    <h3 id="exportTitle">MP4 Dışa Aktarılıyor</h3>
+    <p id="exportSubtext">Kare kare deterministik kodlama hazırlanıyor…</p>
+    <div class="prog-track"><div class="prog-fill" id="exportBar"></div></div>
+    <div class="modal-stats">
+      <span id="exportPct">%0</span>
+      <span id="exportFrames">0 / 0 kare</span>
+    </div>
+    <div class="modal-note" id="exportMethodNote"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btnCancelExport">İptal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="narration-data">
+[
+  {"id":"c1b00","chapter":1,"text":"","seconds":1.4},
+  {"id":"c1b01","chapter":1,"text":"x artı y z eşittir x artı y çarpı x artı z, doğru mu?","seconds":4.4},
+  {"id":"c1b02","chapter":1,"text":"Sıradan cebirde bir artı altı yedi, üç çarpı dört on ikidir. Boole'da ise hep eşittir.","seconds":6.6},
+  {"id":"c1b03","chapter":1,"text":"Sekiz satırlık doğruluk tablosunda iki sütun bütün satırlarda birebir aynı çıkar.","seconds":6.4},
+  {"id":"c1b04","chapter":1,"text":"Boole cebrinde yalnız sıfır ve bir var. Shannon bunu bin dokuz yüz otuz sekizde anahtarlara uyguladı.","seconds":7.4},
+  {"id":"c1b05","chapter":1,"text":"Kuralımız: postüla ispatsız kabul edilir. Teorem ise postülalardan ispatlanır.","seconds":6.1},
+  {"id":"c1b06","chapter":1,"text":"Postüla bir, kapalılık: sıfır ve birle yapılan işlemin sonucu hep sıfır ya da birdir.","seconds":6.5},
+  {"id":"c1b07","chapter":1,"text":"Postüla iki, etkisiz eleman: x artı sıfır ve x çarpı bir yine x verir.","seconds":5.9},
+  {"id":"c1b08","chapter":1,"text":"Postüla üç, değişme: x artı y eşittir y artı x. Çarpmada da sıra değişebilir.","seconds":6.2},
+  {"id":"c1b09","chapter":1,"text":"Postüla dört, dağılma: VEYA işlemi de VE üzerine dağılır. Boole farkı buradadır.","seconds":6.2},
+  {"id":"c1b10","chapter":1,"text":"Postüla beş, tümleyen: x artı x üssü bir, x çarpı x üssü sıfırdır.","seconds":5.5},
+  {"id":"c1b11","chapter":1,"text":"Postüla altı: kümede birbirinden farklı en az iki eleman vardır, bir eşit değildir sıfır.","seconds":6.6},
+  {"id":"c1b12","chapter":1,"text":"Sıradan cebirden fark bir: birleşme postüla değildir ama diğerlerinden teoremle türetilir.","seconds":6.7},
+  {"id":"c1b13","chapter":1,"text":"Fark iki: artı işareti çarpma üzerine dağılır. Bir artı bir de yine bir eder.","seconds":6.0},
+  {"id":"c1b14","chapter":1,"text":"Fark üç: ters eleman yoktur. Bu yüzden Boole cebrinde çıkarma ve bölme tanımlı değildir.","seconds":6.8},
+  {"id":"c1b15","chapter":1,"text":"Yoklama sorusu! Aşağıdakilerden hangisi Boole cebrinde tanımlı değildir?","seconds":5.6},
+  {"id":"c1b16","chapter":1,"text":"","seconds":4.0},
+  {"id":"c1b17","chapter":1,"text":"Cevap B, çıkarma ve bölme! Çünkü toplamaya ve çarpmaya göre ters eleman yoktur.","seconds":6.2},
+  {"id":"c1b18","chapter":1,"text":"A tümleyen, C dağılma, D etkisiz eleman ve E değişme postülalarda doğrudan tanımlıdır.","seconds":6.5},
+  {"id":"c1b19","chapter":1,"text":"Tuzak: x artı y eşittir x artı z ise y eşittir z diyemezsin! Bir artı sıfır da bir, bir artı bir de bir.","seconds":7.8},
+  {"id":"c1b20","chapter":1,"text":"","seconds":1.2},
+
+  {"id":"c2b00","chapter":2,"text":"","seconds":1.3},
+  {"id":"c2b01","chapter":2,"text":"Bir kuralı öğrenince ikincisi bedava mı?","seconds":3.5},
+  {"id":"c2b02","chapter":2,"text":"Düalite ilkesi: artı ile noktayı, sıfır ile biri karşılıklı değiştir. İkinci kural bedava gelir.","seconds":7.2},
+  {"id":"c2b03","chapter":2,"text":"Dikkat: düal alırken değişkenler tümlenmez. Değişken tümlenirse düal değil tümleyen çıkar.","seconds":7.0},
+  {"id":"c2b04","chapter":2,"text":"Teorem bir: x artı x yine x, düali x çarpı x yine x.","seconds":4.5},
+  {"id":"c2b05","chapter":2,"text":"Teorem iki: x artı bir bir, x çarpı sıfır sıfır. Teorem üç: çift tümleyen x'tir.","seconds":6.3},
+  {"id":"c2b06","chapter":2,"text":"Teorem dört, birleşme: parantezler VEYA ve VE içinde serbestçe kayabilir.","seconds":5.8},
+  {"id":"c2b07","chapter":2,"text":"Teorem beş, DeMorgan: parantez dışındaki tümleyen içeri girerken işlemi ters çevirir.","seconds":6.5},
+  {"id":"c2b08","chapter":2,"text":"Teorem altı, soğurma: x artı x y yine x, düali x çarpı x artı y yine x.","seconds":6.0},
+  {"id":"c2b09","chapter":2,"text":"Soğurmayı ispatlayalım. Adım bir: x yerine x çarpı bir yaz.","seconds":4.8},
+  {"id":"c2b10","chapter":2,"text":"Adım iki: ortak çarpan x parantezine al, içeride bir artı y kalır.","seconds":5.3},
+  {"id":"c2b11","chapter":2,"text":"Adım üç: bir artı y birdir. Sonuç x! Doğruluk tablosu da aynı sütunu verir.","seconds":6.0},
+  {"id":"c2b12","chapter":2,"text":"DeMorgan tablosu: x artı y tümleyeni ile x üssü y üssü dört satırda aynı, bir sıfır sıfır sıfır.","seconds":7.2},
+  {"id":"c2b13","chapter":2,"text":"İşlem önceliği: önce parantez, sonra DEĞİL, sonra VE, en son VEYA hesaplanır.","seconds":6.0},
+  {"id":"c2b14","chapter":2,"text":"Hoca üç Kasım'da: teoremleri bilmezseniz şıklardaki denklemi indirgeyemezsiniz. Belki beş puanlık soru olabilir.","seconds":6.8},
+  {"id":"c2b15","chapter":2,"text":"Sen dene! x artı bir ve x çarpı x üssü kaça eşittir?","seconds":4.4},
+  {"id":"c2b16","chapter":2,"text":"","seconds":5.0},
+  {"id":"c2b17","chapter":2,"text":"x artı bir birdir, çünkü bir ile VEYA hep bir. x çarpı x üssü ise sıfırdır.","seconds":6.0},
+  {"id":"c2b18","chapter":2,"text":"","seconds":1.2},
+
+  {"id":"c3b00","chapter":3,"text":"","seconds":1.3},
+  {"id":"c3b01","chapter":3,"text":"Hoca üç Kasım'da dedi ki: teoremleri bilmezseniz şıklardaki denklemi indirgeyemezsiniz.","seconds":6.6},
+  {"id":"c3b02","chapter":3,"text":"Dört terimli uzun bir ifade tek bir harfe nasıl iner?","seconds":4.4},
+  {"id":"c3b03","chapter":3,"text":"Kuralımız: ortak çarpanı dışarı al, x artı x üssünü bir yap, sadeleştir.","seconds":5.7},
+  {"id":"c3b04","chapter":3,"text":"Alıştırma iki nokta bir. Dört terimde de z var, z'yi dışarı alalım.","seconds":5.4},
+  {"id":"c3b05","chapter":3,"text":"Parantez içini grupla: x üssü parantezinde y üssü artı y, artı x parantezinde y artı y üssü.","seconds":6.9},
+  {"id":"c3b06","chapter":3,"text":"Beşinci postüla ile y üssü artı y bir olur. İçeride x üssü artı x kalır.","seconds":6.1},
+  {"id":"c3b07","chapter":3,"text":"x üssü artı x de birdir. Sonuç z çarpı bir, yani yalnızca z.","seconds":5.1},
+  {"id":"c3b08","chapter":3,"text":"Sağlama: sekiz satırlık tabloda birler tam z eşittir bir olan dört satırdadır.","seconds":6.2},
+  {"id":"c3b09","chapter":3,"text":"Örnek iki nokta bir. İlk kalıp: x çarpı x üssü artı y, sıfır artı x y'den x y çıkar.","seconds":6.4},
+  {"id":"c3b10","chapter":3,"text":"İkinci kalıp: x artı x üssü y, dağılma yasasıyla bir çarpı x artı y, yani x artı y.","seconds":6.4},
+  {"id":"c3b11","chapter":3,"text":"Üçüncü kalıp: x artı y çarpı x artı y üssü, x artı y y üssü sıfırdan x çıkar.","seconds":6.3},
+  {"id":"c3b12","chapter":3,"text":"Devre maliyeti: F iki, üç terim sekiz literalden iki terim dört literale düşer. Tablo aynıdır.","seconds":7.2},
+  {"id":"c3b13","chapter":3,"text":"Konsensüs teoremi: x y artı x üssü z artı y z'de y z terimi gereksizdir, atılır.","seconds":6.5},
+  {"id":"c3b14","chapter":3,"text":"Yoklama sorusu! x çarpı x üssü artı y ifadesinin en sade biçimi nedir?","seconds":5.6},
+  {"id":"c3b15","chapter":3,"text":"","seconds":4.0},
+  {"id":"c3b16","chapter":3,"text":"Cevap B, x y! Dağıtınca x x üssü sıfır olur, geriye yalnız x y kalır.","seconds":5.8},
+  {"id":"c3b17","chapter":3,"text":"C tuzağı: x artı x üssü y kuralıyla karıştırma. A, D ve E de yanlıştır.","seconds":5.8},
+  {"id":"c3b18","chapter":3,"text":"","seconds":1.2},
+
+  {"id":"c4b00","chapter":4,"text":"","seconds":1.3},
+  {"id":"c4b01","chapter":4,"text":"Bir denklemi mantık devresine çevirmek kaç adım sürer?","seconds":4.5},
+  {"id":"c4b02","chapter":4,"text":"Kural: üssü olan değişkene DEĞİL, çarpıma VE, artıya VEYA kapısı bağlanır.","seconds":5.9},
+  {"id":"c4b03","chapter":4,"text":"F bir eşittir x artı y üssü z. Tabloda önce y üssü ve y üssü z sütunlarını dolduralım.","seconds":6.6},
+  {"id":"c4b04","chapter":4,"text":"Sonra x ile y üssü z'yi VEYA'la. Birler sıfır sıfır bir ve dört ila yedidedir.","seconds":6.4},
+  {"id":"c4b05","chapter":4,"text":"Devresi üç kapı: y'ye DEĞİL kapısı, z ile VE kapısı, x ile VEYA kapısı.","seconds":5.8},
+  {"id":"c4b06","chapter":4,"text":"Alıştırma iki nokta üç: x üssü y artı x y üssü. İki DEĞİL, iki VE, bir VEYA kapısı.","seconds":6.4},
+  {"id":"c4b07","chapter":4,"text":"Tablosu dört satır: girişler farklıysa bir, aynıysa sıfır. Sıfır bir bir sıfır.","seconds":6.1},
+  {"id":"c4b08","chapter":4,"text":"Öğrenci sınavda böyle sorar mısınız deyince hoca dedi ki: Yani sorulabilir mi? Gayet basit bir soru.","seconds":7.6},
+  {"id":"c4b09","chapter":4,"text":"Alıştırma iki nokta dört: çıkışta daire var, yani tümleyenli VEYA kapısı. Bu x y üssü artı x üssü y'nin tümleyenidir.","seconds":8.3},
+  {"id":"c4b10","chapter":4,"text":"DeMorgan'la bu x y artı x üssü y üssüne döner. Girişler aynıysa bir: bir sıfır sıfır bir.","seconds":6.8},
+  {"id":"c4b11","chapter":4,"text":"Sen dene! x eşittir bir, y eşittir sıfır için x üssü y artı x y üssü kaçtır?","seconds":6.0},
+  {"id":"c4b12","chapter":4,"text":"","seconds":5.0},
+  {"id":"c4b13","chapter":4,"text":"x üssü sıfır, y üssü birdir. Sıfır çarpı sıfır artı bir çarpı bir, sonuç birdir.","seconds":6.3},
+  {"id":"c4b14","chapter":4,"text":"Hızlı tekrar! Boole'da çıkarma ve bölme yok. Düalite artıyı noktaya, sıfırı bire çevirir.","seconds":6.8},
+  {"id":"c4b15","chapter":4,"text":"Soğurma x artı x y eşittir x. DeMorgan parantezi açar ve işlemi tersine çevirir.","seconds":6.2},
+  {"id":"c4b16","chapter":4,"text":"x çarpı x üssü artı y eşittir x y. Üssü olan girişe DEĞİL kapısı bağlanır. İkinci kısımda görüşürüz!","seconds":7.6},
+  {"id":"c4b17","chapter":4,"text":"","seconds":1.2}
+]
+</script>
+
+<script type="application/json" id="narration-audio">{}</script>
+
+<script>
+(() => {
+  'use strict';
+
+  const W = 1280;
+  const H = 720;
+  const FPS = 30;
+
+  const PALETTE = {
+    bg: '#F2F3ED',
+    card: '#FFFFFF',
+    ink: '#24372D',
+    muted: '#7C8A7E',
+    sage: '#9CC29A',
+    lavender: '#B6A2DB',
+    terracotta: '#CF8A68',
+    sand: '#E3C9A0',
+    ice: '#9FC3D6',
+    green: '#2E7D4F',
+    error: '#C55A4B',
+    softFill: '#F7F8F3'
+  };
+
+
+  // ==========================================================
+  // 2. Chapters, Easing, PRNG & Paper Texture
+  // ==========================================================
+
+  const ease = {
+    outCubic: (p) => 1 - Math.pow(1 - clamp01(p), 3),
+    inOutCubic: (p) => {
+      const t = clamp01(p);
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    },
+    outBack: (p) => {
+      const t = clamp01(p);
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    },
+    outExpo: (p) => {
+      const t = clamp01(p);
+      return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    }
+  };
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const paperCanvas = document.createElement('canvas');
+  paperCanvas.width = W;
+  paperCanvas.height = H;
+  (function buildPaperTexture() {
+    const pctx = paperCanvas.getContext('2d');
+    pctx.fillStyle = PALETTE.bg;
+    pctx.fillRect(0, 0, W, H);
+    const rng = mulberry32(20260416);
+    for (let i = 0; i < 3600; i++) {
+      const x = rng() * W;
+      const y = rng() * H;
+      const r = 0.4 + rng() * 1.1;
+      const a = 0.014 + rng() * 0.022;
+      pctx.fillStyle = rng() > 0.5 ? `rgba(36, 55, 45, ${a})` : `rgba(255, 255, 255, ${a * 1.5})`;
+      pctx.beginPath();
+      pctx.arc(x, y, r, 0, Math.PI * 2);
+      pctx.fill();
+    }
+  })();
+
+  // ==========================================================
+  // 3. Hand-drawn Sketch Helpers (Line Boil ONLY on lines, never numbers)
+  // ==========================================================
+  function getBoilOffset(seed, t, amp = 1.0) {
+    if (reducedMotion) return [0, 0];
+    const boilFrame = Math.floor(t * 8);
+    const rng = mulberry32((seed * 73856093) ^ (boilFrame * 19349663));
+    return [(rng() - 0.5) * 2 * amp, (rng() - 0.5) * 2 * amp];
+  }
+
+  function subdividePolyline(points, segLen = 14) {
+    if (points.length < 2) return points.slice();
+    const out = [points[0]];
+    for (let i = 0; i < points.length - 1; i++) {
+      const [x1, y1] = points[i];
+      const [x2, y2] = points[i + 1];
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      const steps = Math.max(1, Math.round(dist / segLen));
+      for (let s = 1; s <= steps; s++) {
+        out.push([lerp(x1, x2, s / steps), lerp(y1, y2, s / steps)]);
+      }
+    }
+    return out;
+  }
+
+  function slicePolylineByProgress(pts, progress) {
+    const p = clamp01(progress);
+    if (p <= 0 || pts.length === 0) return [];
+    if (p >= 1) return pts;
+    const lengths = [0];
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) {
+      total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      lengths.push(total);
+    }
+    if (total === 0) return [pts[0]];
+    const target = total * p;
+    const res = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      if (lengths[i] <= target) res.push(pts[i]);
+      else {
+        const prev = lengths[i - 1];
+        const seg = lengths[i] - prev;
+        const local = seg > 0 ? (target - prev) / seg : 0;
+        res.push([lerp(pts[i - 1][0], pts[i][0], local), lerp(pts[i - 1][1], pts[i][1], local)]);
+        break;
+      }
+    }
+    return res;
+  }
+
+  function drawSketchLine(ctx, points, opts = {}) {
+    const {
+      seed = 1, t = 0, progress = 1, width = 3,
+      color = PALETTE.ink, amp = 0.9, dash = null, dotTip = false, segLen = 14
+    } = opts;
+    if (points.length < 2 || progress <= 0.001) return null;
+    const sub = subdividePolyline(points, segLen);
+    const sliced = slicePolylineByProgress(sub, progress);
+    if (sliced.length < 2) return sliced[0] || null;
+
+    const jittered = sliced.map((pt, idx) => {
+      const fade = (idx === 0 || idx === sliced.length - 1) ? 0.4 : 1;
+      const [ox, oy] = getBoilOffset(seed + idx * 17, t, amp * fade);
+      return [pt[0] + ox, pt[1] + oy];
+    });
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (dash) ctx.setLineDash(dash);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(jittered[0][0], jittered[0][1]);
+    for (let i = 1; i < jittered.length; i++) ctx.lineTo(jittered[i][0], jittered[i][1]);
+    ctx.stroke();
+
+    if (!dash) {
+      ctx.globalAlpha *= 0.35;
+      ctx.lineWidth = Math.max(1, width * 0.55);
+      ctx.beginPath();
+      for (let i = 0; i < jittered.length; i++) {
+        const [ox2, oy2] = getBoilOffset(seed + 900 + i * 13, t, amp * 0.5);
+        const px = jittered[i][0] + ox2;
+        const py = jittered[i][1] + oy2;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    const tip = jittered[jittered.length - 1];
+    if (dotTip && progress > 0.02 && progress < 0.995) {
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(tip[0], tip[1], Math.max(3, width * 0.9), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return tip;
+  }
+
+  function drawSketchRect(ctx, x, y, w, h, opts = {}) {
+    return drawSketchLine(ctx, [[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]], opts);
+  }
+
+  function drawSketchEllipse(ctx, cx, cy, rx, ry, opts = {}) {
+    const { seed = 42, t = 0, progress = 1, width = 4, color = PALETTE.terracotta, turns = 1.12, amp = 1.1, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const steps = 44;
+    const pts = [];
+    const startAngle = -Math.PI * 0.65;
+    for (let i = 0; i <= steps; i++) {
+      const a = startAngle + (i / steps) * Math.PI * 2 * turns;
+      const spiral = 1 + (i / steps - 0.5) * 0.04;
+      pts.push([cx + Math.cos(a) * rx * spiral, cy + Math.sin(a) * ry * spiral]);
+    }
+    drawSketchLine(ctx, pts, { seed, t, progress, width, color, amp, dotTip, segLen: 20 });
+  }
+
+  function drawSketchArrow(ctx, x1, y1, x2, y2, curve = -26, opts = {}) {
+    const { seed = 77, t = 0, progress = 1, width = 3.2, color = PALETTE.terracotta, amp = 0.85, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+    const cpx = mx + nx * curve;
+    const cpy = my + ny * curve;
+
+    const pts = [];
+    for (let i = 0; i <= 18; i++) {
+      const u = i / 18;
+      pts.push([
+        (1 - u) * (1 - u) * x1 + 2 * (1 - u) * u * cpx + u * u * x2,
+        (1 - u) * (1 - u) * y1 + 2 * (1 - u) * u * cpy + u * u * y2
+      ]);
+    }
+    const lineProg = clamp01(progress / 0.85);
+    drawSketchLine(ctx, pts, { seed, t, progress: lineProg, width, color, amp, dotTip: dotTip && progress < 0.85, segLen: 16 });
+
+    if (progress > 0.78) {
+      const headProg = clamp01((progress - 0.78) / 0.22);
+      const angle = Math.atan2(y2 - cpy, x2 - cpx);
+      const headLen = 13 * ease.outCubic(headProg);
+      const wing1 = [x2 - Math.cos(angle - 0.48) * headLen, y2 - Math.sin(angle - 0.48) * headLen];
+      const wing2 = [x2 - Math.cos(angle + 0.48) * headLen, y2 - Math.sin(angle + 0.48) * headLen];
+      drawSketchLine(ctx, [wing1, [x2, y2], wing2], { seed: seed + 300, t, progress: 1, width, color, amp: amp * 0.65, dotTip: false });
+    }
+  }
+
+  function drawSketchWaveUnderline(ctx, x, y, w, opts = {}) {
+    const { seed = 31, t = 0, progress = 1, width = 3, color = PALETTE.terracotta } = opts;
+    if (progress <= 0.001 || w <= 2) return;
+    const pts = [];
+    const steps = Math.max(8, Math.round(w / 10));
+    for (let i = 0; i <= steps; i++) {
+      pts.push([x + (i / steps) * w, y + Math.sin(i * 1.45) * 2.5]);
+    }
+    drawSketchLine(ctx, pts, { seed, t, progress, width, color, amp: 0.65, dotTip: false, segLen: 12 });
+  }
+
+  function drawHighlighterStrip(ctx, x, y, w, h, progress, color = 'rgba(227, 201, 160, 0.72)') {
+    const p = ease.outCubic(clamp01(progress));
+    if (p <= 0.01) return;
+    ctx.save();
+    ctx.fillStyle = color;
+    roundRectPath(ctx, x - 4, y, (w + 8) * p, h, 7);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHandwrittenNote(ctx, text, x, y, progress, opts = {}) {
+    const { color = PALETTE.terracotta, size = 28, align = 'left' } = opts;
+    const p = clamp01(progress);
+    if (p <= 0.01) return;
+    const chars = Math.max(1, Math.round(text.length * p));
+    ctx.save();
+    ctx.font = `700 ${size}px 'Caveat', cursive`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text.slice(0, chars), x, y);
+    ctx.restore();
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawCard(ctx, x, y, w, h, opts = {}) {
+    const { fill = PALETTE.card, radius = 22, shadow = true, stroke = 'rgba(36, 55, 45, 0.09)' } = opts;
+    ctx.save();
+    if (shadow) {
+      ctx.shadowColor = 'rgba(36, 55, 45, 0.07)';
+      ctx.shadowBlur = 22;
+      ctx.shadowOffsetY = 7;
+    }
+    ctx.fillStyle = fill;
+    roundRectPath(ctx, x, y, w, h, radius);
+    ctx.fill();
+    if (stroke) {
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawTextFit(ctx, text, x, y, maxW, opts = {}) {
+    const {
+      family = "'Inter', sans-serif", weight = 600, size = 24, minSize = 13,
+      color = PALETTE.ink, align = 'left', baseline = 'middle', italic = false
+    } = opts;
+    ctx.save();
+    let s = size;
+    while (s > minSize) {
+      ctx.font = `${italic ? 'italic ' : ''}${weight} ${s}px ${family}`;
+      if (ctx.measureText(text).width <= maxW) break;
+      s -= 1;
+    }
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+    return s;
+  }
+
+  function drawFocusZink(ctx, cx, cy, rx, ry, localSinceStart, t, opts = {}) {
+    if (localSinceStart < 0) return;
+    const drawDur = 0.35;
+    const drawP = ease.outCubic(clamp01(localSinceStart / drawDur));
+    let scale = 1;
+    if (localSinceStart > drawDur) {
+      const popT = clamp01((localSinceStart - drawDur) / 0.22);
+      const bump = Math.sin(popT * Math.PI) * (1 - popT * 0.25);
+      scale = 1 + 0.07 * bump;
+    }
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    drawSketchEllipse(ctx, 0, 0, rx, ry, {
+      seed: opts.seed || 111, t, progress: drawP, width: opts.width || 4,
+      color: opts.color || PALETTE.terracotta, turns: 1.12, dotTip: drawP < 0.99
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 4. Continuity & Pedagogical UI Widgets
+  // ==========================================================
+  function drawPrevTopicBadge(ctx, text) {
+    if (!text) return;
+    ctx.save();
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    const full = `az önce: ${text}`;
+    const bw = Math.min(480, ctx.measureText(full).width + 26);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    roundRectPath(ctx, 44, 52, bw, 30, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(36, 55, 45, 0.14)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(full, 57, 67);
+    ctx.restore();
+  }
+
+  function drawStickyRuleCard(ctx, cfg) {
+    // docked: false => center large card; true => compact top-right sand card
+    const {
+      title = 'KURAL KARTI',
+      lines = [],
+      docked = true,
+      highlightTokens = [],
+      t = 0
+    } = cfg;
+    const x = docked ? 886 : 190;
+    const y = docked ? 46 : 165;
+    const w = docked ? 350 : 900;
+    const h = docked ? (lines.length > 2 ? 124 : 104) : 290;
+    const padX = docked ? 16 : 34;
+
+    drawCard(ctx, x, y, w, h, {
+      fill: 'rgba(227, 201, 160, 0.34)',
+      radius: docked ? 16 : 24,
+      stroke: PALETTE.sand,
+      shadow: !docked
+    });
+
+    ctx.save();
+    ctx.font = `700 ${docked ? 10 : 13}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#7E5A28';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`📌 ${title}`, x + padX, y + (docked ? 18 : 30));
+
+    const bodyStartY = y + (docked ? 42 : 90);
+    const lineGap = docked ? 26 : 54;
+    const fSize = docked ? 15 : 30;
+
+    lines.forEach((ln, idx) => {
+      const ly = bodyStartY + idx * lineGap;
+      let s = fSize;
+      while (s > (docked ? 11 : 18)) {
+        ctx.font = `600 ${s}px 'Inter', sans-serif`;
+        if (ctx.measureText(ln).width <= w - padX * 2) break;
+        s -= 1;
+      }
+      ctx.font = `600 ${s}px 'Inter', sans-serif`;
+      for (const tok of highlightTokens) {
+        const pos = ln.indexOf(tok);
+        if (pos >= 0) {
+          const preW = ctx.measureText(ln.slice(0, pos)).width;
+          const tokW = ctx.measureText(tok).width;
+          drawHighlighterStrip(ctx, x + padX + preW, ly - s * 0.65, tokW, s * 1.3, 1, 'rgba(207, 138, 104, 0.45)');
+        }
+      }
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ln, x + padX, ly);
+    });
+    ctx.restore();
+  }
+
+  function drawColorLegend(ctx, items, y = 566) {
+    // items: [{ color, label }]
+    ctx.save();
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    const pillH = 28;
+    const gap = 12;
+    const widths = items.map(it => ctx.measureText(it.label).width + 36);
+    const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
+    let curX = (W - totalW) / 2;
+
+    items.forEach((it, idx) => {
+      const pw = widths[idx];
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      roundRectPath(ctx, curX, y, pw, pillH, 999);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(36, 55, 45, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = it.color;
+      roundRectPath(ctx, curX + 10, y + 7, 14, 14, 4);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(36, 55, 45, 0.25)';
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(it.label, curX + 30, y + pillH / 2 + 0.5);
+      curX += pw + gap;
+    });
+    ctx.restore();
+  }
+
+  function drawBitBoxes(ctx, cfg) {
+    // Supports >=52px bit boxes, vertical paper flip animation, pale padding zeros, group gaps
+    const {
+      bits = [],
+      fromBits = null,       // if provided with flipProgress, animates vertical flip!
+      flipProgress = null,   // array of 0..1 per bit or single number
+      cx = W / 2,
+      y = 220,
+      boxW = 56,
+      boxH = 64,
+      gap = 7,
+      groupEvery = 0,        // extra gap every k bits from RIGHT
+      extraGap = 14,
+      paleMask = null,       // array of booleans for pale padded zeros
+      topLabels = null,
+      bottomLabels = null,
+      fills = null,
+      fromFills = null,
+      textColors = null,
+      subscript = '',
+      seed = 40,
+      t = 0
+    } = cfg;
+
+    const n = bits.length;
+    let totalW = n * boxW + Math.max(0, n - 1) * gap;
+    const extraGaps = new Array(n).fill(0);
+    if (groupEvery > 0) {
+      for (let i = 0; i < n - 1; i++) {
+        const fromRight = n - 1 - i;
+        if (fromRight > 0 && fromRight % groupEvery === 0) {
+          extraGaps[i] = extraGap;
+          totalW += extraGap;
+        }
+      }
+    }
+
+    let curX = cx - totalW / 2;
+    const boxes = [];
+
+    for (let i = 0; i < n; i++) {
+      const bx = curX;
+      const by = y;
+      const fp = Array.isArray(flipProgress) ? clamp01(flipProgress[i]) : (flipProgress !== null ? clamp01(flipProgress) : 1);
+      const showNew = fp >= 0.5;
+      const scaleY = flipProgress !== null ? Math.max(0.06, Math.abs(Math.cos(fp * Math.PI))) : 1;
+
+      const curChar = (showNew || !fromBits) ? bits[i] : fromBits[i];
+      const isPale = paleMask && paleMask[i];
+
+      const defaultFill = curChar === '1' ? 'rgba(156, 194, 154, 0.44)' : PALETTE.softFill;
+      const targetFill = Array.isArray(fills) ? fills[i] : (typeof fills === 'function' ? fills(curChar, i) : defaultFill);
+      const oldFill = fromFills ? (Array.isArray(fromFills) ? fromFills[i] : fromFills(curChar, i)) : defaultFill;
+      const fill = isPale ? 'rgba(124, 138, 126, 0.08)' : (showNew ? targetFill : oldFill);
+
+      const tc = isPale
+        ? PALETTE.muted
+        : (Array.isArray(textColors) ? textColors[i] : (typeof textColors === 'function' ? textColors(curChar, i) : (curChar === '0' ? PALETTE.muted : PALETTE.ink)));
+
+      ctx.save();
+      ctx.translate(bx + boxW / 2, by + boxH / 2);
+      ctx.scale(1, scaleY);
+      ctx.fillStyle = fill;
+      roundRectPath(ctx, -boxW / 2, -boxH / 2, boxW, boxH, 13);
+      ctx.fill();
+
+      ctx.font = `700 ${Math.round(boxH * 0.50)}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = tc;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(curChar), 0, 1);
+      ctx.restore();
+
+      drawSketchRect(ctx, bx, by, boxW, boxH, {
+        seed: seed + i * 17, t, progress: 1, width: isPale ? 1.6 : 2.2,
+        dash: isPale ? [5, 4] : null,
+        color: isPale ? 'rgba(124, 138, 126, 0.55)' : 'rgba(36, 55, 45, 0.52)',
+        amp: 0.55, segLen: 20
+      });
+
+      if (topLabels && topLabels[i]) {
+        ctx.save();
+        ctx.font = `600 15px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(topLabels[i]), bx + boxW / 2, by - 18);
+        ctx.restore();
+      }
+      if (bottomLabels && bottomLabels[i]) {
+        ctx.save();
+        ctx.font = `700 16px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.ink;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(bottomLabels[i]), bx + boxW / 2, by + boxH + 20);
+        ctx.restore();
+      }
+
+      boxes.push({ x: bx, y: by, w: boxW, h: boxH, cx: bx + boxW / 2, cy: by + boxH / 2 });
+      curX += boxW + gap + extraGaps[i];
+    }
+
+    if (subscript) {
+      ctx.save();
+      ctx.font = `700 22px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.terracotta;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(subscript, curX - gap + 8, y + boxH - 8);
+      ctx.restore();
+    }
+
+    return { boxes, leftX: cx - totalW / 2, rightX: curX - gap };
+  }
+
+  function drawGroupingBrackets(ctx, boxes, groups, opts = {}) {
+    const { side = 'bottom', offsetY = 12, t = 0 } = opts;
+    const anchors = [];
+    groups.forEach((g, gi) => {
+      if (g.visible === false) return;
+      const b1 = boxes[g.start];
+      const b2 = boxes[g.end];
+      if (!b1 || !b2) return;
+      const gp = g.progress !== undefined ? clamp01(g.progress) : 1;
+      const x1 = b1.x + 2;
+      const x2 = b2.x + b2.w - 2;
+      const midX = (x1 + x2) / 2;
+      const col = g.color || PALETTE.lavender;
+
+      if (side === 'bottom') {
+        const y0 = b1.y + b1.h + offsetY;
+        const y1 = y0 + 14;
+        drawSketchLine(ctx, [[x1, y0], [x1, y1], [x2, y1], [x2, y0]], {
+          seed: 700 + gi * 23, t, progress: ease.outCubic(gp), width: 3, color: col, amp: 0.6
+        });
+        if (gp > 0.3 && g.label !== undefined) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(182, 162, 219, 0.25)';
+          roundRectPath(ctx, midX - 24, y1 + 8, 48, 42, 12);
+          ctx.fill();
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.font = `700 28px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = PALETTE.ink;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(g.label), midX, y1 + 30);
+          ctx.restore();
+        }
+        anchors.push({ cx: midX, cy: y1 + 29, rx: 32, ry: 28 });
+      } else {
+        const y0 = b1.y - offsetY;
+        const y1 = y0 - 14;
+        drawSketchLine(ctx, [[x1, y0], [x1, y1], [x2, y1], [x2, y0]], {
+          seed: 750 + gi * 23, t, progress: ease.outCubic(gp), width: 3, color: col, amp: 0.6
+        });
+        if (gp > 0.3 && g.label !== undefined) {
+          ctx.save();
+          ctx.font = `700 26px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = col;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(String(g.label), midX, y1 - 8);
+          ctx.restore();
+        }
+        anchors.push({ cx: midX, cy: y1 - 22, rx: 30, ry: 22 });
+      }
+    });
+    return anchors;
+  }
+
+  function drawColumnArithmetic(ctx, cfg) {
+    // Supports revealing specific number of columns from right, plus terracotta carry markers
+    const {
+      x, y, w, h,
+      label = 'ALT ALTA TOPLAMA',
+      carriesTop = '',       // string matching result columns
+      row1 = '',
+      op = '+',
+      row2 = '',
+      result = '',
+      row1Note = '',
+      row2Note = '',
+      resultNote = '',
+      revealedCols = 99,     // how many columns from right are revealed
+      activeColFromRight = -1,
+      crossOutLeftCarry = false,
+      highlightLeftCarry = false,
+      endAroundArrow = false,
+      endAroundProgress = 0,
+      t = 0
+    } = cfg;
+
+    drawCard(ctx, x, y, w, h, { radius: 22 });
+    ctx.save();
+    ctx.font = `600 11px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + 24, y + 24);
+
+    const cols = Math.max(row1.length, row2.length, result.length);
+    const cellW = Math.min(46, (w - 230) / Math.max(1, cols));
+    const rightAnchor = x + w - 165;
+    const baseY = y + 114;
+    const rowGap = 54;
+
+    const r1Pad = row1.padStart(cols, ' ');
+    const r2Pad = row2.padStart(cols, ' ');
+    const resPad = result.padStart(cols, ' ');
+    const ctPad = carriesTop ? carriesTop.padStart(cols, ' ') : '';
+
+    // Carry label
+    ctx.font = `600 14px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.terracotta;
+    ctx.textAlign = 'right';
+    ctx.fillText('elde:', rightAnchor - cols * cellW - 14, baseY - 40);
+
+    // Operator
+    ctx.font = `700 30px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.terracotta;
+    ctx.textAlign = 'center';
+    ctx.fillText(op, rightAnchor - cols * cellW - 18, baseY + rowGap);
+
+    let leftCarryPos = null;
+    let rightBitPos = null;
+    let activeColBox = null;
+
+    for (let c = 0; c < cols; c++) {
+      const fromRight = cols - 1 - c;
+      const cx = rightAnchor - (fromRight + 0.5) * cellW;
+      const isVisible = fromRight < revealedCols;
+
+      if (fromRight === activeColFromRight) {
+        ctx.fillStyle = 'rgba(227, 201, 160, 0.35)';
+        roundRectPath(ctx, cx - cellW * 0.44, baseY - 56, cellW * 0.88, rowGap * 2 + 100, 10);
+        ctx.fill();
+        activeColBox = { cx, cy: baseY + rowGap, rx: cellW * 0.65, ry: rowGap + 34 };
+      }
+
+      if (ctPad[c] && ctPad[c] !== ' ' && fromRight <= revealedCols) {
+        ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+        roundRectPath(ctx, cx - 14, baseY - 54, 28, 28, 8);
+        ctx.fill();
+        ctx.font = `700 20px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#9A4826';
+        ctx.textAlign = 'center';
+        ctx.fillText(ctPad[c], cx, baseY - 40);
+      }
+
+      ctx.font = `700 32px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PALETTE.ink;
+      if (r1Pad[c] !== ' ') ctx.fillText(r1Pad[c], cx, baseY);
+      if (r2Pad[c] !== ' ') ctx.fillText(r2Pad[c], cx, baseY + rowGap);
+
+      if (isVisible && resPad[c] !== ' ') {
+        const isFirstCarry = c === 0 && highlightLeftCarry;
+        const resY = baseY + rowGap * 2 + 16;
+        if (isFirstCarry) {
+          ctx.fillStyle = 'rgba(207, 138, 104, 0.25)';
+          roundRectPath(ctx, cx - 18, resY - 22, 36, 44, 10);
+          ctx.fill();
+          ctx.fillStyle = '#9A4826';
+          leftCarryPos = { x: cx, y: resY };
+        } else {
+          ctx.fillStyle = PALETTE.green;
+        }
+        ctx.fillText(resPad[c], cx, resY);
+        if (isFirstCarry && crossOutLeftCarry) {
+          drawSketchLine(ctx, [[cx - 14, resY + 14], [cx + 14, resY - 14]], {
+            seed: 912, t, width: 3.5, color: PALETTE.error
+          });
+        }
+      }
+      if (fromRight === 0) rightBitPos = { x: cx, y: baseY + rowGap * 2 + 16 };
+    }
+
+    const lineY = baseY + rowGap * 1.5 + 4;
+    drawSketchLine(ctx, [[rightAnchor - cols * cellW - 22, lineY], [rightAnchor + 8, lineY]], {
+      seed: 620, t, width: 2.8, color: PALETTE.ink, amp: 0.6
+    });
+
+    ctx.font = `600 17px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    if (row1Note) ctx.fillText(row1Note, rightAnchor + 14, baseY);
+    if (row2Note) ctx.fillText(row2Note, rightAnchor + 14, baseY + rowGap);
+    if (resultNote && revealedCols >= cols) {
+      ctx.fillStyle = PALETTE.green;
+      ctx.fillText(resultNote, rightAnchor + 14, baseY + rowGap * 2 + 16);
+    }
+
+    if (endAroundArrow && leftCarryPos && rightBitPos && endAroundProgress > 0.02) {
+      drawSketchArrow(ctx, leftCarryPos.x, leftCarryPos.y + 24, rightBitPos.x, rightBitPos.y + 26, -52, {
+        seed: 677, t, progress: endAroundProgress, width: 3.4, color: PALETTE.terracotta
+      });
+    }
+    ctx.restore();
+    return { leftCarryPos, rightBitPos, activeColBox };
+  }
+
+  function drawCountdownRing(ctx, cx, cy, progress, totalSec) {
+    const rem = Math.ceil((1 - clamp01(progress)) * totalSec);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(36, 55, 45, 0.14)';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = PALETTE.terracotta;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - clamp01(progress)));
+    ctx.stroke();
+
+    ctx.font = `700 28px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(Math.max(1, rem)), cx, cy + 1);
+    ctx.restore();
+  }
+
+  function drawIntroCard(ctx, chMeta, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.45));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 20);
+    ctx.scale(lerp(0.92, 1, p), lerp(0.92, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.25);
+
+    drawCard(ctx, -400, -155, 800, 310, { radius: 24 });
+
+    ctx.fillStyle = chMeta.accent;
+    roundRectPath(ctx, -84, -106, 168, 32, 999);
+    ctx.fill();
+    ctx.font = `700 13px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num}`, 0, -90);
+
+    drawTextFit(ctx, chMeta.title, 0, -12, 720, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 54, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[-150, 40], [150, 40]], {
+      seed: 10 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.65)), width: 3.5, color: chMeta.accent
+    });
+
+    if (META.ilkBolumNotu && chMeta.num === CHAPTER_META[0].num) {
+      ctx.font = `600 15px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(META.ilkBolumNotu, 0, 82);
+      ctx.font = `500 13px 'Inter', sans-serif`;
+      ctx.fillText(META.kartKunye, 0, 114);
+    } else {
+      ctx.font = `500 15px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(META.kartKunye, 0, 88);
+    }
+    ctx.restore();
+  }
+
+  function drawOutroCard(ctx, chMeta, lt, t) {
+    const p = ease.outCubic(clamp01(lt / 0.35));
+    ctx.save();
+    ctx.globalAlpha = p;
+    drawCard(ctx, W / 2 - 400, H / 2 - 145, 800, 290, { radius: 24 });
+
+    ctx.font = `600 14px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num} TAMAMLANDI`, W / 2, H / 2 - 72);
+
+    drawTextFit(ctx, chMeta.nextTitle, W / 2, H / 2 - 8, 720, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[W / 2 - 120, H / 2 + 44], [W / 2 + 120, H / 2 + 44]], {
+      seed: 90 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.6)), width: 3, color: PALETTE.sage
+    });
+    ctx.restore();
+  }
+
+  function drawHookQuestion(ctx, question, badge, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.42));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 34);
+    ctx.scale(lerp(0.9, 1, p), lerp(0.9, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.2);
+
+    ctx.fillStyle = 'rgba(227, 201, 160, 0.5)';
+    roundRectPath(ctx, -190, -124, 380, 32, 999);
+    ctx.fill();
+    ctx.font = `600 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badge, 0, -108);
+
+    ctx.font = `italic 400 52px 'Instrument Serif', serif`;
+    ctx.fillStyle = PALETTE.ink;
+    const words = question.split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+      const test = cur ? `${cur} ${w}` : w;
+      if (ctx.measureText(test).width > 940) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+
+    lines.forEach((ln, i) => {
+      ctx.fillText(ln, 0, -16 + (i - (lines.length - 1) / 2) * 64);
+    });
+
+    const lineY = lines.length * 36 + 24;
+    drawSketchWaveUnderline(ctx, -160, lineY, 320, {
+      seed: 333, t, progress: ease.inOutCubic(clamp01((lt - 0.18) / 0.55)), color: PALETTE.terracotta, width: 3.5
+    });
+    ctx.restore();
+  }
+
+  function drawExam5Options(ctx, cfg) {
+    // 5-option exam layout strictly above y=580 so bottom 110px subtitle zone stays untouched
+    const {
+      question = '',
+      options = [],     // [{ key:'A'..'E', text:'...', note:'...' }]
+      correctKey = 'B',
+      mode = 'q',       // 'q' | 'wait' | 'a' | 'traps'
+      focusWrongKeys = [], // keys highlighted in 'traps' mode
+      p = 0,
+      lt = 0,
+      t = 0,
+      badgeText = ''
+    } = cfg;
+
+    // Top Question Banner: y=56..154
+    drawCard(ctx, 64, 54, 1152, 98, { radius: 20 });
+    ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+    roundRectPath(ctx, 88, 68, 116, 24, 999);
+    ctx.fill();
+    ctx.font = `700 11px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#8E4B2D';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SINAV ANI', 146, 80);
+
+    if (badgeText) {
+      ctx.font = `700 12px 'JetBrains Mono', monospace`;
+      const bw = ctx.measureText(badgeText).width + 26;
+      ctx.fillStyle = 'rgba(227, 201, 160, 0.55)';
+      roundRectPath(ctx, 218, 66, bw, 28, 999);
+      ctx.fill();
+      ctx.fillStyle = PALETTE.ink;
+      ctx.fillText(badgeText, 218 + bw / 2, 80);
+    }
+
+    drawTextFit(ctx, question, 88, 122, 960, {
+      family: "'Inter', sans-serif", weight: 700, size: 22, minSize: 15, align: 'left'
+    });
+
+    if (mode === 'wait') {
+      drawCountdownRing(ctx, 1156, 103, p, 4);
+    } else if (mode === 'a' || mode === 'traps') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(46, 125, 79, 0.14)';
+      roundRectPath(ctx, 1068, 80, 124, 46, 14);
+      ctx.fill();
+      ctx.strokeStyle = PALETTE.green;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = `700 17px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.green;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`CEVAP ${correctKey}`, 1130, 103);
+      ctx.restore();
+    }
+
+    // 5 options: A, B (row 0), C, D (row 1), E (row 2 left) — total y=168..574
+    const cardW = 562, cardH = 122, gapX = 28, gapY = 14;
+    const startX = 64, startY = 168;
+    let focusTarget = null;
+
+    options.forEach((opt, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const ox = startX + col * (cardW + gapX);
+      const oy = startY + row * (cardH + gapY);
+      const isCorrect = opt.key === correctKey;
+      const isWrongFocused = focusWrongKeys.includes(opt.key);
+
+      let alpha = 1;
+      let stroke = 'rgba(36, 55, 45, 0.09)';
+      if (mode === 'a') {
+        alpha = isCorrect ? 1 : 0.62;
+        if (isCorrect) stroke = PALETTE.green;
+      } else if (mode === 'traps') {
+        alpha = (isWrongFocused || isCorrect) ? 1 : 0.45;
+        if (isWrongFocused) stroke = PALETTE.error;
+        else if (isCorrect) stroke = PALETTE.green;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      drawCard(ctx, ox, oy, cardW, cardH, { radius: 18, stroke });
+
+      ctx.fillStyle = isCorrect && (mode === 'a' || mode === 'traps')
+        ? PALETTE.green
+        : (isWrongFocused ? PALETTE.error : PALETTE.ink);
+      roundRectPath(ctx, ox + 18, oy + 18, 38, 38, 10);
+      ctx.fill();
+      ctx.font = `700 18px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(opt.key, ox + 37, oy + 37);
+
+      drawTextFit(ctx, opt.text, ox + 68, oy + 37, cardW - 86, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 22, minSize: 13, align: 'left'
+      });
+
+      const showNote = (mode === 'a' && isCorrect) || (mode === 'traps' && (isWrongFocused || (opt.showInTraps && opt.note)));
+      if (showNote && opt.note) {
+        drawTextFit(ctx, opt.note, ox + 20, oy + 88, cardW - 40, {
+          family: "'Inter', sans-serif",
+          weight: 600,
+          size: 16,
+          minSize: 12,
+          color: isCorrect ? PALETTE.green : PALETTE.error,
+          align: 'left'
+        });
+      }
+      ctx.restore();
+
+      if ((mode === 'a' && isCorrect) || (mode === 'traps' && isWrongFocused && !focusTarget)) {
+        focusTarget = { cx: ox + cardW / 2, cy: oy + cardH / 2, rx: cardW / 2 + 6, ry: cardH / 2 + 6, col: isCorrect ? PALETTE.green : PALETTE.error };
+      }
+    });
+
+    // Right side summary note in row 2 when in answer/traps mode
+    if ((mode === 'a' || mode === 'traps') && options.length === 5) {
+      drawCard(ctx, startX + cardW + gapX, startY + 2 * (cardH + gapY), cardW, cardH, {
+        radius: 18, fill: 'rgba(227, 201, 160, 0.25)', stroke: PALETTE.sand, shadow: false
+      });
+      drawTextFit(ctx, mode === 'a' ? 'Doğru cevabı anla, sonra tuzakları gör' : 'Her yanlış şıkkın hata kaynağı', startX + cardW + gapX + 24, startY + 2 * (cardH + gapY) + 40, cardW - 48, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 14, color: '#7E5A28'
+      });
+      const focusOpt = options.find(o => focusWrongKeys.includes(o.key)) || options.find(o => o.key === correctKey);
+      if (focusOpt && focusOpt.note) {
+        drawTextFit(ctx, `${focusOpt.key}: ${focusOpt.note}`, startX + cardW + gapX + 24, startY + 2 * (cardH + gapY) + 82, cardW - 48, {
+          size: 17, minSize: 13, color: PALETTE.ink
+        });
+      }
+    }
+
+    if (focusTarget) {
+      drawFocusZink(ctx, focusTarget.cx, focusTarget.cy, focusTarget.rx, focusTarget.ry, lt, t, {
+        color: focusTarget.col, width: 4
+      });
+    }
+  }
+
+  // ==========================================================
+  // 5. Beat Specs & Timeline Builder
+  // ==========================================================
+
+  let TIMELINE = { beats: [], chapters: [], duration: 0, sfxEvents: [], narrationAudio: null };
+
+  function buildTimeline() {
+    const rawData = JSON.parse(document.getElementById('narration-data').textContent.trim() || '[]');
+    let rawAudio = {};
+    try { rawAudio = JSON.parse(document.getElementById('narration-audio').textContent.trim() || '{}'); } catch (e) { rawAudio = {}; }
+
+    const hasAudioOffsets = rawAudio && rawAudio.src && Array.isArray(rawAudio.offsets);
+    let cursor = 0;
+    const beats = [];
+    const sfxEvents = [];
+
+    rawData.forEach((item, idx) => {
+      let dur = Number(item.seconds) || 3.0;
+      let audioSlice = null;
+      if (hasAudioOffsets && rawAudio.offsets[idx]) {
+        const [s, e] = rawAudio.offsets[idx];
+        if (typeof s === 'number' && typeof e === 'number' && e - s > 0.25) {
+          dur = e - s;
+          audioSlice = [s, e];
+        }
+      }
+      const spec = BEAT_SPECS[item.id] || { scene: 'intro', sfx: [] };
+      const beat = {
+        index: idx, id: item.id, chapter: item.chapter, text: item.text || '',
+        start: cursor, end: cursor + dur, duration: dur, scene: spec.scene, audioSlice
+      };
+      beats.push(beat);
+      (spec.sfx || []).forEach((ev, sIdx) => {
+        sfxEvents.push({
+          id: `${item.id}_sfx_${sIdx}`,
+          t: cursor + clamp01(ev.at) * dur,
+          type: ev.type, gain: ev.gain ?? 0.8, dur: ev.dur ?? 0.3
+        });
+      });
+      cursor += dur;
+    });
+
+    const chapters = CHAPTER_META.map((meta, mIdx) => {
+      const chBeats = beats.filter(b => b.chapter === meta.num);
+      const start = chBeats.length ? chBeats[0].start : 0;
+      const end = chBeats.length ? chBeats[chBeats.length - 1].end : 0;
+      const nextMeta = CHAPTER_META[mIdx + 1] || null;
+      return {
+        ...meta, start, end, duration: end - start,
+        nextTitle: nextMeta ? `Sıradaki: Bölüm ${nextMeta.num} — ${nextMeta.title}` : META.sonNot
+      };
+    });
+
+    sfxEvents.sort((a, b) => a.t - b.t);
+    TIMELINE = { beats, chapters, duration: cursor, sfxEvents, narrationAudio: (rawAudio && rawAudio.src) ? rawAudio : null };
+  }
+
+  // ===== İÇERİK: mt2a =====
+  const META = {
+    onek: 'mt2a',
+    kartKunye: 'Mantıksal Tasarım • Bölüm 2 • Kısım 1/2',
+    ilkBolumNotu: '',
+    sonNot: 'Sıradaki: 2. kısım — Tümleyen, minterm ve Σ↔Π'
+  };
+
+  const CHAPTER_META = [
+    { num: 1, title: 'Boole cebri neden farklı?', filename: 'mt2a-01-boole-cebri-farki.mp4', accent: PALETTE.sage },
+    { num: 2, title: 'Düalite ve teoremler', filename: 'mt2a-02-dualite-teoremler.mp4', accent: PALETTE.lavender },
+    { num: 3, title: 'Sadeleştirme', filename: 'mt2a-03-sadelestirme.mp4', accent: PALETTE.terracotta },
+    { num: 4, title: 'Fonksiyon → tablo → devre', filename: 'mt2a-04-fonksiyon-tablo-devre.mp4', accent: PALETTE.ice }
+  ];
+
+  const BEAT_SPECS = {
+    // Bölüm 1
+    c1b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.6 }] },
+    c1b01: { scene: 'c1_hook', sfx: [{ at: 0.06, type: 'riser', gain: 0.65 }, { at: 0.3, type: 'pop', gain: 0.8 }] },
+    c1b02: { scene: 'c1_ordinary_vs_bool', sfx: [{ at: 0.14, type: 'buzz', gain: 0.7 }, { at: 0.58, type: 'zink', gain: 0.85 }] },
+    c1b03: { scene: 'c1_dist_table', sfx: [{ at: 0.15, type: 'tick', gain: 0.6 }, { at: 0.45, type: 'tick', gain: 0.6 }, { at: 0.78, type: 'ding', gain: 0.9 }] },
+    c1b04: { scene: 'c1_sezgi_switch', sfx: [{ at: 0.15, type: 'pop', gain: 0.75 }, { at: 0.55, type: 'tick', gain: 0.6 }, { at: 0.82, type: 'zink', gain: 0.8 }] },
+    c1b05: { scene: 'c1_rule', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.65 }, { at: 0.52, type: 'zink', gain: 0.85 }] },
+    c1b06: { scene: 'c1_post1', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'tick', gain: 0.6 }] },
+    c1b07: { scene: 'c1_post2', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'tick', gain: 0.6 }] },
+    c1b08: { scene: 'c1_post3', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'tick', gain: 0.6 }] },
+    c1b09: { scene: 'c1_post4', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.9 }] },
+    c1b10: { scene: 'c1_post5', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'tick', gain: 0.6 }] },
+    c1b11: { scene: 'c1_post6', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.65, type: 'ding', gain: 0.9 }] },
+    c1b12: { scene: 'c1_diff1_assoc', sfx: [{ at: 0.14, type: 'whoosh', gain: 0.65 }, { at: 0.55, type: 'pop', gain: 0.75 }] },
+    c1b13: { scene: 'c1_diff2_dist', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'zink', gain: 0.85 }] },
+    c1b14: { scene: 'c1_diff3_noters', sfx: [{ at: 0.2, type: 'buzz', gain: 0.75 }, { at: 0.65, type: 'zink', gain: 0.9 }] },
+    c1b15: { scene: 'c1_exam_q', sfx: [{ at: 0.1, type: 'zink', gain: 0.85 }, { at: 0.5, type: 'pop', gain: 0.65 }] },
+    c1b16: { scene: 'c1_exam_wait', sfx: [{ at: 0.08, type: 'tick', gain: 0.38 }, { at: 0.33, type: 'tick', gain: 0.38 }, { at: 0.58, type: 'tick', gain: 0.38 }, { at: 0.83, type: 'tick', gain: 0.38 }] },
+    c1b17: { scene: 'c1_exam_a', sfx: [{ at: 0.12, type: 'ding', gain: 1.0 }, { at: 0.65, type: 'pop', gain: 0.65 }] },
+    c1b18: { scene: 'c1_exam_traps', sfx: [{ at: 0.15, type: 'buzz', gain: 0.65 }, { at: 0.55, type: 'tick', gain: 0.6 }] },
+    c1b19: { scene: 'c1_trap_cancel', sfx: [{ at: 0.16, type: 'buzz', gain: 0.85 }, { at: 0.62, type: 'zink', gain: 0.9 }] },
+    c1b20: { scene: 'outro', sfx: [] },
+
+    // Bölüm 2
+    c2b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.6 }] },
+    c2b01: { scene: 'c2_hook', sfx: [{ at: 0.06, type: 'riser', gain: 0.65 }, { at: 0.32, type: 'pop', gain: 0.8 }] },
+    c2b02: { scene: 'c2_dual_sezgi', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.52, type: 'scribble', gain: 0.65, dur: 0.4 }, { at: 0.8, type: 'zink', gain: 0.85 }] },
+    c2b03: { scene: 'c2_dual_rule', sfx: [{ at: 0.16, type: 'buzz', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c2b04: { scene: 'c2_thm_t1', sfx: [{ at: 0.2, type: 'pop', gain: 0.75 }, { at: 0.65, type: 'tick', gain: 0.6 }] },
+    c2b05: { scene: 'c2_thm_t2t3', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'tick', gain: 0.6 }] },
+    c2b06: { scene: 'c2_thm_t4', sfx: [{ at: 0.2, type: 'pop', gain: 0.75 }, { at: 0.65, type: 'tick', gain: 0.6 }] },
+    c2b07: { scene: 'c2_thm_t5', sfx: [{ at: 0.2, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'zink', gain: 0.9 }] },
+    c2b08: { scene: 'c2_thm_t6', sfx: [{ at: 0.2, type: 'pop', gain: 0.75 }, { at: 0.68, type: 'ding', gain: 0.9 }] },
+    c2b09: { scene: 'c2_abs_step1', sfx: [{ at: 0.2, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'tick', gain: 0.6 }] },
+    c2b10: { scene: 'c2_abs_step2', sfx: [{ at: 0.2, type: 'tick', gain: 0.65 }, { at: 0.62, type: 'pop', gain: 0.75 }] },
+    c2b11: { scene: 'c2_abs_step3', sfx: [{ at: 0.25, type: 'zink', gain: 0.85 }, { at: 0.72, type: 'ding', gain: 0.95 }] },
+    c2b12: { scene: 'c2_demorgan_table', sfx: [{ at: 0.18, type: 'tick', gain: 0.65 }, { at: 0.52, type: 'tick', gain: 0.65 }, { at: 0.8, type: 'ding', gain: 0.9 }] },
+    c2b13: { scene: 'c2_precedence', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.48, type: 'tick', gain: 0.6 }, { at: 0.78, type: 'zink', gain: 0.85 }] },
+    c2b14: { scene: 'c2_hoca_note', sfx: [{ at: 0.14, type: 'whoosh', gain: 0.7 }, { at: 0.5, type: 'zink', gain: 0.95 }] },
+    c2b15: { scene: 'c2_try_q', sfx: [{ at: 0.14, type: 'pop', gain: 0.8 }] },
+    c2b16: { scene: 'c2_try_wait', sfx: [{ at: 0.05, type: 'tick', gain: 0.35 }, { at: 0.25, type: 'tick', gain: 0.35 }, { at: 0.45, type: 'tick', gain: 0.35 }, { at: 0.65, type: 'tick', gain: 0.35 }, { at: 0.85, type: 'tick', gain: 0.35 }] },
+    c2b17: { scene: 'c2_try_a', sfx: [{ at: 0.14, type: 'ding', gain: 0.95 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c2b18: { scene: 'outro', sfx: [] },
+
+    // Bölüm 3
+    c3b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.6 }] },
+    c3b01: { scene: 'c3_hoca_quote', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.75 }, { at: 0.48, type: 'zink', gain: 1.0 }] },
+    c3b02: { scene: 'c3_hook', sfx: [{ at: 0.06, type: 'riser', gain: 0.65 }, { at: 0.3, type: 'pop', gain: 0.8 }] },
+    c3b03: { scene: 'c3_rule', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.65 }, { at: 0.55, type: 'zink', gain: 0.85 }] },
+    c3b04: { scene: 'c3_ex21_s1', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'tick', gain: 0.65 }] },
+    c3b05: { scene: 'c3_ex21_s2', sfx: [{ at: 0.18, type: 'tick', gain: 0.65 }, { at: 0.62, type: 'pop', gain: 0.75 }] },
+    c3b06: { scene: 'c3_ex21_s3', sfx: [{ at: 0.18, type: 'tick', gain: 0.65 }, { at: 0.65, type: 'zink', gain: 0.85 }] },
+    c3b07: { scene: 'c3_ex21_s4', sfx: [{ at: 0.25, type: 'ding', gain: 0.95 }, { at: 0.7, type: 'pop', gain: 0.65 }] },
+    c3b08: { scene: 'c3_ex21_check', sfx: [{ at: 0.2, type: 'tick', gain: 0.6 }, { at: 0.65, type: 'ding', gain: 0.9 }] },
+    c3b09: { scene: 'c3_ex21_1', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'zink', gain: 0.85 }] },
+    c3b10: { scene: 'c3_ex21_2', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'zink', gain: 0.85 }] },
+    c3b11: { scene: 'c3_ex21_3', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.65, type: 'ding', gain: 0.9 }] },
+    c3b12: { scene: 'c3_cost_f2', sfx: [{ at: 0.18, type: 'scribble', gain: 0.7, dur: 0.45 }, { at: 0.58, type: 'tick', gain: 0.6 }, { at: 0.82, type: 'ding', gain: 0.9 }] },
+    c3b13: { scene: 'c3_consensus', sfx: [{ at: 0.18, type: 'scribble', gain: 0.65, dur: 0.4 }, { at: 0.62, type: 'zink', gain: 0.9 }] },
+    c3b14: { scene: 'c3_exam_q', sfx: [{ at: 0.1, type: 'zink', gain: 0.85 }, { at: 0.5, type: 'pop', gain: 0.65 }] },
+    c3b15: { scene: 'c3_exam_wait', sfx: [{ at: 0.08, type: 'tick', gain: 0.38 }, { at: 0.33, type: 'tick', gain: 0.38 }, { at: 0.58, type: 'tick', gain: 0.38 }, { at: 0.83, type: 'tick', gain: 0.38 }] },
+    c3b16: { scene: 'c3_exam_a', sfx: [{ at: 0.12, type: 'ding', gain: 1.0 }, { at: 0.65, type: 'pop', gain: 0.65 }] },
+    c3b17: { scene: 'c3_exam_traps', sfx: [{ at: 0.14, type: 'buzz', gain: 0.75 }, { at: 0.58, type: 'buzz', gain: 0.65 }] },
+    c3b18: { scene: 'outro', sfx: [] },
+
+    // Bölüm 4
+    c4b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.6 }] },
+    c4b01: { scene: 'c4_hook', sfx: [{ at: 0.06, type: 'riser', gain: 0.65 }, { at: 0.3, type: 'pop', gain: 0.8 }] },
+    c4b02: { scene: 'c4_rule', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.65 }, { at: 0.52, type: 'zink', gain: 0.85 }] },
+    c4b03: { scene: 'c4_f1_table1', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.48, type: 'tick', gain: 0.6 }, { at: 0.78, type: 'tick', gain: 0.6 }] },
+    c4b04: { scene: 'c4_f1_table2', sfx: [{ at: 0.16, type: 'tick', gain: 0.6 }, { at: 0.48, type: 'tick', gain: 0.6 }, { at: 0.8, type: 'ding', gain: 0.9 }] },
+    c4b05: { scene: 'c4_f1_circuit', sfx: [{ at: 0.18, type: 'scribble', gain: 0.7, dur: 0.45 }, { at: 0.68, type: 'ding', gain: 0.9 }] },
+    c4b06: { scene: 'c4_ex23_circuit', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.55, type: 'scribble', gain: 0.65, dur: 0.4 }] },
+    c4b07: { scene: 'c4_ex23_table', sfx: [{ at: 0.2, type: 'tick', gain: 0.65 }, { at: 0.7, type: 'ding', gain: 0.9 }] },
+    c4b08: { scene: 'c4_hoca_quote', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.75 }, { at: 0.48, type: 'zink', gain: 1.0 }] },
+    c4b09: { scene: 'c4_ex24_circuit', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'zink', gain: 0.9 }] },
+    c4b10: { scene: 'c4_ex25_table', sfx: [{ at: 0.2, type: 'tick', gain: 0.65 }, { at: 0.72, type: 'ding', gain: 0.9 }] },
+    c4b11: { scene: 'c4_try_q', sfx: [{ at: 0.14, type: 'pop', gain: 0.8 }] },
+    c4b12: { scene: 'c4_try_wait', sfx: [{ at: 0.05, type: 'tick', gain: 0.35 }, { at: 0.25, type: 'tick', gain: 0.35 }, { at: 0.45, type: 'tick', gain: 0.35 }, { at: 0.65, type: 'tick', gain: 0.35 }, { at: 0.85, type: 'tick', gain: 0.35 }] },
+    c4b13: { scene: 'c4_try_a', sfx: [{ at: 0.15, type: 'ding', gain: 0.95 }, { at: 0.62, type: 'zink', gain: 0.85 }] },
+    c4b14: { scene: 'c4_rev1', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c4b15: { scene: 'c4_rev2', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c4b16: { scene: 'c4_rev3', sfx: [{ at: 0.16, type: 'pop', gain: 0.75 }, { at: 0.74, type: 'ding', gain: 1.0 }] },
+    c4b17: { scene: 'outro', sfx: [] }
+  };
+
+  // ==========================================================
+  // 1. Pure Boolean Logic Helpers (No manual truth tables!)
+  // ==========================================================
+  function bNot(a) { return a ? 0 : 1; }
+  function bAnd(a, b) { return (a && b) ? 1 : 0; }
+  function bOr(a, b) { return (a || b) ? 1 : 0; }
+
+  function evalF(fn, x, y, z) {
+    return fn(x ? 1 : 0, y ? 1 : 0, z ? 1 : 0) ? 1 : 0;
+  }
+
+  function truthTable(fn, n) {
+    const count = 1 << n;
+    const rows = [];
+    for (let i = 0; i < count; i++) {
+      const bits = [];
+      for (let b = n - 1; b >= 0; b--) bits.push((i >> b) & 1);
+      const x = bits[0] ?? 0;
+      const y = bits[1] ?? 0;
+      const z = bits[2] ?? 0;
+      rows.push({ idx: i, bits, x, y, z, out: evalF(fn, x, y, z) });
+    }
+    return rows;
+  }
+
+  function sameTable(fn1, fn2, n) {
+    const t1 = truthTable(fn1, n);
+    const t2 = truthTable(fn2, n);
+    if (t1.length !== t2.length) return false;
+    for (let i = 0; i < t1.length; i++) {
+      if (t1[i].out !== t2[i].out) return false;
+    }
+    return true;
+  }
+
+  function tableVector(fn, n) {
+    return truthTable(fn, n).map(r => r.out).join(',');
+  }
+
+  function oneIndices(fn, n) {
+    return truthTable(fn, n).filter(r => r.out === 1).map(r => r.idx);
+  }
+
+  // Verified Boolean functions used across chapters
+  const FNS = {
+    distL: (x, y, z) => bOr(x, bAnd(y, z)),
+    distR: (x, y, z) => bAnd(bOr(x, y), bOr(x, z)),
+    distAndL: (x, y, z) => bAnd(x, bOr(y, z)),
+    distAndR: (x, y, z) => bOr(bAnd(x, y), bAnd(x, z)),
+    varX: (x) => x,
+    varZ: (_x, _y, z) => z,
+    absL: (x, y) => bOr(x, bAnd(x, y)),
+    absDualL: (x, y) => bAnd(x, bOr(x, y)),
+    dmOrL: (x, y) => bNot(bOr(x, y)),
+    dmOrR: (x, y) => bAnd(bNot(x), bNot(y)),
+    dmAndL: (x, y) => bNot(bAnd(x, y)),
+    dmAndR: (x, y) => bOr(bNot(x), bNot(y)),
+    ex21_full: (x, y, z) => {
+      const t1 = bAnd(bNot(x), bAnd(bNot(y), z));
+      const t2 = bAnd(x, bAnd(y, z));
+      const t3 = bAnd(bNot(x), bAnd(y, z));
+      const t4 = bAnd(x, bAnd(bNot(y), z));
+      return bOr(bOr(t1, t2), bOr(t3, t4));
+    },
+    ex2_1_a: (x, y) => bAnd(x, bOr(bNot(x), y)),
+    ex2_1_a_simp: (x, y) => bAnd(x, y),
+    ex2_1_b: (x, y) => bOr(x, bAnd(bNot(x), y)),
+    ex2_1_b_simp: (x, y) => bOr(x, y),
+    ex2_1_c: (x, y) => bAnd(bOr(x, y), bOr(x, bNot(y))),
+    f2_raw: (x, y, z) => bOr(bAnd(bNot(x), bAnd(bNot(y), z)), bOr(bAnd(bNot(x), bAnd(y, z)), bAnd(x, bNot(y)))),
+    f2_simp: (x, y, z) => bOr(bAnd(bNot(x), z), bAnd(x, bNot(y))),
+    cons_full: (x, y, z) => bOr(bAnd(x, y), bOr(bAnd(bNot(x), z), bAnd(y, z))),
+    cons_simp: (x, y, z) => bOr(bAnd(x, y), bAnd(bNot(x), z)),
+    f1: (x, y, z) => bOr(x, bAnd(bNot(y), z)),
+    ex23_xor: (x, y) => bOr(bAnd(bNot(x), y), bAnd(x, bNot(y))),
+    ex24_xnor_gate: (x, y) => bNot(bOr(bAnd(x, bNot(y)), bAnd(bNot(x), y))),
+    ex24_xnor_dm: (x, y) => bOr(bAnd(x, y), bAnd(bNot(x), bNot(y)))
+  };
+
+  const DATA = {
+    ordL: 1 + 2 * 3,
+    ordR: (1 + 2) * (1 + 3),
+    distVec: tableVector(FNS.distL, 3),
+    absVec: tableVector(FNS.absL, 2),
+    dmOrVec: tableVector(FNS.dmOrL, 2),
+    ex21Ones: oneIndices(FNS.ex21_full, 3).join(','),
+    f2Ones: oneIndices(FNS.f2_raw, 3).join(','),
+    f1Ones: oneIndices(FNS.f1, 3).join(','),
+    ex23Vec: tableVector(FNS.ex23_xor, 2),
+    ex24Vec: tableVector(FNS.ex24_xnor_gate, 2),
+    try4Val: evalF(FNS.ex23_xor, 1, 0, 0)
+  };
+
+  function selfTest() {
+    const checks = [
+      ['Ord 1+2*3', DATA.ordL, 7],
+      ['Ord (1+2)*(1+3)', DATA.ordR, 12],
+      ['Post 4b sameTable', sameTable(FNS.distL, FNS.distR, 3), true],
+      ['Post 4b vector', DATA.distVec, '0,0,0,1,1,1,1,1'],
+      ['Post 4a sameTable', sameTable(FNS.distAndL, FNS.distAndR, 3), true],
+      ['Cancel trap 1+0==1+1', bOr(1, 0) === bOr(1, 1) && 0 !== 1, true],
+      ['T1a x+x=x', sameTable((x) => bOr(x, x), FNS.varX, 1), true],
+      ['T1b x*x=x', sameTable((x) => bAnd(x, x), FNS.varX, 1), true],
+      ['T2a x+1=1', sameTable((x) => bOr(x, 1), () => 1, 1), true],
+      ['T2b x*0=0', sameTable((x) => bAnd(x, 0), () => 0, 1), true],
+      ['T3 (x\')\'=x', sameTable((x) => bNot(bNot(x)), FNS.varX, 1), true],
+      ['T5a DeMorgan OR', sameTable(FNS.dmOrL, FNS.dmOrR, 2), true],
+      ['T5a vector', DATA.dmOrVec, '1,0,0,0'],
+      ['T5b DeMorgan AND', sameTable(FNS.dmAndL, FNS.dmAndR, 2), true],
+      ['T6a Absorption', sameTable(FNS.absL, FNS.varX, 2), true],
+      ['T6a vector', DATA.absVec, '0,0,1,1'],
+      ['T6b Absorption dual', sameTable(FNS.absDualL, FNS.varX, 2), true],
+      ['Alıştırma 2.1 = z', sameTable(FNS.ex21_full, FNS.varZ, 3), true],
+      ['Alıştırma 2.1 1s', DATA.ex21Ones, '1,3,5,7'],
+      ['Örnek 2.1(1) xy', sameTable(FNS.ex2_1_a, FNS.ex2_1_a_simp, 2), true],
+      ['Örnek 2.1(2) x+y', sameTable(FNS.ex2_1_b, FNS.ex2_1_b_simp, 2), true],
+      ['Örnek 2.1(3) x', sameTable(FNS.ex2_1_c, FNS.varX, 2), true],
+      ['F2 simplified', sameTable(FNS.f2_raw, FNS.f2_simp, 3), true],
+      ['F2 1s', DATA.f2Ones, '1,3,4,5'],
+      ['Consensus', sameTable(FNS.cons_full, FNS.cons_simp, 3), true],
+      ['F1 1s', DATA.f1Ones, '1,4,5,6,7'],
+      ['Alıştırma 2.3 XOR', DATA.ex23Vec, '0,1,1,0'],
+      ['Alıştırma 2.4-2.5 XNOR', sameTable(FNS.ex24_xnor_gate, FNS.ex24_xnor_dm, 2), true],
+      ['Alıştırma 2.4-2.5 vec', DATA.ex24Vec, '1,0,0,1'],
+      ['Sen dene B4 (1,0)', DATA.try4Val, 1]
+    ];
+
+    let passed = 0;
+    const fails = [];
+    for (const [name, got, exp] of checks) {
+      if (got === exp) passed++;
+      else fails.push(`${name}: got ${got}, expected ${exp}`);
+    }
+    console.log(`selfTest: ${passed}/${checks.length} OK`);
+    if (fails.length > 0) {
+      console.error('selfTest failures:', fails);
+      const badge = document.createElement('div');
+      badge.className = 'selftest-err';
+      badge.textContent = `selfTest HATA: ${passed}/${checks.length}`;
+      document.body.appendChild(badge);
+    }
+    return { passed, total: checks.length, fails };
+  }
+
+  // ==========================================================
+  // 2. Reusable Truth Table & Hand-Drawn Logic Gate Helpers
+  // ==========================================================
+  function drawTruthTable(ctx, cfg) {
+    const {
+      x, y, w,
+      headerH = 38,
+      rowH = 44,
+      cols = [],      // [{ label, widthRatio, getVal: (row) => 0|1|str, isOut, highlight }]
+      rows = [],
+      revealedRows = rows.length,
+      revealedCols = cols.length,
+      activeRow = -1,
+      t = 0,
+      seed = 400
+    } = cfg;
+
+    const totalH = headerH + rows.length * rowH;
+    drawCard(ctx, x, y, w, totalH, { radius: 18, shadow: true });
+
+    // Compute col bounds
+    const ratioSum = cols.reduce((s, c) => s + (c.widthRatio || 1), 0);
+    let curX = x;
+    const colRects = cols.map(c => {
+      const cw = (w * (c.widthRatio || 1)) / ratioSum;
+      const r = { x: curX, w: cw, cx: curX + cw / 2, col: c };
+      curX += cw;
+      return r;
+    });
+
+    // Header band
+    ctx.save();
+    ctx.fillStyle = PALETTE.ink;
+    roundRectPath(ctx, x, y, w, headerH, 16);
+    ctx.fill();
+    ctx.fillRect(x, y + headerH - 12, w, 12);
+
+    colRects.forEach((cr, ci) => {
+      if (cr.col.highlight) {
+        ctx.fillStyle = 'rgba(156, 194, 154, 0.25)';
+        ctx.fillRect(cr.x + 2, y + 3, cr.w - 4, headerH - 6);
+      }
+      drawTextFit(ctx, cr.col.label, cr.cx, y + headerH / 2 + 1, cr.w - 10, {
+        family: "'JetBrains Mono', monospace",
+        weight: 700,
+        size: Math.min(18, Math.max(12, Math.floor(headerH * 0.45))),
+        minSize: 10,
+        color: cr.col.highlight ? '#DDF0DC' : '#FFFFFF',
+        align: 'center'
+      });
+      if (ci > 0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cr.x, y + 6);
+        ctx.lineTo(cr.x, y + headerH - 4);
+        ctx.stroke();
+      }
+    });
+
+    // Rows
+    rows.forEach((row, rIdx) => {
+      const ry = y + headerH + rIdx * rowH;
+      const isRowVisible = rIdx < revealedRows;
+      if (rIdx % 2 === 1) {
+        ctx.fillStyle = 'rgba(242, 243, 237, 0.55)';
+        ctx.fillRect(x + 2, ry, w - 4, rowH);
+      }
+      if (rIdx === activeRow) {
+        ctx.fillStyle = 'rgba(227, 201, 160, 0.45)';
+        ctx.fillRect(x + 2, ry, w - 4, rowH);
+      }
+
+      colRects.forEach((cr, ci) => {
+        const isColVis = ci < revealedCols;
+        if (ci > 0) {
+          ctx.strokeStyle = 'rgba(36, 55, 45, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cr.x, ry);
+          ctx.lineTo(cr.x, ry + rowH);
+          ctx.stroke();
+        }
+        if (!isRowVisible || !isColVis) return;
+
+        const val = cr.col.getVal(row, rIdx);
+        const isOne = val === 1 || val === '1';
+        const isZero = val === 0 || val === '0';
+
+        if (cr.col.isOut || cr.col.highlight) {
+          if (isOne) {
+            ctx.fillStyle = 'rgba(156, 194, 154, 0.36)';
+            roundRectPath(ctx, cr.x + 4, ry + 3, cr.w - 8, rowH - 6, 8);
+            ctx.fill();
+          } else if (cr.col.highlight) {
+            ctx.fillStyle = 'rgba(182, 162, 219, 0.14)';
+            roundRectPath(ctx, cr.x + 4, ry + 3, cr.w - 8, rowH - 6, 8);
+            ctx.fill();
+          }
+        }
+
+        ctx.font = `${(cr.col.isOut || isOne) ? '700' : '600'} ${Math.min(24, Math.floor(rowH * 0.56))}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = isOne
+          ? ((cr.col.isOut || cr.col.highlight) ? PALETTE.green : PALETTE.ink)
+          : (isZero ? PALETTE.muted : PALETTE.ink);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(val), cr.cx, ry + rowH / 2 + 1);
+      });
+
+      if (rIdx > 0) {
+        drawSketchLine(ctx, [[x + 4, ry], [x + w - 4, ry]], {
+          seed: seed + rIdx * 7, t, width: 1, color: 'rgba(36, 55, 45, 0.08)', amp: 0.25, segLen: 40
+        });
+      }
+    });
+
+    ctx.restore();
+    return { x, y, w, h: totalH, colRects };
+  }
+
+  function drawGateAND(ctx, x, y, w, h, opts = {}) {
+    const { t = 0, seed = 100, progress = 1, fill = 'rgba(159, 195, 214, 0.26)', color = PALETTE.ink, label = 'VE' } = opts;
+    const xFlat = x + w * 0.52;
+    const r = h / 2;
+    const cy = y + r;
+    const pts = [[x, y], [xFlat, y]];
+    const arcSteps = 14;
+    for (let i = 0; i <= arcSteps; i++) {
+      const a = -Math.PI / 2 + (i / arcSteps) * Math.PI;
+      pts.push([xFlat + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    pts.push([x, y + h], [x, y]);
+
+    ctx.save();
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    drawSketchLine(ctx, pts, { seed, t, progress, width: 3, color, amp: 0.55, segLen: 16 });
+    if (label) {
+      drawTextFit(ctx, label, x + w * 0.44, cy, w * 0.65, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 15, color: PALETTE.ink, align: 'center'
+      });
+    }
+    return { inTop: [x, y + h * 0.28], inBot: [x, y + h * 0.72], inMid: [x, cy], out: [xFlat + r, cy] };
+  }
+
+  function drawGateOR(ctx, x, y, w, h, opts = {}) {
+    const { t = 0, seed = 200, progress = 1, fill = 'rgba(156, 194, 154, 0.26)', color = PALETTE.ink, label = 'VEYA', bubble = false } = opts;
+    const bodyW = bubble ? w - 16 : w;
+    const cy = y + h / 2;
+    const tipX = x + bodyW;
+    const pts = [];
+
+    // Top curve from (x, y) to (tipX, cy)
+    for (let i = 0; i <= 10; i++) {
+      const u = i / 10;
+      const px = (1 - u) * (1 - u) * x + 2 * (1 - u) * u * (x + bodyW * 0.65) + u * u * tipX;
+      const py = (1 - u) * (1 - u) * y + 2 * (1 - u) * u * (y + h * 0.05) + u * u * cy;
+      pts.push([px, py]);
+    }
+    // Bottom curve from (tipX, cy) to (x, y + h)
+    for (let i = 1; i <= 10; i++) {
+      const u = i / 10;
+      const px = (1 - u) * (1 - u) * tipX + 2 * (1 - u) * u * (x + bodyW * 0.65) + u * u * x;
+      const py = (1 - u) * (1 - u) * cy + 2 * (1 - u) * u * (y + h * 0.95) + u * u * (y + h);
+      pts.push([px, py]);
+    }
+    // Concave back from (x, y + h) to (x, y)
+    for (let i = 1; i <= 10; i++) {
+      const u = i / 10;
+      const px = (1 - u) * (1 - u) * x + 2 * (1 - u) * u * (x + bodyW * 0.28) + u * u * x;
+      const py = (1 - u) * (1 - u) * (y + h) + 2 * (1 - u) * u * cy + u * u * y;
+      pts.push([px, py]);
+    }
+
+    ctx.save();
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    drawSketchLine(ctx, pts, { seed, t, progress, width: 3, color, amp: 0.55, segLen: 16 });
+
+    if (bubble) {
+      ctx.save();
+      ctx.fillStyle = PALETTE.card;
+      ctx.beginPath();
+      ctx.arc(tipX + 8, cy, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      drawSketchEllipse(ctx, tipX + 8, cy, 7.5, 7.5, { seed: seed + 55, t, progress, width: 2.8, color, turns: 1.08, dotTip: false });
+    }
+
+    if (label) {
+      drawTextFit(ctx, label, x + bodyW * 0.48, cy, bodyW * 0.56, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 14, color: PALETTE.ink, align: 'center'
+      });
+    }
+    return {
+      inTop: [x + bodyW * 0.1, y + h * 0.28],
+      inBot: [x + bodyW * 0.1, y + h * 0.72],
+      out: [bubble ? tipX + 16 : tipX, cy]
+    };
+  }
+
+  function drawGateNOT(ctx, x, y, w, h, opts = {}) {
+    const { t = 0, seed = 300, progress = 1, fill = 'rgba(207, 138, 104, 0.24)', color = PALETTE.ink, label = "DEĞİL" } = opts;
+    const tipX = x + w - 15;
+    const cy = y + h / 2;
+    const pts = [[x, y], [tipX, cy], [x, y + h], [x, y]];
+
+    ctx.save();
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    drawSketchLine(ctx, pts, { seed, t, progress, width: 2.8, color, amp: 0.5, segLen: 16 });
+
+    ctx.save();
+    ctx.fillStyle = PALETTE.card;
+    ctx.beginPath();
+    ctx.arc(tipX + 7.5, cy, 7.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    drawSketchEllipse(ctx, tipX + 7.5, cy, 7.2, 7.2, { seed: seed + 44, t, progress, width: 2.8, color, turns: 1.08, dotTip: false });
+
+    if (label) {
+      drawTextFit(ctx, label, x + (w - 15) * 0.34, cy, (w - 15) * 0.55, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 11, color: PALETTE.ink, align: 'center'
+      });
+    }
+    return { inMid: [x, cy], out: [tipX + 15, cy] };
+  }
+
+  function drawQuoteCard(ctx, badge, quoteText, subText, x = 64, y = 78, w = 1152, h = 152) {
+    drawCard(ctx, x, y, w, h, { radius: 22, fill: 'rgba(227, 201, 160, 0.36)', stroke: PALETTE.terracotta });
+    ctx.save();
+    ctx.fillStyle = PALETTE.terracotta;
+    roundRectPath(ctx, x + 24, y + 18, 178, 28, 999);
+    ctx.fill();
+    ctx.font = `700 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badge, x + 113, y + 32);
+    ctx.restore();
+
+    // Multi-line wrapping for quote
+    ctx.save();
+    ctx.font = `italic 400 32px 'Instrument Serif', serif`;
+    const words = quoteText.split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(wd => {
+      const test = cur ? `${cur} ${wd}` : wd;
+      if (ctx.measureText(test).width > w - 64) { lines.push(cur); cur = wd; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+    lines.slice(0, 2).forEach((ln, idx) => {
+      drawTextFit(ctx, ln, x + 28, y + 78 + idx * 38, w - 56, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 32, minSize: 18, color: PALETTE.ink
+      });
+    });
+    if (subText) {
+      drawTextFit(ctx, subText, x + 28, y + h - 22, w - 56, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 15, color: '#8E4B2D'
+      });
+    }
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 3. Chapter Scene Renderers (Bölüm 1–4)
+  // ==========================================================
+  function renderChapterScene(ctx, beat, lt, dur, t, chMeta) {
+    const p = clamp01(lt / Math.max(0.01, dur));
+    const s = beat.scene;
+
+    if (s === 'intro') { drawIntroCard(ctx, chMeta, lt, t); return; }
+    if (s === 'outro') { drawOutroCard(ctx, chMeta, lt, t); return; }
+
+    // --------------------------------------------------------
+    // BÖLÜM 1 — Boole cebri neden farklı?
+    // --------------------------------------------------------
+    if (s === 'c1_hook') {
+      drawHookQuestion(ctx, 'x + yz = (x + y)(x + z) eşitliği doğru mu?', 'BÖLÜM 01 • BAŞLANGIÇ SORUSU', lt, t);
+      return;
+    }
+
+    if (s === 'c1_ordinary_vs_bool') {
+      drawCard(ctx, 64, 92, 550, 420, { radius: 24, stroke: PALETTE.error });
+      drawTextFit(ctx, 'SIRADAN CEBİR (sayılar)', 339, 138, 490, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: PALETTE.error, align: 'center'
+      });
+      drawTextFit(ctx, 'x = 1, y = 2, z = 3 olsun:', 339, 200, 490, { size: 22, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, `1 + 2·3 = ${DATA.ordL}`, 339, 276, 490, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 44, align: 'center'
+      });
+      drawTextFit(ctx, `(1 + 2)(1 + 3) = ${DATA.ordR}`, 339, 348, 490, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 42, align: 'center'
+      });
+      drawTextFit(ctx, `${DATA.ordL} ≠ ${DATA.ordR}  ✗ YANLIŞ`, 339, 444, 490, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 30, color: PALETTE.error, align: 'center'
+      });
+
+      const rp = ease.outBack(clamp01((p - 0.38) / 0.3));
+      ctx.save();
+      ctx.globalAlpha = rp;
+      drawCard(ctx, 666, 92, 550, 420, { radius: 24, stroke: PALETTE.green });
+      drawTextFit(ctx, 'BOOLE CEBRİ (0 ve 1)', 941, 138, 490, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: PALETTE.green, align: 'center'
+      });
+      drawTextFit(ctx, 'Postüla 4(b): VEYA, VE üzerine dağılır', 941, 200, 490, { size: 21, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, 'x + yz = (x + y)(x + z)', 941, 304, 490, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 34, align: 'center'
+      });
+      drawTextFit(ctx, 'HER ZAMAN DOĞRU  ✓', 941, 444, 490, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 30, color: PALETTE.green, align: 'center'
+      });
+      ctx.restore();
+      if (p > 0.55) drawFocusZink(ctx, 941, 444, 195, 38, lt - dur * 0.55, t, { color: PALETTE.green });
+      return;
+    }
+
+    if (s === 'c1_dist_table') {
+      const rows = truthTable((x, y, z) => ({
+        l: evalF(FNS.distL, x, y, z),
+        r: evalF(FNS.distR, x, y, z)
+      }), 3);
+      // Use direct truthTable for columns
+      const tRows = truthTable(FNS.distL, 3);
+      drawTextFit(ctx, '8 satırda doğrulama: x + yz = (x + y)(x + z)', W / 2, 74, 1080, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, align: 'center'
+      });
+      const revRows = Math.min(8, Math.max(1, Math.ceil(p * 9)));
+      drawTruthTable(ctx, {
+        x: 110, y: 108, w: 1060, headerH: 42, rowH: 48,
+        rows: tRows,
+        revealedRows: revRows,
+        cols: [
+          { label: 'x', widthRatio: 0.7, getVal: r => r.x },
+          { label: 'y', widthRatio: 0.7, getVal: r => r.y },
+          { label: 'z', widthRatio: 0.7, getVal: r => r.z },
+          { label: 'yz', widthRatio: 1.0, getVal: r => bAnd(r.y, r.z) },
+          { label: 'x + yz', widthRatio: 1.5, getVal: r => evalF(FNS.distL, r.x, r.y, r.z), highlight: true, isOut: true },
+          { label: 'x + y', widthRatio: 1.1, getVal: r => bOr(r.x, r.y) },
+          { label: 'x + z', widthRatio: 1.1, getVal: r => bOr(r.x, r.z) },
+          { label: '(x+y)(x+z)', widthRatio: 1.7, getVal: r => evalF(FNS.distR, r.x, r.y, r.z), highlight: true, isOut: true }
+        ],
+        t, seed: 105
+      });
+      drawColorLegend(ctx, [
+        { color: PALETTE.sage, label: 'iki sütun bütün satırlarda özdeş (1 = adaçayı)' }
+      ]);
+      return;
+    }
+
+    if (s === 'c1_sezgi_switch') {
+      drawTextFit(ctx, 'Sezgi: Yalnız iki durum var — 0 (kapalı) ve 1 (açık)', W / 2, 92, 1080, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40, align: 'center'
+      });
+
+      // Switch diagram card
+      drawCard(ctx, 110, 140, 1060, 166, { radius: 22 });
+      drawTextFit(ctx, 'ANAHTARLAMA CEBRİ (iki değerli Boole cebri)', 640, 172, 900, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 15, color: PALETTE.muted, align: 'center'
+      });
+      drawBitBoxes(ctx, {
+        bits: ['0', '1'], cx: 360, y: 196, boxW: 78, boxH: 76, gap: 28,
+        fills: ['rgba(124,138,126,0.12)', 'rgba(156,194,154,0.45)'],
+        bottomLabels: ['devre kapalı', 'devre açık'], seed: 120, t
+      });
+      drawSketchArrow(ctx, 510, 234, 620, 234, 0, { seed: 121, t, color: PALETTE.terracotta });
+      drawTextFit(ctx, 'B = { 0, 1 }   |   1 + 1 = 1', 880, 234, 480, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 32, color: PALETTE.green, align: 'center'
+      });
+
+      // Timeline 1854 -> 1904 -> 1938
+      const people = [
+        { yr: '1854', name: 'George Boole', desc: 'Cebirsel mantık sistemi', col: PALETTE.lavender },
+        { yr: '1904', name: 'E. V. Huntington', desc: '6 postüla (bu ders)', col: PALETTE.ice },
+        { yr: '1938', name: 'Claude Shannon', desc: 'Anahtarlama devreleri', col: PALETTE.sage }
+      ];
+      people.forEach((item, idx) => {
+        const ip = ease.outBack(clamp01((p - idx * 0.22) / 0.3));
+        ctx.save();
+        ctx.globalAlpha = ip;
+        const cx = 110 + idx * 366;
+        drawCard(ctx, cx, 344, 328, 198, { radius: 20, stroke: item.col });
+        ctx.fillStyle = item.col;
+        roundRectPath(ctx, cx + 22, 366, 98, 34, 10);
+        ctx.fill();
+        ctx.font = `700 18px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(item.yr, cx + 71, 383);
+        drawTextFit(ctx, item.name, cx + 22, 434, 284, { weight: 700, size: 24 });
+        drawTextFit(ctx, item.desc, cx + 22, 486, 284, { size: 19, color: PALETTE.muted });
+        ctx.restore();
+      });
+      return;
+    }
+
+    if (s === 'c1_rule') {
+      drawStickyRuleCard(ctx, {
+        title: 'TEMEL KURAL',
+        lines: [
+          'Postüla = ispatsız kabul edilen temel varsayım.',
+          'Teorem = postülalardan adımlarla ispatlanır.'
+        ],
+        docked: p > 0.72,
+        highlightTokens: p > 0.35 ? ['ispatsız kabul', 'postülalardan ispatlanır'] : [],
+        t
+      });
+      if (p > 0.72) {
+        drawTextFit(ctx, "Şimdi Huntington'un 6 postülasını tek tek görelim…", W / 2, 340, 900, {
+          family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, color: PALETTE.muted, align: 'center'
+        });
+      }
+      return;
+    }
+
+    // Huntington's 6 postulates step-by-step (c1_post1 .. c1_post6)
+    if (s.startsWith('c1_post')) {
+      const idx = Number(s.slice(-1)); // 1..6
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ['Postüla = ispatsız kabul.', 'Teorem = postülalardan ispat.'],
+        docked: true,
+        highlightTokens: ['ispatsız kabul'],
+        t
+      });
+      drawTextFit(ctx, "Huntington'un 6 Postülası (B = {0, 1})", 44, 106, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40
+      });
+
+      const posts = [
+        { n: '1. Kapalılık', a: 'x + y ∈ B,  x · y ∈ B', ex: 'Örnek: 1 + 1 = 1 ∈ {0, 1}' },
+        { n: '2. Etkisiz eleman', a: 'x + 0 = x   |   x · 1 = x', ex: 'Örnek: 0 + 0 = 0,  1 · 1 = 1' },
+        { n: '3. Değişme', a: 'x + y = y + x   |   xy = yx', ex: 'Örnek: 0 + 1 = 1 + 0 = 1' },
+        { n: '4. Dağılma', a: 'x(y+z)=xy+xz  |  x+yz=(x+y)(x+z)', ex: 'Özel: + işlemi · üzerine dağılır!' },
+        { n: '5. Tümleyen', a: "x + x' = 1   |   x · x' = 0", ex: "Örnek: 0 + 0' = 1,  1 · 1' = 0" },
+        { n: '6. En az 2 eleman', a: 'x ≠ y olacak x, y ∈ B vardır', ex: 'Örnek: 1 ≠ 0 (iki değerli küme)' }
+      ];
+
+      posts.forEach((pt, i) => {
+        if (i >= idx) return;
+        const ry = 152 + i * 70;
+        const isCur = i === idx - 1;
+        drawCard(ctx, 44, ry, 1192, 60, {
+          radius: 14,
+          fill: isCur ? 'rgba(156, 194, 154, 0.24)' : PALETTE.card,
+          stroke: isCur ? PALETTE.green : 'rgba(36, 55, 45, 0.09)',
+          shadow: isCur
+        });
+        drawTextFit(ctx, pt.n, 64, ry + 30, 220, { weight: 700, size: 19, color: isCur ? PALETTE.green : PALETTE.ink });
+        drawTextFit(ctx, pt.a, 298, ry + 30, 480, { family: "'JetBrains Mono', monospace", weight: 700, size: 20, minSize: 13 });
+        drawTextFit(ctx, pt.ex, 796, ry + 30, 420, { family: "'JetBrains Mono', monospace", weight: 600, size: 16, minSize: 12, color: isCur ? '#8E4B2D' : PALETTE.muted });
+      });
+
+      if (idx === 4) drawFocusZink(ctx, 640, 152 + 3 * 70 + 30, 580, 34, lt, t, { color: PALETTE.terracotta });
+      return;
+    }
+
+    if (s === 'c1_diff1_assoc' || s === 'c1_diff2_dist' || s === 'c1_diff3_noters') {
+      const stage = s === 'c1_diff1_assoc' ? 1 : (s === 'c1_diff2_dist' ? 2 : 3);
+      drawPrevTopicBadge(ctx, "Huntington'un 6 postülası");
+      drawTextFit(ctx, 'Sıradan cebirden 3 kritik fark', 44, 114, 900, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42
+      });
+
+      const diffs = [
+        { tag: 'FARK 1', title: 'Birleşme yasası postüla değil', desc: 'x + (y + z) = (x + y) + z ve x(yz) = (xy)z teoremden türetilir.', col: PALETTE.ice },
+        { tag: 'FARK 2', title: '+ işlemi · üzerine dağılır', desc: 'x + yz = (x + y)(x + z) geçerlidir! Ve 1 + 1 = 1.', col: PALETTE.sage },
+        { tag: 'FARK 3', title: 'Ters eleman YOK → çıkarma ve bölme YOK', desc: 'Boole cebrinde −a veya 1/a yoktur; çıkarma ve bölme tanımlı değildir.', col: PALETTE.error }
+      ];
+
+      diffs.forEach((d, i) => {
+        if (i >= stage) return;
+        const ry = 166 + i * 136;
+        const isCur = i === stage - 1;
+        drawCard(ctx, 64, ry, 1152, 116, { radius: 20, stroke: isCur ? d.col : 'rgba(36, 55, 45, 0.1)' });
+        ctx.fillStyle = d.col;
+        roundRectPath(ctx, 88, ry + 22, 108, 32, 10);
+        ctx.fill();
+        ctx.font = `700 14px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(d.tag, 142, ry + 38);
+        drawTextFit(ctx, d.title, 218, ry + 38, 970, { weight: 700, size: 26, color: PALETTE.ink });
+        drawTextFit(ctx, d.desc, 218, ry + 82, 970, { family: "'JetBrains Mono', monospace", weight: 600, size: 19, color: PALETTE.muted });
+      });
+
+      if (stage === 3) drawFocusZink(ctx, 640, 166 + 2 * 136 + 58, 570, 58, lt, t, { color: PALETTE.error });
+      return;
+    }
+
+    if (['c1_exam_q', 'c1_exam_wait', 'c1_exam_a', 'c1_exam_traps'].includes(s)) {
+      const modeMap = { c1_exam_q: 'q', c1_exam_wait: 'wait', c1_exam_a: 'a', c1_exam_traps: 'traps' };
+      drawExam5Options(ctx, {
+        question: 'Aşağıdakilerden hangisi Boole cebrinde tanımlı değildir?',
+        correctKey: 'B',
+        badgeText: '⭐ Yoklama sorusu • s.17',
+        mode: modeMap[s],
+        focusWrongKeys: s === 'c1_exam_traps' ? ['A', 'C', 'D', 'E'] : [],
+        p, lt, t,
+        options: [
+          { key: 'A', text: 'Tümleyen alma', note: "Tanımlı (Postüla 5: x')", showInTraps: true },
+          { key: 'B', text: 'Çıkarma ve bölme', note: 'Doğru: ters eleman olmadığı için tanımlı değil' },
+          { key: 'C', text: "VEYA'nın VE üzerine dağılması", note: 'Tanımlı (Postüla 4b)', showInTraps: true },
+          { key: 'D', text: 'Etkisiz eleman', note: 'Tanımlı (Postüla 2: 0 ve 1)', showInTraps: true },
+          { key: 'E', text: 'Değişme', note: 'Tanımlı (Postüla 3: x+y = y+x)', showInTraps: true }
+        ]
+      });
+      return;
+    }
+
+    if (s === 'c1_trap_cancel') {
+      drawCard(ctx, 110, 96, 1060, 444, { radius: 24, stroke: PALETTE.error });
+      ctx.fillStyle = PALETTE.error;
+      roundRectPath(ctx, 146, 126, 280, 34, 999);
+      ctx.fill();
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TUZAK • SIK YAPILAN HATA', 286, 143);
+
+      drawTextFit(ctx, 'x + y = x + z   ise   y = z  DİYEMEZSİN!', W / 2, 224, 980, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 38, color: PALETTE.error, align: 'center'
+      });
+
+      drawCard(ctx, 210, 290, 860, 198, { radius: 20, fill: PALETTE.softFill, shadow: false });
+      drawTextFit(ctx, 'Karşı örnek:  x = 1,   y = 0,   z = 1', W / 2, 336, 800, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 26, align: 'center'
+      });
+      drawTextFit(ctx, 'x + y = 1 + 0 = 1    ve    x + z = 1 + 1 = 1', W / 2, 392, 800, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 26, color: PALETTE.green, align: 'center'
+      });
+      drawTextFit(ctx, 'Eşitler ama  y ≠ z  (0 ≠ 1) !  Çünkü çıkarma yok.', W / 2, 448, 800, {
+        weight: 700, size: 24, color: PALETTE.error, align: 'center'
+      });
+      drawFocusZink(ctx, 640, 448, 360, 28, lt - dur * 0.35, t, { color: PALETTE.error });
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 2 — Düalite ve teoremler
+    // --------------------------------------------------------
+    if (s === 'c2_hook') {
+      drawPrevTopicBadge(ctx, 'Boole: ters yok, dağılma çift yönlü');
+      drawHookQuestion(ctx, 'Bir kuralı öğrenince ikincisi bedava mı?', 'BÖLÜM 02 • DÜALİTE VE TEOREMLER', lt, t);
+      return;
+    }
+
+    if (s === 'c2_dual_sezgi') {
+      drawTextFit(ctx, 'Düalite ilkesi:  + ↔ ·   ve   0 ↔ 1  yer değiştir', W / 2, 98, 1080, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42, align: 'center'
+      });
+
+      const pairs = [
+        ['x + 0 = x', 'x · 1 = x'],
+        ['x + 1 = 1', 'x · 0 = 0'],
+        ["x + x' = 1", "x · x' = 0"]
+      ];
+      pairs.forEach(([a, b], i) => {
+        const ry = 162 + i * 124;
+        const ap = ease.outBack(clamp01((p - i * 0.16) / 0.3));
+        ctx.save();
+        ctx.globalAlpha = ap;
+        drawCard(ctx, 140, ry, 380, 92, { radius: 20, stroke: PALETTE.ice });
+        drawTextFit(ctx, a, 330, ry + 46, 340, { family: "'JetBrains Mono', monospace", weight: 700, size: 36, align: 'center' });
+
+        drawSketchArrow(ctx, 540, ry + 46, 740, ry + 46, -16, { seed: 205 + i, t, color: PALETTE.terracotta });
+        drawHandwrittenNote(ctx, '+↔·, 0↔1', 640, ry + 18, 1, { color: PALETTE.terracotta, size: 26, align: 'center' });
+
+        drawCard(ctx, 760, ry, 380, 92, { radius: 20, stroke: PALETTE.sage });
+        drawTextFit(ctx, b, 950, ry + 46, 340, { family: "'JetBrains Mono', monospace", weight: 700, size: 36, color: PALETTE.green, align: 'center' });
+        ctx.restore();
+      });
+      return;
+    }
+
+    if (s === 'c2_dual_rule') {
+      drawStickyRuleCard(ctx, {
+        title: 'DÜALİTE KURALI',
+        lines: [
+          '+ ↔ ·  ve  0 ↔ 1  değiştir.',
+          "DİKKAT: Değişkenler tümlenmez (x → x' YAPMA!)."
+        ],
+        docked: false,
+        highlightTokens: ['Değişkenler tümlenmez'],
+        t
+      });
+      drawTextFit(ctx, 'Değişkeni de tümlersen düal değil, tümleyen çıkar!', W / 2, 514, 960, {
+        weight: 700, size: 24, color: PALETTE.error, align: 'center'
+      });
+      return;
+    }
+
+    // Theorem table T1..T6 built progressively
+    if (s.startsWith('c2_thm_')) {
+      const stageMap = { c2_thm_t1: 1, c2_thm_t2t3: 3, c2_thm_t4: 4, c2_thm_t5: 5, c2_thm_t6: 6 };
+      const shown = stageMap[s] || 6;
+      drawStickyRuleCard(ctx, {
+        title: 'DÜALİTE',
+        lines: ['+ ↔ ·  ve  0 ↔ 1 değiştir.', 'Değişkenler tümlenmez.'],
+        docked: true, highlightTokens: ['+ ↔ ·'], t
+      });
+      drawTextFit(ctx, 'Temel Teoremler Tablosu (s.20)', 44, 102, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40
+      });
+
+      const thms = [
+        { name: 'T1. Teklik', a: 'x + x = x', b: 'x · x = x' },
+        { name: 'T2. Baskın eleman', a: 'x + 1 = 1', b: 'x · 0 = 0' },
+        { name: 'T3. Çift tümleme', a: "(x')' = x", b: '(kendi düali)' },
+        { name: 'T4. Birleşme', a: 'x + (y + z) = (x + y) + z', b: 'x(yz) = (xy)z' },
+        { name: 'T5. DeMorgan', a: "(x + y)' = x'y'", b: "(xy)' = x' + y'", star: true },
+        { name: 'T6. Soğurma', a: 'x + xy = x', b: 'x(x + y) = x', star: true }
+      ];
+
+      thms.forEach((tm, i) => {
+        if (i >= shown) return;
+        const ry = 152 + i * 70;
+        const isNew = (s === 'c2_thm_t1' && i === 0) ||
+          (s === 'c2_thm_t2t3' && (i === 1 || i === 2)) ||
+          (s === 'c2_thm_t4' && i === 3) ||
+          (s === 'c2_thm_t5' && i === 4) ||
+          (s === 'c2_thm_t6' && i === 5);
+
+        drawCard(ctx, 44, ry, 1192, 60, {
+          radius: 14,
+          fill: isNew ? 'rgba(182, 162, 219, 0.22)' : PALETTE.card,
+          stroke: tm.star ? PALETTE.terracotta : (isNew ? PALETTE.lavender : 'rgba(36, 55, 45, 0.09)'),
+          shadow: isNew
+        });
+        drawTextFit(ctx, tm.name, 64, ry + 30, 230, { weight: 700, size: 19, color: tm.star ? '#8E4B2D' : PALETTE.ink });
+        drawTextFit(ctx, `(a) ${tm.a}`, 320, ry + 30, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, minSize: 13 });
+        drawTextFit(ctx, `(b) ${tm.b}`, 790, ry + 30, 420, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, minSize: 13, color: PALETTE.green });
+      });
+
+      if (s === 'c2_thm_t5') drawFocusZink(ctx, 640, 152 + 4 * 70 + 30, 580, 34, lt, t, { color: PALETTE.terracotta });
+      if (s === 'c2_thm_t6') drawFocusZink(ctx, 640, 152 + 5 * 70 + 30, 580, 34, lt, t, { color: PALETTE.green });
+      return;
+    }
+
+    // Absorption proof step-by-step
+    if (s === 'c2_abs_step1' || s === 'c2_abs_step2' || s === 'c2_abs_step3') {
+      const step = s === 'c2_abs_step1' ? 1 : (s === 'c2_abs_step2' ? 2 : 3);
+      drawTextFit(ctx, 'Teorem 6(a) İspatı:  x + xy = x', 44, 106, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42
+      });
+
+      drawCard(ctx, 44, 158, 700, 380, { radius: 22 });
+      const lines = [
+        { expr: 'x + xy = x · 1 + xy', why: 'Postüla 2(b): x = x·1' },
+        { expr: '       = x(1 + y)', why: 'Postüla 4(a): ortak x' },
+        { expr: '       = x · 1', why: 'Teorem 2(a): 1 + y = 1' },
+        { expr: '       = x', why: 'Postüla 2(b)  ✓' }
+      ];
+      const showLines = step === 1 ? 1 : (step === 2 ? 2 : 4);
+      for (let i = 0; i < showLines; i++) {
+        const ly = 216 + i * 78;
+        drawTextFit(ctx, lines[i].expr, 74, ly, 390, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 28,
+          color: i === 3 ? PALETTE.green : PALETTE.ink
+        });
+        drawTextFit(ctx, lines[i].why, 480, ly, 240, {
+          family: "'JetBrains Mono', monospace", weight: 600, size: 16,
+          color: i === showLines - 1 ? PALETTE.terracotta : PALETTE.muted
+        });
+      }
+
+      if (step === 3) {
+        const rows = truthTable(FNS.absL, 2);
+        drawTruthTable(ctx, {
+          x: 774, y: 158, w: 462, headerH: 46, rowH: 76,
+          rows,
+          cols: [
+            { label: 'x', widthRatio: 0.8, getVal: r => r.x, highlight: true },
+            { label: 'y', widthRatio: 0.8, getVal: r => r.y },
+            { label: 'xy', widthRatio: 1.0, getVal: r => bAnd(r.x, r.y) },
+            { label: 'x + xy', widthRatio: 1.4, getVal: r => evalF(FNS.absL, r.x, r.y), highlight: true, isOut: true }
+          ],
+          t, seed: 230
+        });
+        drawFocusZink(ctx, 210, 450, 145, 32, lt - dur * 0.25, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (s === 'c2_demorgan_table') {
+      const rows = truthTable(FNS.dmOrL, 2);
+      drawTextFit(ctx, 'Teorem 5: DeMorgan Teoremi', 44, 102, 900, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42
+      });
+      drawTruthTable(ctx, {
+        x: 64, y: 150, w: 1152, headerH: 44, rowH: 62,
+        rows,
+        revealedRows: Math.min(4, Math.ceil(p * 5)),
+        cols: [
+          { label: 'x', widthRatio: 0.7, getVal: r => r.x },
+          { label: 'y', widthRatio: 0.7, getVal: r => r.y },
+          { label: 'x + y', widthRatio: 1.0, getVal: r => bOr(r.x, r.y) },
+          { label: "(x + y)'", widthRatio: 1.3, getVal: r => evalF(FNS.dmOrL, r.x, r.y), highlight: true, isOut: true },
+          { label: "x'", widthRatio: 0.8, getVal: r => bNot(r.x) },
+          { label: "y'", widthRatio: 0.8, getVal: r => bNot(r.y) },
+          { label: "x'y'", widthRatio: 1.3, getVal: r => evalF(FNS.dmOrR, r.x, r.y), highlight: true, isOut: true }
+        ],
+        t, seed: 240
+      });
+
+      drawCard(ctx, 64, 464, 562, 94, { radius: 18, stroke: PALETTE.lavender });
+      drawTextFit(ctx, "(x + y)' = x'y'  →  VEYA'nın tümleyeni = tümleyenlerin VE'si", 345, 511, 520, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 17, align: 'center'
+      });
+      drawCard(ctx, 654, 464, 562, 94, { radius: 18, stroke: PALETTE.sage });
+      drawTextFit(ctx, "(xy)' = x' + y'  →  VE'nin tümleyeni = tümleyenlerin VEYA'sı", 935, 511, 520, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 17, color: PALETTE.green, align: 'center'
+      });
+      return;
+    }
+
+    if (s === 'c2_precedence') {
+      drawTextFit(ctx, 'İşlem Önceliği (s.25)', 44, 104, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42
+      });
+      const order = [
+        { n: '1', op: 'Parantez ( )', col: PALETTE.ink },
+        { n: '2', op: "DEĞİL ( ' )", col: PALETTE.terracotta },
+        { n: '3', op: 'VE ( · )', col: PALETTE.ice },
+        { n: '4', op: 'VEYA ( + )', col: PALETTE.sage }
+      ];
+      order.forEach((o, i) => {
+        const ry = 160 + i * 94;
+        drawCard(ctx, 64, ry, 500, 76, { radius: 18, stroke: o.col });
+        ctx.fillStyle = o.col;
+        roundRectPath(ctx, 84, ry + 18, 42, 40, 10);
+        ctx.fill();
+        ctx.font = `700 20px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(o.n, 105, ry + 38);
+        drawTextFit(ctx, o.op, 146, ry + 38, 390, { family: "'JetBrains Mono', monospace", weight: 700, size: 24 });
+      });
+
+      drawCard(ctx, 610, 160, 606, 358, { radius: 22, fill: PALETTE.softFill });
+      drawTextFit(ctx, 'ÖRNEK:   x + y\'z', 913, 224, 540, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 42, align: 'center'
+      });
+      drawTextFit(ctx, "1) Önce DEĞİL:  y'", 660, 310, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 24, color: PALETTE.terracotta });
+      drawTextFit(ctx, "2) Sonra VE:    y' · z", 660, 376, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 24, color: PALETTE.ink });
+      drawTextFit(ctx, "3) En son VEYA: x + (y'z)", 660, 442, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 24, color: PALETTE.green });
+      return;
+    }
+
+    if (s === 'c2_hoca_note') {
+      drawQuoteCard(
+        ctx,
+        '⭐ HOCA • 03.11',
+        '"Teoremleri bilmezseniz sınavda size A, B, C, D, E şıkları içerisinde verilen denklemi indirgeyemezsiniz."',
+        'Ek söz (03.11): "Belki 5 puanlık bir tane soru olabilir."',
+        64, 118, 1152, 230
+      );
+      drawCard(ctx, 210, 388, 860, 130, { radius: 22, stroke: PALETTE.lavender });
+      drawTextFit(ctx, 'Teoremleri bil: şıklardaki denklemi indirgersin', W / 2, 453, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, color: PALETTE.ink, align: 'center'
+      });
+      return;
+    }
+
+    if (s === 'c2_try_q' || s === 'c2_try_wait' || s === 'c2_try_a') {
+      drawCard(ctx, 180, 74, 920, 96, { radius: 20, stroke: PALETTE.ice });
+      drawTextFit(ctx, "SEN DENE:   x + 1 = ?     ve     x · x' = ?", W / 2, 122, 860, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 34, align: 'center'
+      });
+
+      if (s === 'c2_try_wait') {
+        drawCountdownRing(ctx, W / 2, 326, p, 5);
+        drawTextFit(ctx, 'Teoremleri hatırla… (5 sn)', W / 2, 408, 500, { size: 22, color: PALETTE.muted, align: 'center' });
+      } else if (s === 'c2_try_a') {
+        drawCard(ctx, 140, 226, 460, 260, { radius: 22, stroke: PALETTE.green });
+        drawTextFit(ctx, 'x + 1 = 1', 370, 316, 400, { family: "'JetBrains Mono', monospace", weight: 700, size: 48, color: PALETTE.green, align: 'center' });
+        drawTextFit(ctx, 'Teorem 2(a): 1 ile VEYA hep 1', 370, 410, 410, { weight: 600, size: 20, color: PALETTE.muted, align: 'center' });
+
+        drawCard(ctx, 680, 226, 460, 260, { radius: 22, stroke: PALETTE.lavender });
+        drawTextFit(ctx, "x · x' = 0", 910, 316, 400, { family: "'JetBrains Mono', monospace", weight: 700, size: 48, color: PALETTE.ink, align: 'center' });
+        drawTextFit(ctx, 'Postüla 5(b): biri 0, çarpım 0', 910, 410, 410, { weight: 600, size: 20, color: PALETTE.muted, align: 'center' });
+      }
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 3 — ⭐ Sadeleştirme
+    // --------------------------------------------------------
+    if (s === 'c3_hoca_quote') {
+      drawQuoteCard(
+        ctx,
+        '⭐⭐ HOCA • 03.11',
+        '"Teoremleri bilmezseniz sınavda size A, B, C, D, E şıkları içerisinde verilen denklemi indirgeyemezsiniz."',
+        'Hoca (03.11): "Belki 5 puanlık bir tane soru olabilir."',
+        64, 114, 1152, 240
+      );
+      drawCard(ctx, 160, 396, 960, 128, { radius: 22, stroke: PALETTE.terracotta });
+      drawTextFit(ctx, 'Bu bölümde sadeleştirmenin bütün kalıplarını adım adım çözüyoruz.', W / 2, 460, 900, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 36, align: 'center'
+      });
+      return;
+    }
+
+    if (s === 'c3_hook') {
+      drawPrevTopicBadge(ctx, 'Teorem 1–6 ve DeMorgan');
+      drawHookQuestion(ctx, 'Dört terimli bir ifade tek harfe nasıl iner?', 'BÖLÜM 03 • CEBİRSEL SADELEŞTİRME', lt, t);
+      return;
+    }
+
+    if (s === 'c3_rule') {
+      drawStickyRuleCard(ctx, {
+        title: 'SADELEŞTİRME KURALI',
+        lines: [
+          '1. Ortak çarpanı parantez dışına al.',
+          "2. (a + a') = 1 ve (1 + y) = 1 ile terim yut."
+        ],
+        docked: p > 0.72,
+        highlightTokens: p > 0.35 ? ['Ortak çarpanı', "(a + a') = 1"] : [],
+        t
+      });
+      if (p > 0.72) {
+        drawTextFit(ctx, "Alıştırma 2.1'i adım adım sadeleştirelim…", W / 2, 340, 900, {
+          family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, color: PALETTE.muted, align: 'center'
+        });
+      }
+      return;
+    }
+
+    if (['c3_ex21_s1', 'c3_ex21_s2', 'c3_ex21_s3', 'c3_ex21_s4'].includes(s)) {
+      const step = Number(s.slice(-1)); // 1..4
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ['Ortak çarpanı dışarı al.', "(a + a') = 1 yap."],
+        docked: true,
+        highlightTokens: step === 1 ? ['Ortak çarpanı dışarı al'] : (step >= 3 ? ["(a + a') = 1"] : []),
+        t
+      });
+      drawTextFit(ctx, "Alıştırma 2.1:  F = x'y'z + xyz + x'yz + xy'z", 44, 108, 820, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 25, minSize: 16
+      });
+
+      drawCard(ctx, 64, 166, 1152, 380, { radius: 22 });
+      const lines = [
+        { expr: "F = z(x'y' + xy + x'y + xy')", why: 'Ortak çarpan z dışarı alındı' },
+        { expr: "  = z[ x'(y' + y) + x(y + y') ]", why: "x' ve x parantezine gruplandı" },
+        { expr: "  = z( x' · 1 + x · 1 ) = z(x' + x)", why: "Postüla 5: y' + y = 1" },
+        { expr: '  = z · 1 = z', why: "Postüla 5: x' + x = 1  ✓" }
+      ];
+      for (let i = 0; i < step; i++) {
+        const ly = 224 + i * 78;
+        drawTextFit(ctx, lines[i].expr, 96, ly, 670, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 28, minSize: 18,
+          color: i === 3 ? PALETTE.green : PALETTE.ink
+        });
+        drawTextFit(ctx, lines[i].why, 796, ly, 390, {
+          family: "'JetBrains Mono', monospace", weight: 600, size: 17,
+          color: i === step - 1 ? PALETTE.terracotta : PALETTE.muted
+        });
+      }
+      if (step === 4) drawFocusZink(ctx, 215, 224 + 3 * 78, 120, 32, lt, t, { color: PALETTE.green });
+      return;
+    }
+
+    if (s === 'c3_ex21_check') {
+      const rows = truthTable(FNS.ex21_full, 3);
+      drawTextFit(ctx, 'Sağlama: F ve z sütunları 8 satırda birebir aynı!', W / 2, 74, 1080, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, align: 'center'
+      });
+      drawTruthTable(ctx, {
+        x: 150, y: 108, w: 980, headerH: 42, rowH: 48,
+        rows,
+        cols: [
+          { label: 'j', widthRatio: 0.5, getVal: r => r.idx },
+          { label: 'x', widthRatio: 0.7, getVal: r => r.x },
+          { label: 'y', widthRatio: 0.7, getVal: r => r.y },
+          { label: 'z', widthRatio: 0.7, getVal: r => r.z, highlight: true },
+          { label: "F = x'y'z + xyz + x'yz + xy'z", widthRatio: 2.6, getVal: r => r.out, highlight: true, isOut: true }
+        ],
+        t, seed: 315
+      });
+      drawColorLegend(ctx, [
+        { color: PALETTE.sage, label: `1 olan satırlar: ${DATA.ex21Ones} (tam z = 1 olanlar!)` }
+      ]);
+      return;
+    }
+
+    if (s === 'c3_ex21_1' || s === 'c3_ex21_2' || s === 'c3_ex21_3') {
+      const stage = s === 'c3_ex21_1' ? 1 : (s === 'c3_ex21_2' ? 2 : 3);
+      drawTextFit(ctx, 'Örnek 2.1 (1–3): Ezbere Bilinmesi Gereken 3 Kalıp', 44, 104, 1120, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38
+      });
+      const cards = [
+        {
+          title: "1) x(x' + y) = xy",
+          steps: ["= xx' + xy", '= 0 + xy', '= xy'],
+          col: PALETTE.terracotta
+        },
+        {
+          title: "2) x + x'y = x + y",
+          steps: ["= (x + x')(x + y)", '= 1 · (x + y)', '= x + y'],
+          col: PALETTE.lavender
+        },
+        {
+          title: "3) (x + y)(x + y') = x",
+          steps: ["= x + yy' (Postüla 4b)", '= x + 0', '= x'],
+          col: PALETTE.sage
+        }
+      ];
+      cards.forEach((c, idx) => {
+        if (idx >= stage) return;
+        const cx = 56 + idx * 396;
+        const isCur = idx === stage - 1;
+        drawCard(ctx, cx, 162, 372, 368, { radius: 22, stroke: isCur ? c.col : 'rgba(36,55,45,0.1)' });
+        drawTextFit(ctx, c.title, cx + 186, 214, 340, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 24, color: PALETTE.ink, align: 'center'
+        });
+        drawSketchLine(ctx, [[cx + 28, 250], [cx + 344, 250]], { seed: 330 + idx, t, width: 2, color: c.col });
+        c.steps.forEach((st, si) => {
+          drawTextFit(ctx, st, cx + 38, 308 + si * 70, 300, {
+            family: "'JetBrains Mono', monospace", weight: 700, size: 26,
+            color: si === 2 ? PALETTE.green : PALETTE.ink
+          });
+        });
+      });
+      return;
+    }
+
+    if (s === 'c3_cost_f2') {
+      const rows = truthTable(FNS.f2_raw, 3);
+      drawTextFit(ctx, "Literal ve Devre Maliyeti: F2 = x'y'z + x'yz + xy'", 44, 96, 1140, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38
+      });
+
+      drawCard(ctx, 44, 140, 620, 184, { radius: 20, stroke: PALETTE.error });
+      drawTextFit(ctx, "ÖNCE:  x'y'z + x'yz + xy'", 70, 182, 560, { family: "'JetBrains Mono', monospace", weight: 700, size: 25 });
+      drawTextFit(ctx, '3 terim, 8 literal (3 VE + 1 VEYA)', 70, 224, 560, { size: 19, color: PALETTE.error, weight: 700 });
+      drawTextFit(ctx, "= x'z(y' + y) + xy' = x'z(1) + xy'", 70, 278, 560, { family: "'JetBrains Mono', monospace", weight: 600, size: 22, color: PALETTE.muted });
+
+      drawCard(ctx, 44, 344, 620, 184, { radius: 20, stroke: PALETTE.green });
+      drawTextFit(ctx, "SONRA:  x'z + xy'", 70, 392, 560, { family: "'JetBrains Mono', monospace", weight: 700, size: 34, color: PALETTE.green });
+      drawTextFit(ctx, '2 terim, 4 literal (2 VE + 1 VEYA) → Yarı yarıya ucuz!', 70, 456, 560, { size: 19, color: PALETTE.green, weight: 700 });
+
+      drawTruthTable(ctx, {
+        x: 696, y: 140, w: 540, headerH: 38, rowH: 43,
+        rows,
+        cols: [
+          { label: 'x', widthRatio: 0.7, getVal: r => r.x },
+          { label: 'y', widthRatio: 0.7, getVal: r => r.y },
+          { label: 'z', widthRatio: 0.7, getVal: r => r.z },
+          { label: 'F2 (ham)', widthRatio: 1.3, getVal: r => r.out, highlight: true, isOut: true },
+          { label: "x'z+xy'", widthRatio: 1.3, getVal: r => evalF(FNS.f2_simp, r.x, r.y, r.z), highlight: true, isOut: true }
+        ],
+        t, seed: 345
+      });
+      return;
+    }
+
+    if (s === 'c3_consensus') {
+      drawTextFit(ctx, "Konsensüs Teoremi:  xy + x'z + yz = xy + x'z", 44, 102, 1140, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40
+      });
+      drawCard(ctx, 64, 158, 1152, 224, { radius: 22 });
+      drawTextFit(ctx, "xy  +  x'z  +  yz", 640, 214, 900, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 44, align: 'center'
+      });
+      drawSketchLine(ctx, [[752, 226], [858, 200]], { seed: 350, t, progress: clamp01((p - 0.35) / 0.3), width: 4.5, color: PALETTE.error });
+      drawHandwrittenNote(ctx, 'gereksiz (konsensüs)!', 805, 168, clamp01((p - 0.35) / 0.3), { color: PALETTE.error, size: 28, align: 'center' });
+
+      drawTextFit(ctx, "İspat: yz'yi (x + x') ile genişlet → xyz + x'yz → xy(1+z) + x'z(1+y) = xy + x'z", 640, 318, 1080, {
+        family: "'JetBrains Mono', monospace", weight: 600, size: 21, color: PALETTE.muted, align: 'center'
+      });
+
+      drawCard(ctx, 140, 412, 1000, 120, { radius: 20, stroke: PALETTE.sage });
+      drawTextFit(ctx, "Sezgi: yz = 1 ise y = 1 ve z = 1'dir. x = 1 ise xy = 1, x = 0 ise x'z = 1 olur.", 640, 454, 940, {
+        weight: 700, size: 22, color: PALETTE.ink, align: 'center'
+      });
+      drawTextFit(ctx, 'Yani x ne olursa olsun ikisinden biri zaten 1!', 640, 496, 940, {
+        weight: 700, size: 22, color: PALETTE.green, align: 'center'
+      });
+      return;
+    }
+
+    if (['c3_exam_q', 'c3_exam_wait', 'c3_exam_a', 'c3_exam_traps'].includes(s)) {
+      const modeMap = { c3_exam_q: 'q', c3_exam_wait: 'wait', c3_exam_a: 'a', c3_exam_traps: 'traps' };
+      drawExam5Options(ctx, {
+        question: "x(x' + y) ifadesinin en sade biçimi nedir?",
+        correctKey: 'B',
+        badgeText: '⭐ 1. oturum sonu yoklama • s.27',
+        mode: modeMap[s],
+        focusWrongKeys: s === 'c3_exam_traps' ? ['C', 'A', 'D', 'E'] : [],
+        p, lt, t,
+        options: [
+          { key: 'A', text: 'x', note: "Soğurma (x + xy = x) ile karıştırma", showInTraps: true },
+          { key: 'B', text: 'xy', note: "Doğru: xx' + xy = 0 + xy = xy" },
+          { key: 'C', text: 'x + y', note: "x + x'y kuralıyla karıştırma tuzağı!", showInTraps: true },
+          { key: 'D', text: 'y', note: "x=0, y=1 için ifade 0, y ise 1", showInTraps: true },
+          { key: 'E', text: '0', note: "Yalnız xx'=0'ı görüp + xy'yi unutma", showInTraps: true }
+        ]
+      });
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 4 — Fonksiyon → doğruluk tablosu → devre
+    // --------------------------------------------------------
+    if (s === 'c4_hook') {
+      drawPrevTopicBadge(ctx, 'sadeleştirme = daha az kapı');
+      drawHookQuestion(ctx, 'Bir denklemi devreye çevirmek kaç adım?', 'BÖLÜM 04 • TABLO VE DEVRE', lt, t);
+      return;
+    }
+
+    if (s === 'c4_rule') {
+      drawStickyRuleCard(ctx, {
+        title: 'DEVRE ÇİZİM KURALI',
+        lines: [
+          "Üssü (') olan değişkene DEĞİL kapısı.",
+          "Çarpıma VE kapısı, artıya (+) VEYA kapısı."
+        ],
+        docked: p > 0.72,
+        highlightTokens: p > 0.35 ? ['DEĞİL kapısı', 'VE kapısı', 'VEYA kapısı'] : [],
+        t
+      });
+      if (p > 0.72) {
+        drawTextFit(ctx, "F1 = x + y'z için tabloyu ve devreyi kuralım…", W / 2, 340, 900, {
+          family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, color: PALETTE.muted, align: 'center'
+        });
+      }
+      return;
+    }
+
+    if (s === 'c4_f1_table1' || s === 'c4_f1_table2') {
+      const rows = truthTable(FNS.f1, 3);
+      const isStep2 = s === 'c4_f1_table2';
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ["(') → DEĞİL, çarpım → VE.", '+ → VEYA kapısı.'],
+        docked: true, highlightTokens: [], t
+      });
+      drawTextFit(ctx, "F1 = x + y'z Doğruluk Tablosu", 44, 102, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40
+      });
+
+      const revCols = isStep2 ? 6 : (p < 0.5 ? 4 : 5);
+      drawTruthTable(ctx, {
+        x: 64, y: 146, w: 780, headerH: 38, rowH: 46,
+        rows,
+        revealedRows: isStep2 ? 8 : Math.min(8, Math.max(2, Math.ceil(p * 9))),
+        revealedCols: revCols,
+        cols: [
+          { label: 'x', widthRatio: 0.7, getVal: r => r.x },
+          { label: 'y', widthRatio: 0.7, getVal: r => r.y },
+          { label: 'z', widthRatio: 0.7, getVal: r => r.z },
+          { label: "y'", widthRatio: 0.8, getVal: r => bNot(r.y) },
+          { label: "y'z", widthRatio: 0.9, getVal: r => bAnd(bNot(r.y), r.z) },
+          { label: "F1 = x+y'z", widthRatio: 1.5, getVal: r => r.out, highlight: true, isOut: true }
+        ],
+        t, seed: 410
+      });
+
+      drawCard(ctx, 876, 188, 360, 326, { radius: 22 });
+      drawTextFit(ctx, isStep2 ? '1 OLAN SATIRLAR' : "ADIM 1: y' ve y'z", 1056, 232, 320, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 17, color: PALETTE.muted, align: 'center'
+      });
+      if (!isStep2) {
+        drawTextFit(ctx, "y' → y'nin tersi", 1056, 310, 320, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, align: 'center' });
+        drawTextFit(ctx, "y'z → ikisi de 1 ise 1", 1056, 376, 320, { family: "'JetBrains Mono', monospace", weight: 700, size: 20, color: PALETTE.terracotta, align: 'center' });
+      } else {
+        drawTextFit(ctx, '001 (1) ve 100–111 (4–7)', 1056, 310, 320, { family: "'JetBrains Mono', monospace", weight: 700, size: 20, color: PALETTE.green, align: 'center' });
+        drawTextFit(ctx, `İndisler: Σ(${DATA.f1Ones})`, 1056, 376, 320, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.green, align: 'center' });
+      }
+      return;
+    }
+
+    if (s === 'c4_f1_circuit') {
+      const rows = truthTable(FNS.f1, 3);
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ["(') → DEĞİL, çarpım → VE.", '+ → VEYA kapısı.'],
+        docked: true, highlightTokens: ["(') → DEĞİL", 'VE', 'VEYA'], t
+      });
+      drawTextFit(ctx, "F1 = x + y'z → Mantık Devresi (Şekil 2.1)", 44, 102, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38
+      });
+
+      // Compact truth table on left
+      drawTruthTable(ctx, {
+        x: 44, y: 150, w: 350, headerH: 34, rowH: 46,
+        rows,
+        cols: [
+          { label: 'x', widthRatio: 0.7, getVal: r => r.x },
+          { label: 'y', widthRatio: 0.7, getVal: r => r.y },
+          { label: 'z', widthRatio: 0.7, getVal: r => r.z },
+          { label: 'F1', widthRatio: 1.0, getVal: r => r.out, highlight: true, isOut: true }
+        ],
+        t, seed: 420
+      });
+
+      // Hand-drawn circuit card on right
+      drawCard(ctx, 424, 186, 812, 366, { radius: 22 });
+      const xIn = 492, yX = 250, yY = 360, yZ = 460;
+      ctx.save();
+      ctx.font = `700 28px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('x', xIn - 14, yX);
+      ctx.fillText('y', xIn - 14, yY);
+      ctx.fillText('z', xIn - 14, yZ);
+      ctx.restore();
+
+      const notG = drawGateNOT(ctx, 560, yY - 26, 88, 52, { t, seed: 421 });
+      const andG = drawGateAND(ctx, 730, 360, 126, 94, { t, seed: 422 });
+      const orG = drawGateOR(ctx, 960, 268, 134, 98, { t, seed: 423 });
+
+      // Wires
+      drawSketchLine(ctx, [[xIn, yY], notG.inMid], { seed: 424, t, width: 2.8 });
+      drawSketchLine(ctx, [notG.out, [688, yY], [688, andG.inTop[1]], andG.inTop], { seed: 425, t, width: 2.8 });
+      drawSketchLine(ctx, [[xIn, yZ], [688, yZ], [688, andG.inBot[1]], andG.inBot], { seed: 426, t, width: 2.8 });
+      drawSketchLine(ctx, [[xIn, yX], [900, yX], [900, orG.inTop[1]], orG.inTop], { seed: 427, t, width: 2.8 });
+      drawSketchLine(ctx, [andG.out, [900, andG.out[1]], [900, orG.inBot[1]], orG.inBot], { seed: 428, t, width: 2.8 });
+      drawSketchLine(ctx, [orG.out, [1156, orG.out[1]]], { seed: 429, t, width: 3.2, color: PALETTE.green });
+
+      drawTextFit(ctx, "y'", 668, yY - 22, 40, { family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: PALETTE.terracotta });
+      drawTextFit(ctx, "y'z", 882, andG.out[1] - 24, 60, { family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: PALETTE.ink });
+      drawTextFit(ctx, 'F1', 1172, orG.out[1], 54, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: PALETTE.green });
+      return;
+    }
+
+    if (s === 'c4_ex23_circuit' || s === 'c4_ex23_table') {
+      const rows = truthTable(FNS.ex23_xor, 2);
+      drawTextFit(ctx, "Alıştırma 2.3:  F = x'y + xy'", 44, 102, 800, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40
+      });
+
+      // Circuit on left
+      drawCard(ctx, 44, 152, 620, 398, { radius: 22 });
+      const xIn = 110, y1 = 224, y2 = 290, y3 = 400, y4 = 466;
+      const labels = ["x'", 'y', 'x', "y'"];
+      const ys = [y1, y2, y3, y4];
+      ctx.save();
+      ctx.font = `700 24px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      labels.forEach((lb, i) => ctx.fillText(lb, xIn - 12, ys[i]));
+      ctx.restore();
+
+      const and1 = drawGateAND(ctx, 210, 212, 120, 90, { t, seed: 440 });
+      const and2 = drawGateAND(ctx, 210, 388, 120, 90, { t, seed: 441 });
+      const orG = drawGateOR(ctx, 440, 298, 130, 98, { t, seed: 442 });
+
+      drawSketchLine(ctx, [[xIn, y1], [176, y1], [176, and1.inTop[1]], and1.inTop], { seed: 443, t, width: 2.6 });
+      drawSketchLine(ctx, [[xIn, y2], [176, y2], [176, and1.inBot[1]], and1.inBot], { seed: 444, t, width: 2.6 });
+      drawSketchLine(ctx, [[xIn, y3], [176, y3], [176, and2.inTop[1]], and2.inTop], { seed: 445, t, width: 2.6 });
+      drawSketchLine(ctx, [[xIn, y4], [176, y4], [176, and2.inBot[1]], and2.inBot], { seed: 446, t, width: 2.6 });
+      drawSketchLine(ctx, [and1.out, [388, and1.out[1]], [388, orG.inTop[1]], orG.inTop], { seed: 447, t, width: 2.8 });
+      drawSketchLine(ctx, [and2.out, [388, and2.out[1]], [388, orG.inBot[1]], orG.inBot], { seed: 448, t, width: 2.8 });
+      drawSketchLine(ctx, [orG.out, [620, orG.out[1]]], { seed: 449, t, width: 3.2, color: PALETTE.green });
+      drawTextFit(ctx, 'F', 632, orG.out[1], 32, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: PALETTE.green });
+      drawTextFit(ctx, "(x' ve y' için 2 DEĞİL kapısı eklenir)", 354, 520, 560, { size: 15, color: PALETTE.muted, align: 'center' });
+
+      if (s === 'c4_ex23_table') {
+        drawTruthTable(ctx, {
+          x: 690, y: 152, w: 546, headerH: 42, rowH: 74,
+          rows,
+          cols: [
+            { label: 'x', widthRatio: 0.7, getVal: r => r.x },
+            { label: 'y', widthRatio: 0.7, getVal: r => r.y },
+            { label: "x'", widthRatio: 0.7, getVal: r => bNot(r.x) },
+            { label: "y'", widthRatio: 0.7, getVal: r => bNot(r.y) },
+            { label: "x'y", widthRatio: 0.9, getVal: r => bAnd(bNot(r.x), r.y) },
+            { label: "xy'", widthRatio: 0.9, getVal: r => bAnd(r.x, bNot(r.y)) },
+            { label: 'F', widthRatio: 1.0, getVal: r => r.out, highlight: true, isOut: true }
+          ],
+          t, seed: 450
+        });
+        drawHandwrittenNote(ctx, 'Girişler farklıysa 1!', 963, 524, clamp01(p / 0.5), { color: PALETTE.green, size: 30, align: 'center' });
+      }
+      return;
+    }
+
+    if (s === 'c4_hoca_quote') {
+      drawQuoteCard(
+        ctx,
+        '⭐ HOCA • 03.11',
+        '"Yani sorulabilir mi? Gayet basit bir soru."',
+        'Öğrenci (devre → tablo sorusu için): "Sınavda böyle sorar mısınız?"',
+        64, 126, 1152, 200
+      );
+      drawCard(ctx, 180, 376, 920, 146, { radius: 22, stroke: PALETTE.ice });
+      drawTextFit(ctx, 'Devreyi gör → her kapının çıkışını yaz → tabloyu oku!', W / 2, 449, 860, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, align: 'center'
+      });
+      return;
+    }
+
+    if (s === 'c4_ex24_circuit' || s === 'c4_ex25_table') {
+      const rows = truthTable(FNS.ex24_xnor_gate, 2);
+      drawTextFit(ctx, "Alıştırma 2.4–2.5:  F = (xy' + x'y)'", 44, 102, 860, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40
+      });
+
+      drawCard(ctx, 44, 152, 620, 398, { radius: 22 });
+      const xIn = 110, ys = [224, 290, 400, 466];
+      const labels = ['x', "y'", "x'", 'y'];
+      ctx.save();
+      ctx.font = `700 24px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      labels.forEach((lb, i) => ctx.fillText(lb, xIn - 12, ys[i]));
+      ctx.restore();
+
+      const and1 = drawGateAND(ctx, 210, 212, 120, 90, { t, seed: 460 });
+      const and2 = drawGateAND(ctx, 210, 388, 120, 90, { t, seed: 461 });
+      const norG = drawGateOR(ctx, 430, 298, 146, 98, { t, seed: 462, bubble: true, label: 'VEYA\'' });
+
+      drawSketchLine(ctx, [[xIn, ys[0]], [176, ys[0]], [176, and1.inTop[1]], and1.inTop], { seed: 463, t, width: 2.6 });
+      drawSketchLine(ctx, [[xIn, ys[1]], [176, ys[1]], [176, and1.inBot[1]], and1.inBot], { seed: 464, t, width: 2.6 });
+      drawSketchLine(ctx, [[xIn, ys[2]], [176, ys[2]], [176, and2.inTop[1]], and2.inTop], { seed: 465, t, width: 2.6 });
+      drawSketchLine(ctx, [[xIn, ys[3]], [176, ys[3]], [176, and2.inBot[1]], and2.inBot], { seed: 466, t, width: 2.6 });
+      drawSketchLine(ctx, [and1.out, [384, and1.out[1]], [384, norG.inTop[1]], norG.inTop], { seed: 467, t, width: 2.8 });
+      drawSketchLine(ctx, [and2.out, [384, and2.out[1]], [384, norG.inBot[1]], norG.inBot], { seed: 468, t, width: 2.8 });
+      drawSketchLine(ctx, [norG.out, [622, norG.out[1]]], { seed: 469, t, width: 3.2, color: PALETTE.terracotta });
+      drawTextFit(ctx, 'F', 632, norG.out[1], 32, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: PALETTE.terracotta });
+      drawFocusZink(ctx, norG.out[0] - 8, norG.out[1], 18, 18, lt, t, { color: PALETTE.terracotta });
+
+      if (s === 'c4_ex25_table') {
+        drawCard(ctx, 690, 152, 546, 92, { radius: 18, stroke: PALETTE.lavender });
+        drawTextFit(ctx, "DeMorgan:  (xy' + x'y)' = xy + x'y'", 963, 198, 510, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 22, align: 'center'
+        });
+        drawTruthTable(ctx, {
+          x: 690, y: 262, w: 546, headerH: 40, rowH: 56,
+          rows,
+          cols: [
+            { label: 'x', widthRatio: 0.8, getVal: r => r.x },
+            { label: 'y', widthRatio: 0.8, getVal: r => r.y },
+            { label: 'F', widthRatio: 1.2, getVal: r => r.out, highlight: true, isOut: true }
+          ],
+          t, seed: 470
+        });
+        drawHandwrittenNote(ctx, 'Girişler aynıysa 1!', 963, 550, clamp01(p / 0.5), { color: PALETTE.green, size: 28, align: 'center' });
+      }
+      return;
+    }
+
+    if (s === 'c4_try_q' || s === 'c4_try_wait' || s === 'c4_try_a') {
+      drawCard(ctx, 140, 74, 1000, 96, { radius: 20, stroke: PALETTE.ice });
+      drawTextFit(ctx, "SEN DENE:   x = 1,  y = 0  için   x'y + xy' = ?", W / 2, 122, 940, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 30, align: 'center'
+      });
+
+      if (s === 'c4_try_wait') {
+        drawCountdownRing(ctx, W / 2, 330, p, 5);
+        drawTextFit(ctx, 'Değerleri yerine koy… (5 sn)', W / 2, 412, 500, { size: 22, color: PALETTE.muted, align: 'center' });
+      } else if (s === 'c4_try_a') {
+        drawCard(ctx, 180, 214, 920, 300, { radius: 24, stroke: PALETTE.green });
+        drawTextFit(ctx, "1) Tümleyenler:   x' = 1' = 0     ve     y' = 0' = 1", W / 2, 276, 860, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 26, align: 'center'
+        });
+        drawTextFit(ctx, "2) Terimler:   x'y = 0·0 = 0     ve     xy' = 1·1 = 1", W / 2, 350, 860, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 26, align: 'center'
+        });
+        drawTextFit(ctx, `3) Toplam (VEYA):   0 + 1 = ${DATA.try4Val}  ✓`, W / 2, 434, 860, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 36, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, 796, 434, 62, 34, lt - dur * 0.4, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (s === 'c4_rev1' || s === 'c4_rev2' || s === 'c4_rev3') {
+      const items = [
+        { tag: 'B1', star: false, code: 'Boole: çıkarma / bölme YOK', desc: 'Ters eleman yok; x + yz = (x+y)(x+z) geçerli' },
+        { tag: 'B2', star: false, code: 'Düalite: + ↔ · , 0 ↔ 1', desc: 'Değişkenler tümlenmez!' },
+        { tag: 'B2', star: false, code: 'Soğurma: x + xy = x', desc: 'Düali: x(x + y) = x' },
+        { tag: 'B2', star: true, code: "DeMorgan: (x + y)' = x'y'", desc: "Parantez aç, işlemi çevir: (xy)' = x' + y'" },
+        { tag: '⭐', star: true, code: "x(x' + y) = xy", desc: "Yoklama sorusu! (x + x'y = x + y ile karıştırma)" },
+        { tag: 'B4', star: false, code: "(') → DEĞİL, · → VE, + → VEYA", desc: 'Devre → tablo: her kapı çıkışını adım adım yaz' }
+      ];
+      const visible = s === 'c4_rev1' ? (p < 0.5 ? 1 : 2) : (s === 'c4_rev2' ? (p < 0.5 ? 3 : 4) : (p < 0.5 ? 5 : 6));
+
+      ctx.save();
+      ctx.font = `italic 400 40px 'Instrument Serif', serif`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'center';
+      ctx.fillText('Kısım 1/2 Hızlı Tekrar', W / 2, 74);
+      ctx.restore();
+
+      items.forEach((it, idx) => {
+        if (idx >= visible) return;
+        const rowY = 108 + idx * 74;
+        drawCard(ctx, 64, rowY, 1152, 62, { radius: 16, stroke: it.star ? PALETTE.terracotta : 'rgba(36,55,45,0.09)' });
+        ctx.fillStyle = it.star ? PALETTE.terracotta : PALETTE.sage;
+        roundRectPath(ctx, 82, rowY + 14, 54, 34, 9);
+        ctx.fill();
+        ctx.font = `700 13px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(it.tag, 109, rowY + 31);
+
+        drawTextFit(ctx, it.code, 154, rowY + 31, 430, { family: "'JetBrains Mono', monospace", weight: 700, size: 21 });
+        drawTextFit(ctx, it.desc, 600, rowY + 31, 594, { size: 18, color: PALETTE.muted });
+      });
+
+      if (s === 'c4_rev3' && p > 0.6) {
+        drawHandwrittenNote(ctx, 'Sıradaki: 2. kısım — Tümleyen, minterm ve Σ↔Π!', W / 2, 574, clamp01((p - 0.6) / 0.3), {
+          color: PALETTE.green, size: 30, align: 'center'
+        });
+      }
+    }
+  }
+
+
+  // ==========================================================
+  // 7. Kinetic Subtitles & 4-Segment Progress Bar (5–8)
+  // ==========================================================
+  function drawProgressBar(ctx, t, exportScope) {
+    const barX = 44, barY = 14, barW = W - 88, barH = 5;
+    ctx.save();
+    if (exportScope) {
+      const ch = exportScope.chapter;
+      const p = clamp01((t - ch.start) / Math.max(0.01, ch.duration));
+      ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+      roundRectPath(ctx, barX, barY, barW, barH, 3);
+      ctx.fill();
+      ctx.fillStyle = ch.accent;
+      roundRectPath(ctx, barX, barY, barW * p, barH, 3);
+      ctx.fill();
+    } else {
+      const n = TIMELINE.chapters.length;
+      const gap = 10;
+      const segW = (barW - gap * (n - 1)) / n;
+      TIMELINE.chapters.forEach((ch, idx) => {
+        const sx = barX + idx * (segW + gap);
+        ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+        roundRectPath(ctx, sx, barY, segW, barH, 3);
+        ctx.fill();
+        const fillP = clamp01((t - ch.start) / Math.max(0.01, ch.duration));
+        if (fillP > 0) {
+          ctx.fillStyle = ch.accent;
+          roundRectPath(ctx, sx, barY, segW * fillP, barH, 3);
+          ctx.fill();
+        }
+      });
+    }
+    ctx.restore();
+  }
+
+  function drawKineticSubtitles(ctx, beat, lt) {
+    if (!state.subtitlesOn || !beat || !beat.text) return;
+    const words = beat.text.trim().split(/\s+/);
+    if (!words.length) return;
+
+    const totalChars = words.reduce((s, w) => s + w.length + 1, 0);
+    const activeStart = 0.08;
+    const activeEnd = Math.max(activeStart + 0.4, beat.duration - 0.15);
+    const span = activeEnd - activeStart;
+    let cur = activeStart;
+    let activeIdx = 0;
+    for (let i = 0; i < words.length; i++) {
+      const wDur = ((words[i].length + 1) / totalChars) * span;
+      if (lt >= cur && lt <= cur + wDur) { activeIdx = i; break; }
+      if (lt > cur + wDur) activeIdx = i;
+      cur += wDur;
+    }
+
+    ctx.save();
+    ctx.font = `600 28px 'Inter', sans-serif`;
+    const maxLineW = 1060;
+    const spaceW = ctx.measureText(' ').width;
+    const lines = [[]];
+    let lineW = 0;
+    words.forEach((w, idx) => {
+      const ww = ctx.measureText(w).width;
+      if (lineW > 0 && lineW + spaceW + ww > maxLineW) { lines.push([]); lineW = 0; }
+      lines[lines.length - 1].push({ word: w, idx, w: ww });
+      lineW += (lineW > 0 ? spaceW : 0) + ww;
+    });
+    const shownLines = lines.slice(0, 2);
+
+    const baseTop = shownLines.length === 1 ? 658 : 630;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    shownLines.forEach((ln, lIdx) => {
+      const totalW = ln.reduce((acc, item, i) => acc + item.w + (i > 0 ? spaceW : 0), 0);
+      let x = (W - totalW) / 2;
+      const y = baseTop + lIdx * 38;
+      ln.forEach((item, i) => {
+        if (i > 0) x += spaceW;
+        if (item.idx === activeIdx) {
+          ctx.fillStyle = PALETTE.sand;
+          roundRectPath(ctx, x - 5, y + 6, item.w + 10, 11, 5);
+          ctx.fill();
+        }
+        ctx.fillStyle = item.idx === activeIdx ? PALETTE.ink : 'rgba(36, 55, 45, 0.72)';
+        ctx.fillText(item.word, x, y);
+        x += item.w;
+      });
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 8. SFX Synthesis Engine (Shared Live + Offline MP4)
+  // ==========================================================
+  const noiseBufferCache = new WeakMap();
+  function getNoiseBuffer(ctx) {
+    if (noiseBufferCache.has(ctx)) return noiseBufferCache.get(ctx);
+    const len = Math.floor(ctx.sampleRate * 1.0);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    const rng = mulberry32(991122);
+    for (let i = 0; i < len; i++) data[i] = rng() * 2 - 1;
+    noiseBufferCache.set(ctx, buf);
+    return buf;
+  }
+
+  function scheduleSFX(ctx, dest, type, when, gainVal = 0.2, dur = 0.25) {
+    const t0 = Math.max(0, when);
+    const masterGain = gainVal * 0.22;
+
+    if (type === 'pop') {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, t0);
+      osc.frequency.exponentialRampToValueAtTime(190, t0 + 0.085);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 1.1, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.095);
+      osc.connect(g).connect(dest);
+      osc.start(t0); osc.stop(t0 + 0.11);
+    } else if (type === 'tick') {
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(2200, t0);
+      filt.Q.setValueAtTime(3.2, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.9, t0 + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.045);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0, 0, 0.06);
+    } else if (type === 'scribble') {
+      const d = clamp(dur || 0.45, 0.18, 0.8);
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      src.loop = true;
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(1450, t0);
+      filt.frequency.linearRampToValueAtTime(1900, t0 + d * 0.6);
+      filt.Q.setValueAtTime(2.0, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.55, t0 + 0.04);
+      g.gain.setValueAtTime(masterGain * 0.5, t0 + d - 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0); src.stop(t0 + d + 0.02);
+    } else if (type === 'zink') {
+      [880, 1108.73].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'triangle';
+        const st = t0 + i * 0.045;
+        osc.frequency.setValueAtTime(freq, st);
+        g.gain.setValueAtTime(0.001, st);
+        g.gain.linearRampToValueAtTime(masterGain * 1.15, st + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0005, st + 0.28);
+        osc.connect(g).connect(dest);
+        osc.start(st); osc.stop(st + 0.30);
+      });
+    } else if (type === 'whoosh') {
+      const d = 0.26;
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(360, t0);
+      filt.frequency.exponentialRampToValueAtTime(1600, t0 + d * 0.6);
+      filt.frequency.exponentialRampToValueAtTime(480, t0 + d);
+      filt.Q.setValueAtTime(1.4, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.7, t0 + d * 0.45);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0, 0, d + 0.02);
+    } else if (type === 'ding') {
+      [783.99, 1046.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        const st = t0 + i * 0.07;
+        osc.frequency.setValueAtTime(freq, st);
+        g.gain.setValueAtTime(0.001, st);
+        g.gain.linearRampToValueAtTime(masterGain * 1.15, st + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0005, st + 0.34);
+        osc.connect(g).connect(dest);
+        osc.start(st); osc.stop(st + 0.36);
+      });
+    } else if (type === 'buzz') {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(165, t0);
+      osc.frequency.linearRampToValueAtTime(130, t0 + 0.16);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.9, t0 + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.18);
+      osc.connect(g).connect(dest);
+      osc.start(t0); osc.stop(t0 + 0.2);
+    } else if (type === 'riser') {
+      const d = 0.55;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, t0);
+      osc.frequency.exponentialRampToValueAtTime(560, t0 + d);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.65, t0 + d * 0.85);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      osc.connect(g).connect(dest);
+      osc.start(t0); osc.stop(t0 + d + 0.02);
+    }
+  }
+
+  // ==========================================================
+  // 9. Safe Pure renderFrame(t) & Playback Loop
+  // ==========================================================
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  let renderErrorLogged = false;
+
+  function renderFrame(t, exportScope = null) {
+    try {
+      const clampedT = clamp(t, 0, Math.max(0, TIMELINE.duration - 0.001));
+      ctx.drawImage(paperCanvas, 0, 0);
+
+      let beat = TIMELINE.beats[0];
+      for (let i = 0; i < TIMELINE.beats.length; i++) {
+        if (clampedT >= TIMELINE.beats[i].start && clampedT < TIMELINE.beats[i].end) {
+          beat = TIMELINE.beats[i];
+          break;
+        }
+      }
+      if (!beat && TIMELINE.beats.length) beat = TIMELINE.beats[TIMELINE.beats.length - 1];
+
+      const chMeta = TIMELINE.chapters.find(c => c.num === beat.chapter) || TIMELINE.chapters[0];
+      const lt = clampedT - beat.start;
+
+      drawProgressBar(ctx, clampedT, exportScope);
+
+      if (beat.scene !== 'intro' && beat.scene !== 'outro') {
+        ctx.save();
+        ctx.font = `600 11px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`BÖLÜM 0${chMeta.num} • ${chMeta.title.toUpperCase()}`, 44, 38);
+        ctx.restore();
+      }
+
+      renderChapterScene(ctx, beat, lt, beat.duration, clampedT, chMeta);
+      drawKineticSubtitles(ctx, beat, lt);
+    } catch (err) {
+      if (!renderErrorLogged) {
+        console.error('safeRender error:', err);
+        renderErrorLogged = true;
+      }
+    }
+  }
+
+  const state = {
+    time: 0,
+    playing: false,
+    speed: 1,
+    narrationOn: false,
+    sfxOn: true,
+    subtitlesOn: true,
+    lastFrameTs: 0,
+    activeBeatIdx: -1,
+    audioCtx: null,
+    compNode: null,
+    narrationBuffer: null,
+    narrationSource: null,
+    lastSfxIdx: -1
+  };
+
+  function ensureLiveAudioCtx() {
+    if (!state.audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      state.audioCtx = new AC();
+      const comp = state.audioCtx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 12;
+      comp.ratio.value = 4;
+      comp.connect(state.audioCtx.destination);
+      state.compNode = comp;
+    }
+    if (state.audioCtx.state === 'suspended') state.audioCtx.resume().catch(() => {});
+    return state.audioCtx;
+  }
+
+  async function decodeEmbeddedNarration() {
+    if (!TIMELINE.narrationAudio || !TIMELINE.narrationAudio.src) return null;
+    if (state.narrationBuffer) return state.narrationBuffer;
+    try {
+      const res = await fetch(TIMELINE.narrationAudio.src);
+      const buf = await res.arrayBuffer();
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      state.narrationBuffer = await ac.decodeAudioData(buf);
+      await ac.close();
+      return state.narrationBuffer;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function stopLiveNarration() {
+    if (state.narrationSource) {
+      try { state.narrationSource.stop(); } catch (e) {}
+      state.narrationSource = null;
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+  }
+
+  function speakBeatWebSpeech(beat) {
+    if (!state.narrationOn || !beat || !beat.text || TIMELINE.narrationAudio) return;
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(beat.text);
+      u.lang = 'tr-TR';
+      u.rate = state.speed;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  function syncSfxIndexToTime(t) {
+    let idx = -1;
+    for (let i = 0; i < TIMELINE.sfxEvents.length; i++) {
+      if (TIMELINE.sfxEvents[i].t < t) idx = i;
+      else break;
+    }
+    state.lastSfxIdx = idx;
+  }
+
+  function triggerLiveSfxInRange(prevT, curT) {
+    if (!state.sfxOn || curT <= prevT) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    for (let i = state.lastSfxIdx + 1; i < TIMELINE.sfxEvents.length; i++) {
+      const ev = TIMELINE.sfxEvents[i];
+      if (ev.t <= curT + 0.015) {
+        if (ev.t >= prevT - 0.05) scheduleSFX(ctx, state.compNode, ev.type, ctx.currentTime + 0.005, ev.gain, ev.dur);
+        state.lastSfxIdx = i;
+      } else break;
+    }
+  }
+
+  function playCurrentNarrationSliceIfEmbedded(t) {
+    if (!state.narrationOn || !state.narrationBuffer || !TIMELINE.narrationAudio) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    stopLiveNarration();
+    const beat = TIMELINE.beats.find(b => t >= b.start && t < b.end);
+    if (!beat || !beat.audioSlice) return;
+    const [s, e] = beat.audioSlice;
+    const offsetInBeat = t - beat.start;
+    const rem = (e - s) - offsetInBeat;
+    if (rem > 0.05) {
+      const src = ctx.createBufferSource();
+      src.buffer = state.narrationBuffer;
+      src.playbackRate.value = state.speed;
+      src.connect(state.compNode);
+      src.start(ctx.currentTime, s + offsetInBeat, rem);
+      state.narrationSource = src;
+    }
+  }
+
+  function seekTo(newT) {
+    state.time = clamp(newT, 0, Math.max(0, TIMELINE.duration - 0.02));
+    syncSfxIndexToTime(state.time);
+    stopLiveNarration();
+    state.activeBeatIdx = -1;
+    if (state.playing) {
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        state.activeBeatIdx = beat.index;
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    }
+    renderFrame(state.time);
+    updateUI();
+  }
+
+  function togglePlay(forceState) {
+    const next = typeof forceState === 'boolean' ? forceState : !state.playing;
+    if (next && state.time >= TIMELINE.duration - 0.05) {
+      state.time = 0;
+      syncSfxIndexToTime(0);
+    }
+    state.playing = next;
+    if (state.playing) {
+      ensureLiveAudioCtx();
+      state.lastFrameTs = performance.now();
+      syncSfxIndexToTime(state.time);
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        state.activeBeatIdx = beat.index;
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    } else {
+      stopLiveNarration();
+    }
+    updateUI();
+  }
+
+  function animLoop(now) {
+    if (state.playing) {
+      const dt = Math.min(0.1, (now - state.lastFrameTs) / 1000) * state.speed;
+      state.lastFrameTs = now;
+      const prevT = state.time;
+      state.time += dt;
+      if (state.time >= TIMELINE.duration) {
+        state.time = TIMELINE.duration;
+        state.playing = false;
+        stopLiveNarration();
+      } else {
+        triggerLiveSfxInRange(prevT, state.time);
+        const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+        if (beat && beat.index !== state.activeBeatIdx) {
+          state.activeBeatIdx = beat.index;
+          if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+          else speakBeatWebSpeech(beat);
+        }
+      }
+      renderFrame(state.time);
+      updateUI();
+    }
+    requestAnimationFrame(animLoop);
+  }
+
+  // ==========================================================
+  // 10. UI Controls & Chapter Cards
+  // ==========================================================
+  const btnPlay = document.getElementById('btnPlay');
+  const btnBack = document.getElementById('btnBack');
+  const btnFwd = document.getElementById('btnFwd');
+  const btnSpeed = document.getElementById('btnSpeed');
+  const btnNar = document.getElementById('btnNar');
+  const btnSfx = document.getElementById('btnSfx');
+  const btnSub = document.getElementById('btnSub');
+  const timeReadout = document.getElementById('timeReadout');
+  const chapterStrip = document.getElementById('chapterStrip');
+  const toastEl = document.getElementById('toast');
+
+  function formatMMSS(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toastEl.classList.remove('show'), 3600);
+  }
+
+  function buildChapterCards() {
+    chapterStrip.innerHTML = '';
+    TIMELINE.chapters.forEach((ch) => {
+      const card = document.createElement('div');
+      card.className = 'ch-card';
+      card.dataset.chapter = String(ch.num);
+      card.innerHTML = `
+        <div>
+          <div class="ch-head">
+            <span class="ch-num">BÖLÜM 0${ch.num}</span>
+            <span>${formatMMSS(ch.duration)}</span>
+          </div>
+          <div class="ch-title" style="margin-top:8px;">${ch.title}</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn" data-watch="${ch.num}">▶ İzle</button>
+          <button class="btn export-btn" data-mp4="${ch.num}">⬇ MP4</button>
+        </div>
+      `;
+      chapterStrip.appendChild(card);
+    });
+
+    chapterStrip.querySelectorAll('[data-watch]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ch = TIMELINE.chapters.find(c => c.num === Number(btn.dataset.watch));
+        if (ch) { seekTo(ch.start); togglePlay(true); }
+      });
+    });
+
+    chapterStrip.querySelectorAll('[data-mp4]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ch = TIMELINE.chapters.find(c => c.num === Number(btn.dataset.mp4));
+        if (ch) exportRangeMP4({ start: ch.start, end: ch.end, chapter: ch, filename: ch.filename });
+      });
+    });
+  }
+
+  function updateUI() {
+    btnPlay.textContent = state.playing ? '❚❚ Duraklat' : '▶ Oynat';
+    timeReadout.textContent = `${formatMMSS(state.time)} / ${formatMMSS(TIMELINE.duration)}`;
+    btnSpeed.textContent = `${state.speed}×`;
+    btnNar.textContent = state.narrationOn ? '🗣️ Anlatım: Açık' : '🗣️ Anlatım: Kapalı';
+    btnNar.classList.toggle('active-pill', state.narrationOn);
+    btnSfx.textContent = state.sfxOn ? '🔊 SFX: Açık' : '🔇 SFX: Kapalı';
+    btnSfx.classList.toggle('active-pill', state.sfxOn);
+    btnSub.textContent = state.subtitlesOn ? '💬 Altyazı: Açık' : '💬 Altyazı: Kapalı';
+    btnSub.classList.toggle('active-pill', state.subtitlesOn);
+
+    const activeCh = TIMELINE.chapters.find(c => state.time >= c.start && state.time < c.end) || TIMELINE.chapters[0];
+    document.querySelectorAll('.ch-card').forEach(el => {
+      el.classList.toggle('active', activeCh && Number(el.dataset.chapter) === activeCh.num);
+    });
+  }
+
+  function toggleNarration() {
+    state.narrationOn = !state.narrationOn;
+    if (!state.narrationOn) stopLiveNarration();
+    else if (state.playing) {
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    }
+    updateUI();
+  }
+
+  canvas.addEventListener('click', () => togglePlay());
+  btnPlay.addEventListener('click', () => togglePlay());
+  btnBack.addEventListener('click', () => seekTo(state.time - 5));
+  btnFwd.addEventListener('click', () => seekTo(state.time + 5));
+  btnSpeed.addEventListener('click', () => {
+    state.speed = state.speed === 0.75 ? 1 : (state.speed === 1 ? 1.25 : 0.75);
+    if (state.narrationSource) state.narrationSource.playbackRate.value = state.speed;
+    updateUI();
+  });
+  btnNar.addEventListener('click', toggleNarration);
+  btnSfx.addEventListener('click', () => { state.sfxOn = !state.sfxOn; updateUI(); });
+  btnSub.addEventListener('click', () => { state.subtitlesOn = !state.subtitlesOn; renderFrame(state.time); updateUI(); });
+
+  document.getElementById('btnExportFull').addEventListener('click', () => {
+    exportRangeMP4({ start: 0, end: TIMELINE.duration, chapter: null, filename: META.onek + '-tam-video.mp4' });
+  });
+
+  document.getElementById('btnExportAll').addEventListener('click', async () => {
+    for (let i = 0; i < TIMELINE.chapters.length; i++) {
+      const ch = TIMELINE.chapters[i];
+      const res = await exportRangeMP4({ start: ch.start, end: ch.end, chapter: ch, filename: ch.filename }, true);
+      if (res && res.cancelled) break;
+      await new Promise(r => setTimeout(r, 350));
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); seekTo(state.time - 5); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); seekTo(state.time + 5); }
+    else if (e.key === 'n' || e.key === 'N') toggleNarration();
+    else if (e.key === 'm' || e.key === 'M') { state.sfxOn = !state.sfxOn; updateUI(); }
+    else if (e.key === 'c' || e.key === 'C') { state.subtitlesOn = !state.subtitlesOn; renderFrame(state.time); updateUI(); }
+    else if (e.key >= '5' && e.key <= '8') {
+      const ch = TIMELINE.chapters.find(c => c.num === Number(e.key));
+      if (ch) { seekTo(ch.start); togglePlay(true); }
+    }
+  });
+
+  // ==========================================================
+  // 11. Deterministic MP4 + AAC Export (WebCodecs + OfflineAudioContext + MediaRecorder fallback)
+  // ==========================================================
+  const exportModal = document.getElementById('exportModal');
+  const exportTitle = document.getElementById('exportTitle');
+  const exportSubtext = document.getElementById('exportSubtext');
+  const exportBar = document.getElementById('exportBar');
+  const exportPct = document.getElementById('exportPct');
+  const exportFrames = document.getElementById('exportFrames');
+  const exportMethodNote = document.getElementById('exportMethodNote');
+  const btnCancelExport = document.getElementById('btnCancelExport');
+
+  let cancelRequested = false;
+  btnCancelExport.addEventListener('click', () => { cancelRequested = true; });
+
+  async function renderOfflineAudioBuffer(start, end) {
+    const dur = Math.max(0.1, end - start);
+    const narBuf = await decodeEmbeddedNarration();
+    const sr = narBuf ? narBuf.sampleRate : 44100;
+    const offCtx = new OfflineAudioContext(2, Math.ceil(dur * sr), sr);
+
+    const comp = offCtx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 12;
+    comp.ratio.value = 4;
+    comp.connect(offCtx.destination);
+
+    if (narBuf) {
+      TIMELINE.beats.forEach(beat => {
+        if (beat.end > start && beat.start < end && beat.audioSlice) {
+          const [as, ae] = beat.audioSlice;
+          const relStart = Math.max(0, beat.start - start);
+          const trimHead = Math.max(0, start - beat.start);
+          const playDur = Math.min(ae - as - trimHead, end - Math.max(start, beat.start));
+          if (playDur > 0.02) {
+            const src = offCtx.createBufferSource();
+            src.buffer = narBuf;
+            src.connect(comp);
+            src.start(relStart, as + trimHead, playDur);
+          }
+        }
+      });
+    }
+
+    TIMELINE.sfxEvents.forEach(ev => {
+      if (ev.t >= start && ev.t < end) scheduleSFX(offCtx, comp, ev.type, ev.t - start, ev.gain, ev.dur);
+    });
+
+    return await offCtx.startRendering();
+  }
+
+  async function pickAudioEncoderConfig(sampleRate) {
+    if (typeof AudioEncoder === 'undefined') return null;
+    const candidates = [
+      { codec: 'mp4a.40.2', muxCodec: 'aac', sampleRate, numberOfChannels: 2, bitrate: 128_000 },
+      { codec: 'opus', muxCodec: 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: 128_000 }
+    ];
+    for (const c of candidates) {
+      try {
+        const res = await AudioEncoder.isConfigSupported({
+          codec: c.codec, sampleRate: c.sampleRate, numberOfChannels: c.numberOfChannels, bitrate: c.bitrate
+        });
+        if (res && res.supported) return c;
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  async function muxOfflineAudio(muxer, audioBuffer, audioCfg) {
+    const encoder = new AudioEncoder({
+      output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+      error: (err) => { throw err; }
+    });
+    encoder.configure({
+      codec: audioCfg.codec, sampleRate: audioCfg.sampleRate,
+      numberOfChannels: audioCfg.numberOfChannels, bitrate: audioCfg.bitrate
+    });
+
+    const sr = audioCfg.sampleRate;
+    const chCount = audioCfg.numberOfChannels;
+    const totalSamples = audioBuffer.length;
+    for (let offset = 0; offset < totalSamples; offset += 1024) {
+      if (cancelRequested) break;
+      const count = Math.min(1024, totalSamples - offset);
+      const planar = new Float32Array(count * chCount);
+      for (let ch = 0; ch < chCount; ch++) {
+        const srcCh = Math.min(ch, audioBuffer.numberOfChannels - 1);
+        planar.set(audioBuffer.getChannelData(srcCh).subarray(offset, offset + count), ch * count);
+      }
+      const ad = new AudioData({
+        format: 'f32-planar', sampleRate: sr, numberOfFrames: count,
+        numberOfChannels: chCount, timestamp: Math.round((offset / sr) * 1_000_000), data: planar
+      });
+      encoder.encode(ad);
+      ad.close();
+    }
+    await encoder.flush();
+    encoder.close();
+  }
+
+  async function exportMediaRecorderFallback(scope, filename) {
+    const start = scope.start, end = scope.end, dur = end - start;
+    exportSubtext.textContent = 'WebCodecs bulunamadı; MediaRecorder yedeği çalışıyor…';
+    const stream = canvas.captureStream(FPS);
+    const ac = ensureLiveAudioCtx();
+    const dest = ac ? ac.createMediaStreamDestination() : null;
+    if (dest) dest.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+
+    const mime = MediaRecorder.isTypeSupported('video/mp4')
+      ? 'video/mp4'
+      : (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm');
+    const outName = mime.includes('mp4') ? filename : filename.replace(/\.mp4$/, '.webm');
+    exportMethodNote.textContent = `Yöntem: MediaRecorder (${mime}).`;
+
+    const chunks = [];
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 });
+    rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    const recDone = new Promise(resolve => { rec.onstop = resolve; });
+    rec.start(250);
+
+    if (ac && dest) {
+      const baseTime = ac.currentTime + 0.05;
+      TIMELINE.sfxEvents.forEach(ev => {
+        if (ev.t >= start && ev.t < end) scheduleSFX(ac, dest, ev.type, baseTime + (ev.t - start), ev.gain, ev.dur);
+      });
+    }
+
+    const tStart = performance.now();
+    const totalFrames = Math.ceil(dur * FPS);
+    while (!cancelRequested) {
+      const elapsed = (performance.now() - tStart) / 1000;
+      if (elapsed >= dur) break;
+      renderFrame(start + elapsed, scope.chapter ? scope : null);
+      const pct = Math.min(100, Math.round((elapsed / dur) * 100));
+      exportBar.style.width = `${pct}%`;
+      exportPct.textContent = `%${pct}`;
+      exportFrames.textContent = `${Math.min(totalFrames, Math.floor(elapsed * FPS))} / ${totalFrames} kare`;
+      await new Promise(r => setTimeout(r, 16));
+    }
+    rec.stop();
+    await recDone;
+    if (cancelRequested) return { cancelled: true };
+
+    triggerDownload(new Blob(chunks, { type: mime }), outName);
+    showToast(`${outName} indirildi.`);
+    return { ok: true };
+  }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+  }
+
+  async function exportRangeMP4(scope) {
+    togglePlay(false);
+    cancelRequested = false;
+    exportModal.classList.add('open');
+    exportBar.style.width = '0%';
+    exportPct.textContent = '%0';
+    exportTitle.textContent = scope.chapter ? `Bölüm ${scope.chapter.num}: ${scope.chapter.title}` : 'Tam Video MP4';
+    exportSubtext.textContent = `Hazırlanıyor: ${scope.filename}`;
+
+    const speechNote = TIMELINE.narrationAudio
+      ? 'Gömülü anlatım WAV ve tüm SFX olayları dahil ediliyor.'
+      : 'Not: Gömülü anlatım sesi henüz eklenmediği için Web Speech MP4 dosyasına girmez; tüm SFX sesleri dahil edilir.';
+
+    try {
+      let supportedCfg = null;
+      if (typeof VideoEncoder !== 'undefined' && typeof Mp4Muxer !== 'undefined') {
+        for (const codec of ['avc1.4d002a', 'avc1.640028', 'avc1.42001f']) {
+          const cfg = { codec, width: W, height: H, bitrate: 6_000_000, framerate: FPS };
+          try {
+            const res = await VideoEncoder.isConfigSupported(cfg);
+            if (res && res.supported) { supportedCfg = cfg; break; }
+          } catch (e) {}
+        }
+      }
+
+      if (!supportedCfg) {
+        const res = await exportMediaRecorderFallback(scope, scope.filename);
+        exportModal.classList.remove('open');
+        renderFrame(state.time);
+        return res;
+      }
+
+      exportSubtext.textContent = 'Ses izi (OfflineAudioContext) hazırlanıyor…';
+      let offlineBuf = await renderOfflineAudioBuffer(scope.start, scope.end);
+      const audioCfg = await pickAudioEncoderConfig(offlineBuf.sampleRate);
+
+      if (audioCfg && audioCfg.sampleRate !== offlineBuf.sampleRate) {
+        const dur = Math.max(0.1, scope.end - scope.start);
+        const off48 = new OfflineAudioContext(2, Math.ceil(dur * audioCfg.sampleRate), audioCfg.sampleRate);
+        const src = off48.createBufferSource();
+        src.buffer = offlineBuf;
+        src.connect(off48.destination);
+        src.start(0);
+        offlineBuf = await off48.startRendering();
+      }
+
+      const audioLabel = audioCfg ? `${audioCfg.muxCodec.toUpperCase()} ses kodlama` : 'Sessiz MP4';
+      exportMethodNote.textContent = `Yöntem: WebCodecs H.264 + ${audioLabel}. ${speechNote}`;
+
+      const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: { codec: 'avc', width: W, height: H },
+        ...(audioCfg ? { audio: { codec: audioCfg.muxCodec, numberOfChannels: audioCfg.numberOfChannels, sampleRate: audioCfg.sampleRate } } : {}),
+        fastStart: 'in-memory'
+      });
+
+      let encodeErr = null;
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => { encodeErr = e; }
+      });
+      encoder.configure(supportedCfg);
+
+      const dur = scope.end - scope.start;
+      const totalFrames = Math.max(1, Math.round(dur * FPS));
+      const frameDurUs = Math.round(1_000_000 / FPS);
+      exportSubtext.textContent = `Kareler kodlanıyor: ${scope.filename}`;
+
+      for (let f = 0; f < totalFrames; f++) {
+        if (cancelRequested || encodeErr) break;
+        const t = scope.start + f / FPS;
+        renderFrame(t, scope.chapter ? scope : null);
+
+        const frame = new VideoFrame(canvas, { timestamp: f * frameDurUs, duration: frameDurUs });
+        encoder.encode(frame, { keyFrame: f % (FPS * 2) === 0 });
+        frame.close();
+
+        if (f % 15 === 0 || f === totalFrames - 1) {
+          const pct = Math.min(100, Math.round(((f + 1) / totalFrames) * 100));
+          exportBar.style.width = `${pct}%`;
+          exportPct.textContent = `%${pct}`;
+          exportFrames.textContent = `${f + 1} / ${totalFrames} kare (${formatMMSS(f / FPS)} / ${formatMMSS(dur)})`;
+          await new Promise(r => setTimeout(r, 0));
+        }
+        while (encoder.encodeQueueSize > 12 && !cancelRequested) {
+          await new Promise(r => setTimeout(r, 4));
+        }
+      }
+
+      if (cancelRequested) {
+        try { encoder.close(); } catch (e) {}
+        exportModal.classList.remove('open');
+        renderFrame(state.time);
+        return { cancelled: true };
+      }
+      if (encodeErr) throw encodeErr;
+
+      await encoder.flush();
+      encoder.close();
+
+      if (audioCfg) {
+        exportSubtext.textContent = `Ses izi (${audioCfg.muxCodec.toUpperCase()}) birleştiriliyor…`;
+        await muxOfflineAudio(muxer, offlineBuf, audioCfg);
+      }
+
+      muxer.finalize();
+      triggerDownload(new Blob([muxer.target.buffer], { type: 'video/mp4' }), scope.filename);
+      exportModal.classList.remove('open');
+      renderFrame(state.time);
+      showToast(`${scope.filename} indirildi.`);
+      return { ok: true };
+    } catch (err) {
+      console.error('Export error:', err);
+      exportModal.classList.remove('open');
+      renderFrame(state.time);
+      showToast(`Dışa aktarma hatası: ${err.message || err}`);
+      return { error: err };
+    }
+  }
+
+  // ==========================================================
+  // 12. Boot
+  // ==========================================================
+  async function init() {
+    selfTest();
+    buildTimeline();
+    buildChapterCards();
+    updateUI();
+
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    document.getElementById('fontStatus').textContent = `${TIMELINE.chapters.length} Bölüm • ${formatMMSS(TIMELINE.duration)} • 1280×720 30 FPS`;
+    decodeEmbeddedNarration();
+    renderFrame(0);
+    requestAnimationFrame(animLoop);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3846 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mantıksal Tasarım 2B — Tümleyen, Minterm ve Maxterm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+<style>
+  :root {
+    --bg: #F2F3ED;
+    --card: #FFFFFF;
+    --ink: #24372D;
+    --muted: #7C8A7E;
+    --sage: #9CC29A;
+    --lavender: #B6A2DB;
+    --terracotta: #CF8A68;
+    --sand: #E3C9A0;
+    --ice: #9FC3D6;
+    --border: rgba(36, 55, 45, 0.09);
+    --shadow: 0 10px 30px rgba(36, 55, 45, 0.06), 0 2px 8px rgba(36, 55, 45, 0.04);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px 20px 42px;
+  }
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .brand-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--ink);
+    margin: 0;
+  }
+  .topbar-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .stage-shell {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #F2F3ED;
+  }
+  canvas#stage {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+  }
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: #F7F8F3;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 13px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+  }
+  .btn:hover { background: #ECEFE4; border-color: rgba(36, 55, 45, 0.18); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary {
+    background: var(--ink);
+    color: #F2F3ED;
+    border-color: var(--ink);
+  }
+  .btn.primary:hover { background: #2F473B; }
+  .btn.active-pill {
+    background: rgba(156, 194, 154, 0.35);
+    border-color: rgba(36, 55, 45, 0.25);
+  }
+  .btn.export-btn {
+    background: rgba(227, 201, 160, 0.35);
+  }
+  .btn.export-btn:hover {
+    background: rgba(227, 201, 160, 0.58);
+  }
+  .time-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 0 6px;
+    min-width: 112px;
+    text-align: center;
+  }
+  .chapter-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  @media (max-width: 960px) {
+    .chapter-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px) {
+    .chapter-strip { grid-template-columns: 1fr; }
+  }
+  .ch-card {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 13px 14px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+  }
+  .ch-card.active {
+    border-color: var(--terracotta);
+    background: #FFFFFF;
+  }
+  .ch-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ch-num {
+    background: #F2F3ED;
+    color: var(--ink);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .ch-card.active .ch-num {
+    background: rgba(207, 138, 104, 0.22);
+    color: #8E4B2D;
+  }
+  .ch-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .ch-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .ch-actions .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 6px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+  .kbd-hint {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(36, 55, 45, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 22px 24px;
+    box-shadow: 0 24px 60px rgba(36, 55, 45, 0.22);
+    border: 1px solid var(--border);
+  }
+  .modal h3 {
+    margin: 0 0 6px;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--ink);
+  }
+  .modal p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .prog-track {
+    height: 10px;
+    background: #ECEFE4;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 14px 0 10px;
+  }
+  .prog-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--terracotta);
+    border-radius: 999px;
+    transition: width 0.08s linear;
+  }
+  .modal-stats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .modal-note {
+    background: #F6F7F1;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink);
+    margin: 10px 0 14px;
+    border: 1px solid var(--border);
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink);
+    color: #F2F3ED;
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 120;
+    box-shadow: 0 8px 24px rgba(36,55,45,0.2);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .selftest-err {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: #C55A4B;
+    color: #FFFFFF;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    z-index: 200;
+    box-shadow: 0 6px 18px rgba(197, 90, 75, 0.3);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-kicker">MANTIKSAL TASARIM • BÖLÜM 2 • KISIM 2/2</span>
+      <h1 class="brand-title">Tümleyen, Minterm ve Maxterm</h1>
+    </div>
+    <div class="topbar-meta" id="fontStatus">Yazı tipleri hazırlanıyor…</div>
+  </div>
+
+  <div class="stage-shell">
+    <div class="canvas-wrap">
+      <canvas id="stage" width="1280" height="720"></canvas>
+    </div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <button class="btn primary" id="btnPlay">▶ Oynat</button>
+      <button class="btn" id="btnBack">↺ -5 sn</button>
+      <button class="btn" id="btnFwd">+5 sn ↻</button>
+      <span class="time-readout" id="timeReadout">00:00 / 00:00</span>
+      <button class="btn" id="btnSpeed">1×</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="btn" id="btnNar">🗣️ Anlatım: Kapalı</button>
+      <button class="btn active-pill" id="btnSfx">🔊 SFX: Açık</button>
+      <button class="btn active-pill" id="btnSub">💬 Altyazı: Açık</button>
+      <button class="btn export-btn" id="btnExportFull">⬇ Tam Video MP4</button>
+      <button class="btn export-btn" id="btnExportAll">⬇ Tümünü İndir (4 MP4)</button>
+    </div>
+  </div>
+
+  <div class="chapter-strip" id="chapterStrip"></div>
+
+  <div class="kbd-hint">
+    Kısayollar: [Space] Oynat/Duraklat • [← / →] ±5 sn • [5–8] Bölüme atla • [N] Anlatım • [M] SFX • [C] Altyazı
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportModal">
+  <div class="modal">
+    <h3 id="exportTitle">MP4 Dışa Aktarılıyor</h3>
+    <p id="exportSubtext">Kare kare deterministik kodlama hazırlanıyor…</p>
+    <div class="prog-track"><div class="prog-fill" id="exportBar"></div></div>
+    <div class="modal-stats">
+      <span id="exportPct">%0</span>
+      <span id="exportFrames">0 / 0 kare</span>
+    </div>
+    <div class="modal-note" id="exportMethodNote"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btnCancelExport">İptal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="narration-data">
+[
+  {"id":"c5b00","chapter":5,"text":"","seconds":1.4},
+  {"id":"c5b01","chapter":5,"text":"F'nin tersini bulmak için tabloyu baştan mı çıkaracağız?","seconds":4.6},
+  {"id":"c5b02","chapter":5,"text":"F'nin tümleyeni F üssü, tabloda sıfır ile birin yer değiştirmesidir.","seconds":5.5},
+  {"id":"c5b03","chapter":5,"text":"Büyük devrelerde tablo çıkarmadan, tek kuralla doğrudan tümleyen buluruz.","seconds":5.8},
+  {"id":"c5b04","chapter":5,"text":"Genel DeMorgan kuralı: VE ile VEYA'yı değiştir, sonra her harfi tümle.","seconds":5.6},
+  {"id":"c5b05","chapter":5,"text":"Örnek iki nokta iki. Dıştan DeMorgan uygula: iki çarpımın tümleyeni gelir.","seconds":5.9},
+  {"id":"c5b06","chapter":5,"text":"İlk çarpımı açalım. Bu ifade x artı y üssü artı z olur.","seconds":5.4},
+  {"id":"c5b07","chapter":5,"text":"İkinci çarpımı açalım. Bu ifade x artı y artı z üssü olur.","seconds":5.4},
+  {"id":"c5b08","chapter":5,"text":"Sonucu okuyalım. İlk parantez x artı y üssü artı z. İkinci parantez x artı y artı z üssü.","seconds":6.8},
+  {"id":"c5b09","chapter":5,"text":"Sağlama yapalım. Doğruluk tablosunda F bir ve F bir üssünün her satırı tam ters.","seconds":6.5},
+  {"id":"c5b10","chapter":5,"text":"","seconds":1.0},
+  {"id":"c5b11","chapter":5,"text":"Kısa yol: önce düalini al, VE ile VEYA'yı değiştir. Sonra her harfi tümle, aynı sonuç!","seconds":6.7},
+  {"id":"c5b12","chapter":5,"text":"Dikkat! Yalnız düal almak tümleyeni vermez. Harfleri de mutlaka tümlemelisin.","seconds":6.1},
+  {"id":"c5b13","chapter":5,"text":"Sınav anı! Alıştırma iki nokta altı: bu fonksiyonun tümleyeni hangisidir?","seconds":5.9},
+  {"id":"c5b14","chapter":5,"text":"","seconds":4.0},
+  {"id":"c5b15","chapter":5,"text":"Cevap A: A artı B C artı B üssü C üssü! Şimdi adım adım çözelim.","seconds":5.3},
+  {"id":"c5b16","chapter":5,"text":"İlk adım: A üssü ortak çarpan parantezine al.","seconds":4.0},
+  {"id":"c5b17","chapter":5,"text":"Dıştan DeMorgan: A üssü A olur. Çarpım artıya döner, iç parantez tümlenir.","seconds":5.9},
+  {"id":"c5b18","chapter":5,"text":"İçteki VEYA iki çarpıma ayrılır. B üssü artı C, çarpı B artı C üssü.","seconds":5.5},
+  {"id":"c5b19","chapter":5,"text":"Çarpımı açalım. B üssü B ve C C üssü sıfırlanır. Kalanlar B C artı B üssü C üssüdür.","seconds":6.6},
+  {"id":"c5b20","chapter":5,"text":"A ile birleştirelim. Sonuç F üssü eşittir A artı B C artı B üssü C üssü. Doğru şık A!","seconds":6.4},
+  {"id":"c5b21","chapter":5,"text":"Tuzaklar: B şıkkı A'yı tümlememiş. D içini bırakmış. C ise yalnız düal alma hatası.","seconds":6.0},
+  {"id":"c5b22","chapter":5,"text":"","seconds":1.2},
+
+  {"id":"c6b00","chapter":6,"text":"","seconds":1.3},
+  {"id":"c6b01","chapter":6,"text":"Her doğruluk tablosu tek bir formüle dönüşebilir mi?","seconds":4.4},
+  {"id":"c6b02","chapter":6,"text":"Minterm tüm değişkenlerin VE'sidir. Bit sıfırsa harf tümlü, birse düz yazılır.","seconds":6.2},
+  {"id":"c6b03","chapter":6,"text":"Maxterm tüm değişkenlerin VEYA'sıdır. Bit birse tümlü yazılır. Her M j, m j'nin tümleyenidir.","seconds":6.8},
+  {"id":"c6b04","chapter":6,"text":"Hoca on Kasım dersinde: size kıyak olsun diye doğruluk tablosunu verebilirim, dedi.","seconds":6.5},
+  {"id":"c6b05","chapter":6,"text":"Sezgi: m beş yalnız beşinci satırda bir eder. M beş ise yalnız orada sıfır olur.","seconds":6.6},
+  {"id":"c6b06","chapter":6,"text":"Kural: bir satırları mintermlerin toplamı sigma. Sıfır satırları ise maxtermlerin çarpımı pi.","seconds":6.9},
+  {"id":"c6b07","chapter":6,"text":"Hoca sözü: maxtermlerin çarpımı olabilir, toplamı olmaz. Mintermlerin toplamı olur, çarpımı olmaz.","seconds":7.3},
+  {"id":"c6b08","chapter":6,"text":"Tablodan okuyalım. f bir sütununda üç tane bir var. İndisleri bir, dört ve yedi.","seconds":6.5},
+  {"id":"c6b09","chapter":6,"text":"Bu üç satırın mintermlerini toplayalım. Sonuç m bir artı m dört artı m yedi.","seconds":6.2},
+  {"id":"c6b10","chapter":6,"text":"Örnek iki nokta dört: F eşittir A artı B üssü C. Önce A bir olan dört satır yanar.","seconds":6.9},
+  {"id":"c6b11","chapter":6,"text":"Sonra B C eşittir sıfır bir olan bir ve beşinci satırlar yanar.","seconds":5.2},
+  {"id":"c6b12","chapter":6,"text":"Yanan satırlar birleşir. Sonuç F eşittir sigma bir, dört, beş, altı, yedi.","seconds":6.0},
+  {"id":"c6b13","chapter":6,"text":"","seconds":1.0},
+  {"id":"c6b14","chapter":6,"text":"Sen dene! F eşittir sigma sıfır, üç için hangi satırlar bir olur?","seconds":5.3},
+  {"id":"c6b15","chapter":6,"text":"","seconds":5.0},
+  {"id":"c6b16","chapter":6,"text":"Sıfır ikilide sıfır sıfır sıfır, üç ise sıfır bir bir. Bu iki satır bir olur.","seconds":6.2},
+  {"id":"c6b17","chapter":6,"text":"","seconds":1.2},
+
+  {"id":"c7b00","chapter":7,"text":"","seconds":1.3},
+  {"id":"c7b01","chapter":7,"text":"Çok kritik! Hoca on Kasım dersinde söyledi: bu şekilde ben sınavda sorarsam sorarım.","seconds":6.7},
+  {"id":"c7b02","chapter":7,"text":"Sigma verilince pi'yi saniyede nasıl yazarız?","seconds":4.0},
+  {"id":"c7b03","chapter":7,"text":"Üç değişkende sekiz satır vardır. Her satır ya birle sigmada ya sıfırla pi'de yer alır.","seconds":6.8},
+  {"id":"c7b04","chapter":7,"text":"Kuralımız tek cümle: sigma ile pi'yi değiştir, listede olmayan indisleri yaz.","seconds":6.1},
+  {"id":"c7b05","chapter":7,"text":"Örnek iki nokta beş: x y artı x üssü z. Bir, üç, altı, yedide bir olur.","seconds":6.2},
+  {"id":"c7b06","chapter":7,"text":"Kalan sıfır, iki, dört, beş pi'ye akar. Sigma bir üç altı yedi eşittir pi sıfır iki dört beş.","seconds":7.4},
+  {"id":"c7b07","chapter":7,"text":"","seconds":1.0},
+  {"id":"c7b08","chapter":7,"text":"Alıştırma iki nokta yedi: sigma bir, iki, üç, beş, yedi için pi nedir?","seconds":5.6},
+  {"id":"c7b09","chapter":7,"text":"Sıfırdan yediye listede olmayanlar sıfır, dört, altı. Cevap pi sıfır, dört, altı.","seconds":6.4},
+  {"id":"c7b10","chapter":7,"text":"Alıştırma iki nokta sekiz: pi bir, üç, dört, altı verilirse sigma nedir?","seconds":5.7},
+  {"id":"c7b11","chapter":7,"text":"Listede olmayan indisler sıfır, iki, beş, yedi. Cevap sigma sıfır, iki, beş, yedi.","seconds":6.2},
+  {"id":"c7b12","chapter":7,"text":"Alıştırma iki nokta dokuz. F sütunu yukarıdan aşağı sıfır bir sıfır bir bir sıfır bir sıfır.","seconds":6.8},
+  {"id":"c7b13","chapter":7,"text":"Bir olan satırlar sigma bir, üç, dört, altı. Sıfırlar ise pi sıfır, iki, beş, yedi.","seconds":6.4},
+  {"id":"c7b14","chapter":7,"text":"Yoklama sorusu! F eşittir sigma sıfır, iki, beş hangi maxterm çarpımına eşittir?","seconds":6.3},
+  {"id":"c7b15","chapter":7,"text":"","seconds":4.0},
+  {"id":"c7b16","chapter":7,"text":"Cevap B: pi bir, üç, dört, altı, yedi! Kalan beş indisi yazdık.","seconds":5.4},
+  {"id":"c7b17","chapter":7,"text":"A şıkkı en sık yapılan hata! Sigma ile pi'ye aynı indisleri yazma.","seconds":5.4},
+  {"id":"c7b18","chapter":7,"text":"C yediyi unutmuş, sıfırdan yediye sekiz satır var. E ise sigmayı pi'ye çevirmemiş.","seconds":6.5},
+  {"id":"c7b19","chapter":7,"text":"Kısım sonu hızlı tekrar! F üssü için VE ve VEYA'yı değiştir, her harfi tümle.","seconds":6.1},
+  {"id":"c7b20","chapter":7,"text":"Mintermde bit sıfırsa tümlü, maxtermde birse tümlü. Birler sigma, sıfırlar pi verir.","seconds":6.5},
+  {"id":"c7b21","chapter":7,"text":"Dönüşümde olmayan indisleri yaz: sigma sıfır iki beş, pi bir üç dört altı yedi. Başarılar!","seconds":7.6},
+  {"id":"c7b22","chapter":7,"text":"","seconds":1.2}
+]
+</script>
+
+<script type="application/json" id="narration-audio">{}</script>
+
+<script>
+(() => {
+  'use strict';
+
+  const W = 1280;
+  const H = 720;
+  const FPS = 30;
+
+  const PALETTE = {
+    bg: '#F2F3ED',
+    card: '#FFFFFF',
+    ink: '#24372D',
+    muted: '#7C8A7E',
+    sage: '#9CC29A',
+    lavender: '#B6A2DB',
+    terracotta: '#CF8A68',
+    sand: '#E3C9A0',
+    ice: '#9FC3D6',
+    green: '#2E7D4F',
+    error: '#C55A4B',
+    softFill: '#F7F8F3'
+  };
+
+
+  // ==========================================================
+  // 2. Chapters, Easing, PRNG & Paper Texture
+  // ==========================================================
+
+  const ease = {
+    outCubic: (p) => 1 - Math.pow(1 - clamp01(p), 3),
+    inOutCubic: (p) => {
+      const t = clamp01(p);
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    },
+    outBack: (p) => {
+      const t = clamp01(p);
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    },
+    outExpo: (p) => {
+      const t = clamp01(p);
+      return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    }
+  };
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const paperCanvas = document.createElement('canvas');
+  paperCanvas.width = W;
+  paperCanvas.height = H;
+  (function buildPaperTexture() {
+    const pctx = paperCanvas.getContext('2d');
+    pctx.fillStyle = PALETTE.bg;
+    pctx.fillRect(0, 0, W, H);
+    const rng = mulberry32(20260416);
+    for (let i = 0; i < 3600; i++) {
+      const x = rng() * W;
+      const y = rng() * H;
+      const r = 0.4 + rng() * 1.1;
+      const a = 0.014 + rng() * 0.022;
+      pctx.fillStyle = rng() > 0.5 ? `rgba(36, 55, 45, ${a})` : `rgba(255, 255, 255, ${a * 1.5})`;
+      pctx.beginPath();
+      pctx.arc(x, y, r, 0, Math.PI * 2);
+      pctx.fill();
+    }
+  })();
+
+  // ==========================================================
+  // 3. Hand-drawn Sketch Helpers (Line Boil ONLY on lines, never numbers)
+  // ==========================================================
+  function getBoilOffset(seed, t, amp = 1.0) {
+    if (reducedMotion) return [0, 0];
+    const boilFrame = Math.floor(t * 8);
+    const rng = mulberry32((seed * 73856093) ^ (boilFrame * 19349663));
+    return [(rng() - 0.5) * 2 * amp, (rng() - 0.5) * 2 * amp];
+  }
+
+  function subdividePolyline(points, segLen = 14) {
+    if (points.length < 2) return points.slice();
+    const out = [points[0]];
+    for (let i = 0; i < points.length - 1; i++) {
+      const [x1, y1] = points[i];
+      const [x2, y2] = points[i + 1];
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      const steps = Math.max(1, Math.round(dist / segLen));
+      for (let s = 1; s <= steps; s++) {
+        out.push([lerp(x1, x2, s / steps), lerp(y1, y2, s / steps)]);
+      }
+    }
+    return out;
+  }
+
+  function slicePolylineByProgress(pts, progress) {
+    const p = clamp01(progress);
+    if (p <= 0 || pts.length === 0) return [];
+    if (p >= 1) return pts;
+    const lengths = [0];
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) {
+      total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      lengths.push(total);
+    }
+    if (total === 0) return [pts[0]];
+    const target = total * p;
+    const res = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      if (lengths[i] <= target) res.push(pts[i]);
+      else {
+        const prev = lengths[i - 1];
+        const seg = lengths[i] - prev;
+        const local = seg > 0 ? (target - prev) / seg : 0;
+        res.push([lerp(pts[i - 1][0], pts[i][0], local), lerp(pts[i - 1][1], pts[i][1], local)]);
+        break;
+      }
+    }
+    return res;
+  }
+
+  function drawSketchLine(ctx, points, opts = {}) {
+    const {
+      seed = 1, t = 0, progress = 1, width = 3,
+      color = PALETTE.ink, amp = 0.9, dash = null, dotTip = false, segLen = 14
+    } = opts;
+    if (points.length < 2 || progress <= 0.001) return null;
+    const sub = subdividePolyline(points, segLen);
+    const sliced = slicePolylineByProgress(sub, progress);
+    if (sliced.length < 2) return sliced[0] || null;
+
+    const jittered = sliced.map((pt, idx) => {
+      const fade = (idx === 0 || idx === sliced.length - 1) ? 0.4 : 1;
+      const [ox, oy] = getBoilOffset(seed + idx * 17, t, amp * fade);
+      return [pt[0] + ox, pt[1] + oy];
+    });
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (dash) ctx.setLineDash(dash);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(jittered[0][0], jittered[0][1]);
+    for (let i = 1; i < jittered.length; i++) ctx.lineTo(jittered[i][0], jittered[i][1]);
+    ctx.stroke();
+
+    if (!dash) {
+      ctx.globalAlpha *= 0.35;
+      ctx.lineWidth = Math.max(1, width * 0.55);
+      ctx.beginPath();
+      for (let i = 0; i < jittered.length; i++) {
+        const [ox2, oy2] = getBoilOffset(seed + 900 + i * 13, t, amp * 0.5);
+        const px = jittered[i][0] + ox2;
+        const py = jittered[i][1] + oy2;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    const tip = jittered[jittered.length - 1];
+    if (dotTip && progress > 0.02 && progress < 0.995) {
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(tip[0], tip[1], Math.max(3, width * 0.9), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return tip;
+  }
+
+  function drawSketchRect(ctx, x, y, w, h, opts = {}) {
+    return drawSketchLine(ctx, [[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]], opts);
+  }
+
+  function drawSketchEllipse(ctx, cx, cy, rx, ry, opts = {}) {
+    const { seed = 42, t = 0, progress = 1, width = 4, color = PALETTE.terracotta, turns = 1.12, amp = 1.1, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const steps = 44;
+    const pts = [];
+    const startAngle = -Math.PI * 0.65;
+    for (let i = 0; i <= steps; i++) {
+      const a = startAngle + (i / steps) * Math.PI * 2 * turns;
+      const spiral = 1 + (i / steps - 0.5) * 0.04;
+      pts.push([cx + Math.cos(a) * rx * spiral, cy + Math.sin(a) * ry * spiral]);
+    }
+    drawSketchLine(ctx, pts, { seed, t, progress, width, color, amp, dotTip, segLen: 20 });
+  }
+
+  function drawSketchArrow(ctx, x1, y1, x2, y2, curve = -26, opts = {}) {
+    const { seed = 77, t = 0, progress = 1, width = 3.2, color = PALETTE.terracotta, amp = 0.85, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+    const cpx = mx + nx * curve;
+    const cpy = my + ny * curve;
+
+    const pts = [];
+    for (let i = 0; i <= 18; i++) {
+      const u = i / 18;
+      pts.push([
+        (1 - u) * (1 - u) * x1 + 2 * (1 - u) * u * cpx + u * u * x2,
+        (1 - u) * (1 - u) * y1 + 2 * (1 - u) * u * cpy + u * u * y2
+      ]);
+    }
+    const lineProg = clamp01(progress / 0.85);
+    drawSketchLine(ctx, pts, { seed, t, progress: lineProg, width, color, amp, dotTip: dotTip && progress < 0.85, segLen: 16 });
+
+    if (progress > 0.78) {
+      const headProg = clamp01((progress - 0.78) / 0.22);
+      const angle = Math.atan2(y2 - cpy, x2 - cpx);
+      const headLen = 13 * ease.outCubic(headProg);
+      const wing1 = [x2 - Math.cos(angle - 0.48) * headLen, y2 - Math.sin(angle - 0.48) * headLen];
+      const wing2 = [x2 - Math.cos(angle + 0.48) * headLen, y2 - Math.sin(angle + 0.48) * headLen];
+      drawSketchLine(ctx, [wing1, [x2, y2], wing2], { seed: seed + 300, t, progress: 1, width, color, amp: amp * 0.65, dotTip: false });
+    }
+  }
+
+  function drawSketchWaveUnderline(ctx, x, y, w, opts = {}) {
+    const { seed = 31, t = 0, progress = 1, width = 3, color = PALETTE.terracotta } = opts;
+    if (progress <= 0.001 || w <= 2) return;
+    const pts = [];
+    const steps = Math.max(8, Math.round(w / 10));
+    for (let i = 0; i <= steps; i++) {
+      pts.push([x + (i / steps) * w, y + Math.sin(i * 1.45) * 2.5]);
+    }
+    drawSketchLine(ctx, pts, { seed, t, progress, width, color, amp: 0.65, dotTip: false, segLen: 12 });
+  }
+
+  function drawHighlighterStrip(ctx, x, y, w, h, progress, color = 'rgba(227, 201, 160, 0.72)') {
+    const p = ease.outCubic(clamp01(progress));
+    if (p <= 0.01) return;
+    ctx.save();
+    ctx.fillStyle = color;
+    roundRectPath(ctx, x - 4, y, (w + 8) * p, h, 7);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHandwrittenNote(ctx, text, x, y, progress, opts = {}) {
+    const { color = PALETTE.terracotta, size = 28, align = 'left' } = opts;
+    const p = clamp01(progress);
+    if (p <= 0.01) return;
+    const chars = Math.max(1, Math.round(text.length * p));
+    ctx.save();
+    ctx.font = `700 ${size}px 'Caveat', cursive`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text.slice(0, chars), x, y);
+    ctx.restore();
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawCard(ctx, x, y, w, h, opts = {}) {
+    const { fill = PALETTE.card, radius = 22, shadow = true, stroke = 'rgba(36, 55, 45, 0.09)' } = opts;
+    ctx.save();
+    if (shadow) {
+      ctx.shadowColor = 'rgba(36, 55, 45, 0.07)';
+      ctx.shadowBlur = 22;
+      ctx.shadowOffsetY = 7;
+    }
+    ctx.fillStyle = fill;
+    roundRectPath(ctx, x, y, w, h, radius);
+    ctx.fill();
+    if (stroke) {
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawTextFit(ctx, text, x, y, maxW, opts = {}) {
+    const {
+      family = "'Inter', sans-serif", weight = 600, size = 24, minSize = 13,
+      color = PALETTE.ink, align = 'left', baseline = 'middle', italic = false
+    } = opts;
+    ctx.save();
+    let s = size;
+    while (s > minSize) {
+      ctx.font = `${italic ? 'italic ' : ''}${weight} ${s}px ${family}`;
+      if (ctx.measureText(text).width <= maxW) break;
+      s -= 1;
+    }
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+    return s;
+  }
+
+  function drawFocusZink(ctx, cx, cy, rx, ry, localSinceStart, t, opts = {}) {
+    if (localSinceStart < 0) return;
+    const drawDur = 0.35;
+    const drawP = ease.outCubic(clamp01(localSinceStart / drawDur));
+    let scale = 1;
+    if (localSinceStart > drawDur) {
+      const popT = clamp01((localSinceStart - drawDur) / 0.22);
+      const bump = Math.sin(popT * Math.PI) * (1 - popT * 0.25);
+      scale = 1 + 0.07 * bump;
+    }
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    drawSketchEllipse(ctx, 0, 0, rx, ry, {
+      seed: opts.seed || 111, t, progress: drawP, width: opts.width || 4,
+      color: opts.color || PALETTE.terracotta, turns: 1.12, dotTip: drawP < 0.99
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 4. Continuity & Pedagogical UI Widgets
+  // ==========================================================
+  function drawPrevTopicBadge(ctx, text) {
+    if (!text) return;
+    ctx.save();
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    const full = `az önce: ${text}`;
+    const bw = Math.min(480, ctx.measureText(full).width + 26);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    roundRectPath(ctx, 44, 52, bw, 30, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(36, 55, 45, 0.14)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(full, 57, 67);
+    ctx.restore();
+  }
+
+  function drawStickyRuleCard(ctx, cfg) {
+    // docked: false => center large card; true => compact top-right sand card
+    const {
+      title = 'KURAL KARTI',
+      lines = [],
+      docked = true,
+      highlightTokens = [],
+      t = 0
+    } = cfg;
+    const x = docked ? 886 : 190;
+    const y = docked ? 46 : 165;
+    const w = docked ? 350 : 900;
+    const h = docked ? (lines.length > 2 ? 124 : 104) : 290;
+    const padX = docked ? 16 : 34;
+
+    drawCard(ctx, x, y, w, h, {
+      fill: 'rgba(227, 201, 160, 0.34)',
+      radius: docked ? 16 : 24,
+      stroke: PALETTE.sand,
+      shadow: !docked
+    });
+
+    ctx.save();
+    ctx.font = `700 ${docked ? 10 : 13}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#7E5A28';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`📌 ${title}`, x + padX, y + (docked ? 18 : 30));
+
+    const bodyStartY = y + (docked ? 42 : 90);
+    const lineGap = docked ? 26 : 54;
+    const fSize = docked ? 15 : 30;
+
+    lines.forEach((ln, idx) => {
+      const ly = bodyStartY + idx * lineGap;
+      let s = fSize;
+      while (s > (docked ? 11 : 18)) {
+        ctx.font = `600 ${s}px 'Inter', sans-serif`;
+        if (ctx.measureText(ln).width <= w - padX * 2) break;
+        s -= 1;
+      }
+      ctx.font = `600 ${s}px 'Inter', sans-serif`;
+      for (const tok of highlightTokens) {
+        const pos = ln.indexOf(tok);
+        if (pos >= 0) {
+          const preW = ctx.measureText(ln.slice(0, pos)).width;
+          const tokW = ctx.measureText(tok).width;
+          drawHighlighterStrip(ctx, x + padX + preW, ly - s * 0.65, tokW, s * 1.3, 1, 'rgba(207, 138, 104, 0.45)');
+        }
+      }
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ln, x + padX, ly);
+    });
+    ctx.restore();
+  }
+
+  function drawColorLegend(ctx, items, y = 566) {
+    // items: [{ color, label }]
+    ctx.save();
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    const pillH = 28;
+    const gap = 12;
+    const widths = items.map(it => ctx.measureText(it.label).width + 36);
+    const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
+    let curX = (W - totalW) / 2;
+
+    items.forEach((it, idx) => {
+      const pw = widths[idx];
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      roundRectPath(ctx, curX, y, pw, pillH, 999);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(36, 55, 45, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = it.color;
+      roundRectPath(ctx, curX + 10, y + 7, 14, 14, 4);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(36, 55, 45, 0.25)';
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(it.label, curX + 30, y + pillH / 2 + 0.5);
+      curX += pw + gap;
+    });
+    ctx.restore();
+  }
+
+  function drawBitBoxes(ctx, cfg) {
+    // Supports >=52px bit boxes, vertical paper flip animation, pale padding zeros, group gaps
+    const {
+      bits = [],
+      fromBits = null,       // if provided with flipProgress, animates vertical flip!
+      flipProgress = null,   // array of 0..1 per bit or single number
+      cx = W / 2,
+      y = 220,
+      boxW = 56,
+      boxH = 64,
+      gap = 7,
+      groupEvery = 0,        // extra gap every k bits from RIGHT
+      extraGap = 14,
+      paleMask = null,       // array of booleans for pale padded zeros
+      topLabels = null,
+      bottomLabels = null,
+      fills = null,
+      fromFills = null,
+      textColors = null,
+      subscript = '',
+      seed = 40,
+      t = 0
+    } = cfg;
+
+    const n = bits.length;
+    let totalW = n * boxW + Math.max(0, n - 1) * gap;
+    const extraGaps = new Array(n).fill(0);
+    if (groupEvery > 0) {
+      for (let i = 0; i < n - 1; i++) {
+        const fromRight = n - 1 - i;
+        if (fromRight > 0 && fromRight % groupEvery === 0) {
+          extraGaps[i] = extraGap;
+          totalW += extraGap;
+        }
+      }
+    }
+
+    let curX = cx - totalW / 2;
+    const boxes = [];
+
+    for (let i = 0; i < n; i++) {
+      const bx = curX;
+      const by = y;
+      const fp = Array.isArray(flipProgress) ? clamp01(flipProgress[i]) : (flipProgress !== null ? clamp01(flipProgress) : 1);
+      const showNew = fp >= 0.5;
+      const scaleY = flipProgress !== null ? Math.max(0.06, Math.abs(Math.cos(fp * Math.PI))) : 1;
+
+      const curChar = (showNew || !fromBits) ? bits[i] : fromBits[i];
+      const isPale = paleMask && paleMask[i];
+
+      const defaultFill = curChar === '1' ? 'rgba(156, 194, 154, 0.44)' : PALETTE.softFill;
+      const targetFill = Array.isArray(fills) ? fills[i] : (typeof fills === 'function' ? fills(curChar, i) : defaultFill);
+      const oldFill = fromFills ? (Array.isArray(fromFills) ? fromFills[i] : fromFills(curChar, i)) : defaultFill;
+      const fill = isPale ? 'rgba(124, 138, 126, 0.08)' : (showNew ? targetFill : oldFill);
+
+      const tc = isPale
+        ? PALETTE.muted
+        : (Array.isArray(textColors) ? textColors[i] : (typeof textColors === 'function' ? textColors(curChar, i) : (curChar === '0' ? PALETTE.muted : PALETTE.ink)));
+
+      ctx.save();
+      ctx.translate(bx + boxW / 2, by + boxH / 2);
+      ctx.scale(1, scaleY);
+      ctx.fillStyle = fill;
+      roundRectPath(ctx, -boxW / 2, -boxH / 2, boxW, boxH, 13);
+      ctx.fill();
+
+      ctx.font = `700 ${Math.round(boxH * 0.50)}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = tc;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(curChar), 0, 1);
+      ctx.restore();
+
+      drawSketchRect(ctx, bx, by, boxW, boxH, {
+        seed: seed + i * 17, t, progress: 1, width: isPale ? 1.6 : 2.2,
+        dash: isPale ? [5, 4] : null,
+        color: isPale ? 'rgba(124, 138, 126, 0.55)' : 'rgba(36, 55, 45, 0.52)',
+        amp: 0.55, segLen: 20
+      });
+
+      if (topLabels && topLabels[i]) {
+        ctx.save();
+        ctx.font = `600 15px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(topLabels[i]), bx + boxW / 2, by - 18);
+        ctx.restore();
+      }
+      if (bottomLabels && bottomLabels[i]) {
+        ctx.save();
+        ctx.font = `700 16px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.ink;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(bottomLabels[i]), bx + boxW / 2, by + boxH + 20);
+        ctx.restore();
+      }
+
+      boxes.push({ x: bx, y: by, w: boxW, h: boxH, cx: bx + boxW / 2, cy: by + boxH / 2 });
+      curX += boxW + gap + extraGaps[i];
+    }
+
+    if (subscript) {
+      ctx.save();
+      ctx.font = `700 22px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.terracotta;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(subscript, curX - gap + 8, y + boxH - 8);
+      ctx.restore();
+    }
+
+    return { boxes, leftX: cx - totalW / 2, rightX: curX - gap };
+  }
+
+  function drawGroupingBrackets(ctx, boxes, groups, opts = {}) {
+    const { side = 'bottom', offsetY = 12, t = 0 } = opts;
+    const anchors = [];
+    groups.forEach((g, gi) => {
+      if (g.visible === false) return;
+      const b1 = boxes[g.start];
+      const b2 = boxes[g.end];
+      if (!b1 || !b2) return;
+      const gp = g.progress !== undefined ? clamp01(g.progress) : 1;
+      const x1 = b1.x + 2;
+      const x2 = b2.x + b2.w - 2;
+      const midX = (x1 + x2) / 2;
+      const col = g.color || PALETTE.lavender;
+
+      if (side === 'bottom') {
+        const y0 = b1.y + b1.h + offsetY;
+        const y1 = y0 + 14;
+        drawSketchLine(ctx, [[x1, y0], [x1, y1], [x2, y1], [x2, y0]], {
+          seed: 700 + gi * 23, t, progress: ease.outCubic(gp), width: 3, color: col, amp: 0.6
+        });
+        if (gp > 0.3 && g.label !== undefined) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(182, 162, 219, 0.25)';
+          roundRectPath(ctx, midX - 24, y1 + 8, 48, 42, 12);
+          ctx.fill();
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.font = `700 28px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = PALETTE.ink;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(g.label), midX, y1 + 30);
+          ctx.restore();
+        }
+        anchors.push({ cx: midX, cy: y1 + 29, rx: 32, ry: 28 });
+      } else {
+        const y0 = b1.y - offsetY;
+        const y1 = y0 - 14;
+        drawSketchLine(ctx, [[x1, y0], [x1, y1], [x2, y1], [x2, y0]], {
+          seed: 750 + gi * 23, t, progress: ease.outCubic(gp), width: 3, color: col, amp: 0.6
+        });
+        if (gp > 0.3 && g.label !== undefined) {
+          ctx.save();
+          ctx.font = `700 26px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = col;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(String(g.label), midX, y1 - 8);
+          ctx.restore();
+        }
+        anchors.push({ cx: midX, cy: y1 - 22, rx: 30, ry: 22 });
+      }
+    });
+    return anchors;
+  }
+
+  function drawColumnArithmetic(ctx, cfg) {
+    // Supports revealing specific number of columns from right, plus terracotta carry markers
+    const {
+      x, y, w, h,
+      label = 'ALT ALTA TOPLAMA',
+      carriesTop = '',       // string matching result columns
+      row1 = '',
+      op = '+',
+      row2 = '',
+      result = '',
+      row1Note = '',
+      row2Note = '',
+      resultNote = '',
+      revealedCols = 99,     // how many columns from right are revealed
+      activeColFromRight = -1,
+      crossOutLeftCarry = false,
+      highlightLeftCarry = false,
+      endAroundArrow = false,
+      endAroundProgress = 0,
+      t = 0
+    } = cfg;
+
+    drawCard(ctx, x, y, w, h, { radius: 22 });
+    ctx.save();
+    ctx.font = `600 11px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + 24, y + 24);
+
+    const cols = Math.max(row1.length, row2.length, result.length);
+    const cellW = Math.min(46, (w - 230) / Math.max(1, cols));
+    const rightAnchor = x + w - 165;
+    const baseY = y + 114;
+    const rowGap = 54;
+
+    const r1Pad = row1.padStart(cols, ' ');
+    const r2Pad = row2.padStart(cols, ' ');
+    const resPad = result.padStart(cols, ' ');
+    const ctPad = carriesTop ? carriesTop.padStart(cols, ' ') : '';
+
+    // Carry label
+    ctx.font = `600 14px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.terracotta;
+    ctx.textAlign = 'right';
+    ctx.fillText('elde:', rightAnchor - cols * cellW - 14, baseY - 40);
+
+    // Operator
+    ctx.font = `700 30px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.terracotta;
+    ctx.textAlign = 'center';
+    ctx.fillText(op, rightAnchor - cols * cellW - 18, baseY + rowGap);
+
+    let leftCarryPos = null;
+    let rightBitPos = null;
+    let activeColBox = null;
+
+    for (let c = 0; c < cols; c++) {
+      const fromRight = cols - 1 - c;
+      const cx = rightAnchor - (fromRight + 0.5) * cellW;
+      const isVisible = fromRight < revealedCols;
+
+      if (fromRight === activeColFromRight) {
+        ctx.fillStyle = 'rgba(227, 201, 160, 0.35)';
+        roundRectPath(ctx, cx - cellW * 0.44, baseY - 56, cellW * 0.88, rowGap * 2 + 100, 10);
+        ctx.fill();
+        activeColBox = { cx, cy: baseY + rowGap, rx: cellW * 0.65, ry: rowGap + 34 };
+      }
+
+      if (ctPad[c] && ctPad[c] !== ' ' && fromRight <= revealedCols) {
+        ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+        roundRectPath(ctx, cx - 14, baseY - 54, 28, 28, 8);
+        ctx.fill();
+        ctx.font = `700 20px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#9A4826';
+        ctx.textAlign = 'center';
+        ctx.fillText(ctPad[c], cx, baseY - 40);
+      }
+
+      ctx.font = `700 32px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PALETTE.ink;
+      if (r1Pad[c] !== ' ') ctx.fillText(r1Pad[c], cx, baseY);
+      if (r2Pad[c] !== ' ') ctx.fillText(r2Pad[c], cx, baseY + rowGap);
+
+      if (isVisible && resPad[c] !== ' ') {
+        const isFirstCarry = c === 0 && highlightLeftCarry;
+        const resY = baseY + rowGap * 2 + 16;
+        if (isFirstCarry) {
+          ctx.fillStyle = 'rgba(207, 138, 104, 0.25)';
+          roundRectPath(ctx, cx - 18, resY - 22, 36, 44, 10);
+          ctx.fill();
+          ctx.fillStyle = '#9A4826';
+          leftCarryPos = { x: cx, y: resY };
+        } else {
+          ctx.fillStyle = PALETTE.green;
+        }
+        ctx.fillText(resPad[c], cx, resY);
+        if (isFirstCarry && crossOutLeftCarry) {
+          drawSketchLine(ctx, [[cx - 14, resY + 14], [cx + 14, resY - 14]], {
+            seed: 912, t, width: 3.5, color: PALETTE.error
+          });
+        }
+      }
+      if (fromRight === 0) rightBitPos = { x: cx, y: baseY + rowGap * 2 + 16 };
+    }
+
+    const lineY = baseY + rowGap * 1.5 + 4;
+    drawSketchLine(ctx, [[rightAnchor - cols * cellW - 22, lineY], [rightAnchor + 8, lineY]], {
+      seed: 620, t, width: 2.8, color: PALETTE.ink, amp: 0.6
+    });
+
+    ctx.font = `600 17px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    if (row1Note) ctx.fillText(row1Note, rightAnchor + 14, baseY);
+    if (row2Note) ctx.fillText(row2Note, rightAnchor + 14, baseY + rowGap);
+    if (resultNote && revealedCols >= cols) {
+      ctx.fillStyle = PALETTE.green;
+      ctx.fillText(resultNote, rightAnchor + 14, baseY + rowGap * 2 + 16);
+    }
+
+    if (endAroundArrow && leftCarryPos && rightBitPos && endAroundProgress > 0.02) {
+      drawSketchArrow(ctx, leftCarryPos.x, leftCarryPos.y + 24, rightBitPos.x, rightBitPos.y + 26, -52, {
+        seed: 677, t, progress: endAroundProgress, width: 3.4, color: PALETTE.terracotta
+      });
+    }
+    ctx.restore();
+    return { leftCarryPos, rightBitPos, activeColBox };
+  }
+
+  function drawCountdownRing(ctx, cx, cy, progress, totalSec) {
+    const rem = Math.ceil((1 - clamp01(progress)) * totalSec);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(36, 55, 45, 0.14)';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = PALETTE.terracotta;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - clamp01(progress)));
+    ctx.stroke();
+
+    ctx.font = `700 28px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(Math.max(1, rem)), cx, cy + 1);
+    ctx.restore();
+  }
+
+  function drawIntroCard(ctx, chMeta, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.45));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 20);
+    ctx.scale(lerp(0.92, 1, p), lerp(0.92, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.25);
+
+    drawCard(ctx, -400, -155, 800, 310, { radius: 24 });
+
+    ctx.fillStyle = chMeta.accent;
+    roundRectPath(ctx, -84, -106, 168, 32, 999);
+    ctx.fill();
+    ctx.font = `700 13px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num}`, 0, -90);
+
+    drawTextFit(ctx, chMeta.title, 0, -12, 720, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 54, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[-150, 40], [150, 40]], {
+      seed: 10 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.65)), width: 3.5, color: chMeta.accent
+    });
+
+    if (META.ilkBolumNotu && chMeta.num === CHAPTER_META[0].num) {
+      ctx.font = `600 15px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(META.ilkBolumNotu, 0, 82);
+      ctx.font = `500 13px 'Inter', sans-serif`;
+      ctx.fillText(META.kartKunye, 0, 114);
+    } else {
+      ctx.font = `500 15px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(META.kartKunye, 0, 88);
+    }
+    ctx.restore();
+  }
+
+  function drawOutroCard(ctx, chMeta, lt, t) {
+    const p = ease.outCubic(clamp01(lt / 0.35));
+    ctx.save();
+    ctx.globalAlpha = p;
+    drawCard(ctx, W / 2 - 400, H / 2 - 145, 800, 290, { radius: 24 });
+
+    ctx.font = `600 14px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num} TAMAMLANDI`, W / 2, H / 2 - 72);
+
+    drawTextFit(ctx, chMeta.nextTitle, W / 2, H / 2 - 8, 720, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[W / 2 - 120, H / 2 + 44], [W / 2 + 120, H / 2 + 44]], {
+      seed: 90 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.6)), width: 3, color: PALETTE.sage
+    });
+    ctx.restore();
+  }
+
+  function drawHookQuestion(ctx, question, badge, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.42));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 34);
+    ctx.scale(lerp(0.9, 1, p), lerp(0.9, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.2);
+
+    ctx.fillStyle = 'rgba(227, 201, 160, 0.5)';
+    roundRectPath(ctx, -190, -124, 380, 32, 999);
+    ctx.fill();
+    ctx.font = `600 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badge, 0, -108);
+
+    ctx.font = `italic 400 52px 'Instrument Serif', serif`;
+    ctx.fillStyle = PALETTE.ink;
+    const words = question.split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+      const test = cur ? `${cur} ${w}` : w;
+      if (ctx.measureText(test).width > 940) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+
+    lines.forEach((ln, i) => {
+      ctx.fillText(ln, 0, -16 + (i - (lines.length - 1) / 2) * 64);
+    });
+
+    const lineY = lines.length * 36 + 24;
+    drawSketchWaveUnderline(ctx, -160, lineY, 320, {
+      seed: 333, t, progress: ease.inOutCubic(clamp01((lt - 0.18) / 0.55)), color: PALETTE.terracotta, width: 3.5
+    });
+    ctx.restore();
+  }
+
+  function drawExam5Options(ctx, cfg) {
+    // 5-option exam layout strictly above y=580 so bottom 110px subtitle zone stays untouched
+    const {
+      question = '',
+      options = [],     // [{ key:'A'..'E', text:'...', note:'...' }]
+      correctKey = 'B',
+      mode = 'q',       // 'q' | 'wait' | 'a' | 'traps'
+      focusWrongKeys = [], // keys highlighted in 'traps' mode
+      p = 0,
+      lt = 0,
+      t = 0,
+      badgeText = ''
+    } = cfg;
+
+    // Top Question Banner: y=56..154
+    drawCard(ctx, 64, 54, 1152, 98, { radius: 20 });
+    ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+    roundRectPath(ctx, 88, 68, 116, 24, 999);
+    ctx.fill();
+    ctx.font = `700 11px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#8E4B2D';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SINAV ANI', 146, 80);
+
+    if (badgeText) {
+      ctx.font = `700 12px 'JetBrains Mono', monospace`;
+      const bw = ctx.measureText(badgeText).width + 26;
+      ctx.fillStyle = 'rgba(227, 201, 160, 0.55)';
+      roundRectPath(ctx, 218, 66, bw, 28, 999);
+      ctx.fill();
+      ctx.fillStyle = PALETTE.ink;
+      ctx.fillText(badgeText, 218 + bw / 2, 80);
+    }
+
+    drawTextFit(ctx, question, 88, 122, 960, {
+      family: "'Inter', sans-serif", weight: 700, size: 22, minSize: 15, align: 'left'
+    });
+
+    if (mode === 'wait') {
+      drawCountdownRing(ctx, 1156, 103, p, 4);
+    } else if (mode === 'a' || mode === 'traps') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(46, 125, 79, 0.14)';
+      roundRectPath(ctx, 1068, 80, 124, 46, 14);
+      ctx.fill();
+      ctx.strokeStyle = PALETTE.green;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = `700 17px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.green;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`CEVAP ${correctKey}`, 1130, 103);
+      ctx.restore();
+    }
+
+    // 5 options: A, B (row 0), C, D (row 1), E (row 2 left) — total y=168..574
+    const cardW = 562, cardH = 122, gapX = 28, gapY = 14;
+    const startX = 64, startY = 168;
+    let focusTarget = null;
+
+    options.forEach((opt, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const ox = startX + col * (cardW + gapX);
+      const oy = startY + row * (cardH + gapY);
+      const isCorrect = opt.key === correctKey;
+      const isWrongFocused = focusWrongKeys.includes(opt.key);
+
+      let alpha = 1;
+      let stroke = 'rgba(36, 55, 45, 0.09)';
+      if (mode === 'a') {
+        alpha = isCorrect ? 1 : 0.62;
+        if (isCorrect) stroke = PALETTE.green;
+      } else if (mode === 'traps') {
+        alpha = (isWrongFocused || isCorrect) ? 1 : 0.45;
+        if (isWrongFocused) stroke = PALETTE.error;
+        else if (isCorrect) stroke = PALETTE.green;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      drawCard(ctx, ox, oy, cardW, cardH, { radius: 18, stroke });
+
+      ctx.fillStyle = isCorrect && (mode === 'a' || mode === 'traps')
+        ? PALETTE.green
+        : (isWrongFocused ? PALETTE.error : PALETTE.ink);
+      roundRectPath(ctx, ox + 18, oy + 18, 38, 38, 10);
+      ctx.fill();
+      ctx.font = `700 18px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(opt.key, ox + 37, oy + 37);
+
+      drawTextFit(ctx, opt.text, ox + 68, oy + 37, cardW - 86, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 22, minSize: 13, align: 'left'
+      });
+
+      const showNote = (mode === 'a' && isCorrect) || (mode === 'traps' && (isWrongFocused || (opt.showInTraps && opt.note)));
+      if (showNote && opt.note) {
+        drawTextFit(ctx, opt.note, ox + 20, oy + 88, cardW - 40, {
+          family: "'Inter', sans-serif",
+          weight: 600,
+          size: 16,
+          minSize: 12,
+          color: isCorrect ? PALETTE.green : PALETTE.error,
+          align: 'left'
+        });
+      }
+      ctx.restore();
+
+      if ((mode === 'a' && isCorrect) || (mode === 'traps' && isWrongFocused && !focusTarget)) {
+        focusTarget = { cx: ox + cardW / 2, cy: oy + cardH / 2, rx: cardW / 2 + 6, ry: cardH / 2 + 6, col: isCorrect ? PALETTE.green : PALETTE.error };
+      }
+    });
+
+    // Right side summary note in row 2 when in answer/traps mode
+    if ((mode === 'a' || mode === 'traps') && options.length === 5) {
+      drawCard(ctx, startX + cardW + gapX, startY + 2 * (cardH + gapY), cardW, cardH, {
+        radius: 18, fill: 'rgba(227, 201, 160, 0.25)', stroke: PALETTE.sand, shadow: false
+      });
+      drawTextFit(ctx, mode === 'a' ? 'Doğru cevabı anla, sonra tuzakları gör' : 'Her yanlış şıkkın hata kaynağı', startX + cardW + gapX + 24, startY + 2 * (cardH + gapY) + 40, cardW - 48, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 14, color: '#7E5A28'
+      });
+      const focusOpt = options.find(o => focusWrongKeys.includes(o.key)) || options.find(o => o.key === correctKey);
+      if (focusOpt && focusOpt.note) {
+        drawTextFit(ctx, `${focusOpt.key}: ${focusOpt.note}`, startX + cardW + gapX + 24, startY + 2 * (cardH + gapY) + 82, cardW - 48, {
+          size: 17, minSize: 13, color: PALETTE.ink
+        });
+      }
+    }
+
+    if (focusTarget) {
+      drawFocusZink(ctx, focusTarget.cx, focusTarget.cy, focusTarget.rx, focusTarget.ry, lt, t, {
+        color: focusTarget.col, width: 4
+      });
+    }
+  }
+
+  // ==========================================================
+  // 5. Beat Specs & Timeline Builder
+  // ==========================================================
+
+  let TIMELINE = { beats: [], chapters: [], duration: 0, sfxEvents: [], narrationAudio: null };
+
+  function buildTimeline() {
+    const rawData = JSON.parse(document.getElementById('narration-data').textContent.trim() || '[]');
+    let rawAudio = {};
+    try { rawAudio = JSON.parse(document.getElementById('narration-audio').textContent.trim() || '{}'); } catch (e) { rawAudio = {}; }
+
+    const hasAudioOffsets = rawAudio && rawAudio.src && Array.isArray(rawAudio.offsets);
+    let cursor = 0;
+    const beats = [];
+    const sfxEvents = [];
+
+    rawData.forEach((item, idx) => {
+      let dur = Number(item.seconds) || 3.0;
+      let audioSlice = null;
+      if (hasAudioOffsets && rawAudio.offsets[idx]) {
+        const [s, e] = rawAudio.offsets[idx];
+        if (typeof s === 'number' && typeof e === 'number' && e - s > 0.25) {
+          dur = e - s;
+          audioSlice = [s, e];
+        }
+      }
+      const spec = BEAT_SPECS[item.id] || { scene: 'intro', sfx: [] };
+      const beat = {
+        index: idx, id: item.id, chapter: item.chapter, text: item.text || '',
+        start: cursor, end: cursor + dur, duration: dur, scene: spec.scene, audioSlice
+      };
+      beats.push(beat);
+      (spec.sfx || []).forEach((ev, sIdx) => {
+        sfxEvents.push({
+          id: `${item.id}_sfx_${sIdx}`,
+          t: cursor + clamp01(ev.at) * dur,
+          type: ev.type, gain: ev.gain ?? 0.8, dur: ev.dur ?? 0.3
+        });
+      });
+      cursor += dur;
+    });
+
+    const chapters = CHAPTER_META.map((meta, mIdx) => {
+      const chBeats = beats.filter(b => b.chapter === meta.num);
+      const start = chBeats.length ? chBeats[0].start : 0;
+      const end = chBeats.length ? chBeats[chBeats.length - 1].end : 0;
+      const nextMeta = CHAPTER_META[mIdx + 1] || null;
+      return {
+        ...meta, start, end, duration: end - start,
+        nextTitle: nextMeta ? `Sıradaki: Bölüm ${nextMeta.num} — ${nextMeta.title}` : META.sonNot
+      };
+    });
+
+    sfxEvents.sort((a, b) => a.t - b.t);
+    TIMELINE = { beats, chapters, duration: cursor, sfxEvents, narrationAudio: (rawAudio && rawAudio.src) ? rawAudio : null };
+  }
+
+  // ===== İÇERİK: mt2b =====
+  const META = {
+    onek: 'mt2b',
+    kartKunye: 'Mantıksal Tasarım • Bölüm 2 • Kısım 2/2',
+    ilkBolumNotu: '1. kısımda: postülalar, teoremler, sadeleştirme',
+    sonNot: 'Kısım 2/2 tamamlandı — Sınavda başarılar!'
+  };
+
+  const CHAPTER_META = [
+    { num: 5, title: 'Fonksiyonun tümleyeni', filename: 'mt2b-05-fonksiyonun-tumleyeni.mp4', accent: PALETTE.terracotta },
+    { num: 6, title: 'Minterm ve maxterm', filename: 'mt2b-06-minterm-maxterm.mp4', accent: PALETTE.ice },
+    { num: 7, title: 'Kanonik dönüşüm: Σ ↔ Π', filename: 'mt2b-07-sigma-pi-donusumu.mp4', accent: PALETTE.sage }
+  ];
+
+  const BEAT_SPECS = {
+    // Bölüm 5
+    c5b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.6 }] },
+    c5b01: { scene: 'c5_hook', sfx: [{ at: 0.06, type: 'riser', gain: 0.65 }, { at: 0.3, type: 'pop', gain: 0.8 }] },
+    c5b02: { scene: 'c5_sezgi_tab', sfx: [{ at: 0.15, type: 'pop', gain: 0.75 }, { at: 0.55, type: 'tick', gain: 0.65 }] },
+    c5b03: { scene: 'c5_sezgi_why', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c5b04: { scene: 'c5_rule', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.65 }, { at: 0.52, type: 'zink', gain: 0.9 }] },
+    c5b05: { scene: 'c5_ex22_s1', sfx: [{ at: 0.18, type: 'scribble', gain: 0.65, dur: 0.4 }, { at: 0.65, type: 'pop', gain: 0.8 }] },
+    c5b06: { scene: 'c5_ex22_s2', sfx: [{ at: 0.22, type: 'tick', gain: 0.7 }, { at: 0.65, type: 'pop', gain: 0.8 }] },
+    c5b07: { scene: 'c5_ex22_s3', sfx: [{ at: 0.22, type: 'tick', gain: 0.7 }, { at: 0.65, type: 'pop', gain: 0.8 }] },
+    c5b08: { scene: 'c5_ex22_s4', sfx: [{ at: 0.25, type: 'ding', gain: 0.95 }] },
+    c5b09: { scene: 'c5_ex22_check', sfx: [{ at: 0.2, type: 'tick', gain: 0.65 }, { at: 0.65, type: 'ding', gain: 0.9 }] },
+    c5b10: { scene: 'c5_ex22_hold', sfx: [] },
+    c5b11: { scene: 'c5_ex23_dual', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'ding', gain: 0.9 }] },
+    c5b12: { scene: 'c5_ex23_trap', sfx: [{ at: 0.18, type: 'buzz', gain: 0.85 }, { at: 0.62, type: 'zink', gain: 0.8 }] },
+    c5b13: { scene: 'c5_exam_q', sfx: [{ at: 0.1, type: 'zink', gain: 0.9 }] },
+    c5b14: { scene: 'c5_exam_wait', sfx: [{ at: 0.08, type: 'tick', gain: 0.38 }, { at: 0.33, type: 'tick', gain: 0.38 }, { at: 0.58, type: 'tick', gain: 0.38 }, { at: 0.83, type: 'tick', gain: 0.38 }] },
+    c5b15: { scene: 'c5_exam_a', sfx: [{ at: 0.12, type: 'ding', gain: 1.0 }] },
+    c5b16: { scene: 'c5_exam_s1', sfx: [{ at: 0.25, type: 'pop', gain: 0.8 }] },
+    c5b17: { scene: 'c5_exam_s2', sfx: [{ at: 0.22, type: 'tick', gain: 0.7 }, { at: 0.65, type: 'pop', gain: 0.8 }] },
+    c5b18: { scene: 'c5_exam_s3', sfx: [{ at: 0.22, type: 'tick', gain: 0.7 }, { at: 0.65, type: 'pop', gain: 0.8 }] },
+    c5b19: { scene: 'c5_exam_s4', sfx: [{ at: 0.2, type: 'scribble', gain: 0.65, dur: 0.45 }, { at: 0.7, type: 'pop', gain: 0.8 }] },
+    c5b20: { scene: 'c5_exam_s5', sfx: [{ at: 0.25, type: 'ding', gain: 0.95 }] },
+    c5b21: { scene: 'c5_exam_traps', sfx: [{ at: 0.16, type: 'buzz', gain: 0.75 }, { at: 0.58, type: 'buzz', gain: 0.75 }] },
+    c5b22: { scene: 'outro', sfx: [] },
+
+    // Bölüm 6
+    c6b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.6 }] },
+    c6b01: { scene: 'c6_hook', sfx: [{ at: 0.06, type: 'riser', gain: 0.65 }, { at: 0.3, type: 'pop', gain: 0.8 }] },
+    c6b02: { scene: 'c6_tab_min', sfx: [{ at: 0.15, type: 'tick', gain: 0.65 }, { at: 0.45, type: 'tick', gain: 0.65 }, { at: 0.78, type: 'zink', gain: 0.85 }] },
+    c6b03: { scene: 'c6_tab_max', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.62, type: 'zink', gain: 0.85 }] },
+    c6b04: { scene: 'c6_quote_table', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.7 }, { at: 0.5, type: 'zink', gain: 0.9 }] },
+    c6b05: { scene: 'c6_sezgi', sfx: [{ at: 0.18, type: 'pop', gain: 0.8 }, { at: 0.6, type: 'ding', gain: 0.85 }] },
+    c6b06: { scene: 'c6_rule', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.65 }, { at: 0.55, type: 'zink', gain: 0.9 }] },
+    c6b07: { scene: 'c6_quote_sumprod', sfx: [{ at: 0.14, type: 'zink', gain: 0.9 }, { at: 0.65, type: 'buzz', gain: 0.7 }] },
+    c6b08: { scene: 'c6_f1_s1', sfx: [{ at: 0.2, type: 'tick', gain: 0.65 }, { at: 0.5, type: 'tick', gain: 0.65 }, { at: 0.8, type: 'pop', gain: 0.8 }] },
+    c6b09: { scene: 'c6_f1_s2', sfx: [{ at: 0.25, type: 'ding', gain: 0.9 }] },
+    c6b10: { scene: 'c6_ex24_s1', sfx: [{ at: 0.22, type: 'pop', gain: 0.8 }, { at: 0.68, type: 'tick', gain: 0.65 }] },
+    c6b11: { scene: 'c6_ex24_s2', sfx: [{ at: 0.25, type: 'pop', gain: 0.8 }, { at: 0.68, type: 'tick', gain: 0.65 }] },
+    c6b12: { scene: 'c6_ex24_s3', sfx: [{ at: 0.3, type: 'ding', gain: 0.95 }] },
+    c6b13: { scene: 'c6_ex24_hold', sfx: [] },
+    c6b14: { scene: 'c6_try_q', sfx: [{ at: 0.14, type: 'pop', gain: 0.8 }] },
+    c6b15: { scene: 'c6_try_wait', sfx: [{ at: 0.05, type: 'tick', gain: 0.35 }, { at: 0.25, type: 'tick', gain: 0.35 }, { at: 0.45, type: 'tick', gain: 0.35 }, { at: 0.65, type: 'tick', gain: 0.35 }, { at: 0.85, type: 'tick', gain: 0.35 }] },
+    c6b16: { scene: 'c6_try_a', sfx: [{ at: 0.15, type: 'ding', gain: 0.95 }, { at: 0.65, type: 'pop', gain: 0.75 }] },
+    c6b17: { scene: 'outro', sfx: [] },
+
+    // Bölüm 7
+    c7b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.6 }] },
+    c7b01: { scene: 'c7_quote_star', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.8 }, { at: 0.45, type: 'zink', gain: 1.0 }] },
+    c7b02: { scene: 'c7_hook', sfx: [{ at: 0.06, type: 'riser', gain: 0.65 }, { at: 0.3, type: 'pop', gain: 0.8 }] },
+    c7b03: { scene: 'c7_sezgi', sfx: [{ at: 0.18, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c7b04: { scene: 'c7_rule', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.65 }, { at: 0.55, type: 'zink', gain: 0.9 }] },
+    c7b05: { scene: 'c7_ex25_s1', sfx: [{ at: 0.2, type: 'tick', gain: 0.65 }, { at: 0.65, type: 'pop', gain: 0.8 }] },
+    c7b06: { scene: 'c7_ex25_s2', sfx: [{ at: 0.25, type: 'scribble', gain: 0.65, dur: 0.45 }, { at: 0.7, type: 'ding', gain: 0.95 }] },
+    c7b07: { scene: 'c7_ex25_hold', sfx: [] },
+    c7b08: { scene: 'c7_ex27_q', sfx: [{ at: 0.2, type: 'pop', gain: 0.8 }] },
+    c7b09: { scene: 'c7_ex27_a', sfx: [{ at: 0.25, type: 'ding', gain: 0.9 }] },
+    c7b10: { scene: 'c7_ex28_q', sfx: [{ at: 0.2, type: 'pop', gain: 0.8 }] },
+    c7b11: { scene: 'c7_ex28_a', sfx: [{ at: 0.25, type: 'ding', gain: 0.9 }] },
+    c7b12: { scene: 'c7_ex29_q', sfx: [{ at: 0.2, type: 'tick', gain: 0.7 }, { at: 0.6, type: 'pop', gain: 0.75 }] },
+    c7b13: { scene: 'c7_ex29_a', sfx: [{ at: 0.25, type: 'ding', gain: 0.9 }, { at: 0.68, type: 'ding', gain: 0.85 }] },
+    c7b14: { scene: 'c7_exam_q', sfx: [{ at: 0.1, type: 'zink', gain: 0.9 }] },
+    c7b15: { scene: 'c7_exam_wait', sfx: [{ at: 0.08, type: 'tick', gain: 0.38 }, { at: 0.33, type: 'tick', gain: 0.38 }, { at: 0.58, type: 'tick', gain: 0.38 }, { at: 0.83, type: 'tick', gain: 0.38 }] },
+    c7b16: { scene: 'c7_exam_a', sfx: [{ at: 0.12, type: 'ding', gain: 1.0 }] },
+    c7b17: { scene: 'c7_exam_trapA', sfx: [{ at: 0.16, type: 'buzz', gain: 0.8 }] },
+    c7b18: { scene: 'c7_exam_trapCE', sfx: [{ at: 0.16, type: 'buzz', gain: 0.75 }, { at: 0.58, type: 'buzz', gain: 0.75 }] },
+    c7b19: { scene: 'c7_rev1', sfx: [{ at: 0.15, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c7b20: { scene: 'c7_rev2', sfx: [{ at: 0.15, type: 'pop', gain: 0.75 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c7b21: { scene: 'c7_rev3', sfx: [{ at: 0.15, type: 'pop', gain: 0.75 }, { at: 0.75, type: 'ding', gain: 1.0 }] },
+    c7b22: { scene: 'outro', sfx: [] }
+  };
+
+  // ==========================================================
+  // 1. Saf Mantık ve Doğruluk Tablosu Yardımcıları
+  // ==========================================================
+  function truthTable(fn, n) {
+    const count = 1 << n;
+    const rows = [];
+    for (let idx = 0; idx < count; idx++) {
+      const bits = [];
+      for (let b = n - 1; b >= 0; b--) {
+        bits.push((idx >> b) & 1);
+      }
+      const val = fn(...bits) ? 1 : 0;
+      rows.push({
+        idx,
+        bits,
+        bin: bits.join(''),
+        val
+      });
+    }
+    return rows;
+  }
+
+  function mintermIndices(fn, n = 3) {
+    return truthTable(fn, n).filter(r => r.val === 1).map(r => r.idx);
+  }
+
+  function maxtermIndices(fn, n = 3) {
+    return truthTable(fn, n).filter(r => r.val === 0).map(r => r.idx);
+  }
+
+  function mintermText(i, vars = ['x', 'y', 'z']) {
+    const n = vars.length;
+    let out = '';
+    for (let b = n - 1; b >= 0; b--) {
+      const bit = (i >> b) & 1;
+      const v = vars[n - 1 - b];
+      out += bit === 0 ? `${v}'` : v;
+    }
+    return out;
+  }
+
+  function maxtermText(i, vars = ['x', 'y', 'z']) {
+    const n = vars.length;
+    const parts = [];
+    for (let b = n - 1; b >= 0; b--) {
+      const bit = (i >> b) & 1;
+      const v = vars[n - 1 - b];
+      parts.push(bit === 1 ? `${v}'` : v);
+    }
+    return parts.join(' + ');
+  }
+
+  function complementList(list, n = 3) {
+    const total = 1 << n;
+    const set = new Set(list);
+    const out = [];
+    for (let i = 0; i < total; i++) {
+      if (!set.has(i)) out.push(i);
+    }
+    return out;
+  }
+
+  function indicesToFn(indices) {
+    const s = new Set(indices);
+    return (a, b, c) => (s.has((a << 2) | (b << 1) | c) ? 1 : 0);
+  }
+
+  // Tüm ders örnekleri saf Boole fonksiyonları olarak tanımlı
+  const FN = {
+    xy: (x, y) => x & y,
+    xyComp: (x, y) => (x & y) ^ 1,
+
+    // Örnek 2.2: F1 = x'yz' + x'y'z
+    ex22_F1: (x, y, z) => ((x ^ 1) & y & (z ^ 1)) | ((x ^ 1) & (y ^ 1) & z),
+    ex22_F1p: (x, y, z) => (((x ^ 1) & y & (z ^ 1)) | ((x ^ 1) & (y ^ 1) & z)) ^ 1,
+    ex22_F1p_alg: (x, y, z) => (x | (y ^ 1) | z) & (x | y | (z ^ 1)),
+    ex22_F1_dual: (x, y, z) => ((x ^ 1) | y | (z ^ 1)) & ((x ^ 1) | (y ^ 1) | z),
+
+    // Alıştırma 2.6 (sınav anı): F = A'BC' + A'B'C
+    ex26_F: (A, B, C) => ((A ^ 1) & B & (C ^ 1)) | ((A ^ 1) & (B ^ 1) & C),
+    ex26_Fp: (A, B, C) => (((A ^ 1) & B & (C ^ 1)) | ((A ^ 1) & (B ^ 1) & C)) ^ 1,
+    ex26_optA: (A, B, C) => A | (B & C) | ((B ^ 1) & (C ^ 1)),
+    ex26_optB: (A, B, C) => (A ^ 1) | (B & C) | ((B ^ 1) & (C ^ 1)),
+    ex26_optC: (A, B, C) => (A & (B ^ 1) & C) | (A & B & (C ^ 1)),
+    ex26_optD: (A, B, C) => A | (B & (C ^ 1)) | ((B ^ 1) & C),
+    ex26_optE: (A, B, C) => (A ^ 1) & (B ^ 1) & (C ^ 1),
+
+    // s.43 f1 = m1 + m4 + m7
+    s43_f1: indicesToFn([1, 4, 7]),
+
+    // Örnek 2.4: F = A + B'C
+    ex24_F: (A, B, C) => A | ((B ^ 1) & C),
+
+    // Sen dene Ch6: F = Σ(0, 3)
+    try6_F: indicesToFn([0, 3]),
+
+    // Örnek 2.5: F = xy + x'z
+    ex25_F: (x, y, z) => (x & y) | ((x ^ 1) & z),
+
+    // Alıştırma 2.7 - 2.9 (s.50)
+    ex27_F: indicesToFn([1, 2, 3, 5, 7]),
+    ex28_F: indicesToFn(complementList([1, 3, 4, 6], 3)),
+    ex29_F: indicesToFn([1, 3, 4, 6]), // F sütunu: 0 1 0 1 1 0 1 0
+
+    // s.51 yoklama: F(x, y, z) = Σ(0, 2, 5)
+    ex51_F: indicesToFn([0, 2, 5])
+  };
+
+  const DATA = {
+    ch5_xy_tt: truthTable(FN.xy, 2),
+    ch5_xyp_tt: truthTable(FN.xyComp, 2),
+    ch5_ex22_tt: truthTable(FN.ex22_F1, 3),
+    ch5_ex22p_tt: truthTable(FN.ex22_F1p, 3),
+    ch5_ex22p_alg_tt: truthTable(FN.ex22_F1p_alg, 3),
+    ch5_ex22_dual_tt: truthTable(FN.ex22_F1_dual, 3),
+
+    ch5_ex26_F_tt: truthTable(FN.ex26_F, 3),
+    ch5_ex26_Fp_tt: truthTable(FN.ex26_Fp, 3),
+    ch5_ex26_optA_tt: truthTable(FN.ex26_optA, 3),
+    ch5_ex26_optB_tt: truthTable(FN.ex26_optB, 3),
+    ch5_ex26_optC_tt: truthTable(FN.ex26_optC, 3),
+    ch5_ex26_optD_tt: truthTable(FN.ex26_optD, 3),
+    ch5_ex26_optE_tt: truthTable(FN.ex26_optE, 3),
+
+    ch6_xyz_rows: truthTable(() => 0, 3),
+    ch6_minterms: Array.from({ length: 8 }, (_, i) => ({
+      idx: i,
+      label: `m${i}`,
+      expr: mintermText(i, ['x', 'y', 'z'])
+    })),
+    ch6_maxterms: Array.from({ length: 8 }, (_, i) => ({
+      idx: i,
+      label: `M${i}`,
+      expr: maxtermText(i, ['x', 'y', 'z'])
+    })),
+
+    ch6_f1_tt: truthTable(FN.s43_f1, 3),
+    ch6_f1_min: mintermIndices(FN.s43_f1, 3),
+    ch6_f1_max: maxtermIndices(FN.s43_f1, 3),
+
+    ch6_ex24_tt: truthTable(FN.ex24_F, 3),
+    ch6_ex24_min: mintermIndices(FN.ex24_F, 3),
+    ch6_ex24_max: maxtermIndices(FN.ex24_F, 3),
+
+    ch6_try_tt: truthTable(FN.try6_F, 3),
+    ch6_try_min: mintermIndices(FN.try6_F, 3),
+
+    ch7_ex25_tt: truthTable(FN.ex25_F, 3),
+    ch7_ex25_min: mintermIndices(FN.ex25_F, 3),
+    ch7_ex25_max: complementList(mintermIndices(FN.ex25_F, 3), 3),
+
+    ch7_ex27_min: mintermIndices(FN.ex27_F, 3),
+    ch7_ex27_max: complementList(mintermIndices(FN.ex27_F, 3), 3),
+
+    ch7_ex28_max: maxtermIndices(FN.ex28_F, 3),
+    ch7_ex28_min: complementList(maxtermIndices(FN.ex28_F, 3), 3),
+
+    ch7_ex29_tt: truthTable(FN.ex29_F, 3),
+    ch7_ex29_min: mintermIndices(FN.ex29_F, 3),
+    ch7_ex29_max: maxtermIndices(FN.ex29_F, 3),
+
+    ch7_ex51_min: mintermIndices(FN.ex51_F, 3),
+    ch7_ex51_max: complementList(mintermIndices(FN.ex51_F, 3), 3)
+  };
+
+  function selfTest() {
+    const arrEq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const valStr = (tt) => tt.map(r => r.val).join('');
+
+    const checks = [
+      // Minterm & Maxterm text helpers
+      ['minterm 0', mintermText(0, ['x', 'y', 'z']), "x'y'z'"],
+      ['minterm 5', mintermText(5, ['x', 'y', 'z']), "xy'z"],
+      ['maxterm 0', maxtermText(0, ['x', 'y', 'z']), 'x + y + z'],
+      ['maxterm 5', maxtermText(5, ['x', 'y', 'z']), "x' + y + z'"],
+      ['complementList [0,2,5]', arrEq(DATA.ch7_ex51_max, [1, 3, 4, 6, 7]), true],
+
+      // Bölüm 5: F = xy ve F'
+      ['Ch5 xy vals', valStr(DATA.ch5_xy_tt), '0001'],
+      ['Ch5 xy comp vals', valStr(DATA.ch5_xyp_tt), '1110'],
+
+      // Bölüm 5: Örnek 2.2 F1 = x'yz' + x'y'z
+      ['Ch5 ex2.2 F1 vals', valStr(DATA.ch5_ex22_tt), '01100000'],
+      ['Ch5 ex2.2 F1p == alg', valStr(DATA.ch5_ex22p_tt) === valStr(DATA.ch5_ex22p_alg_tt), true],
+      ['Ch5 ex2.2 F1p vals', valStr(DATA.ch5_ex22p_tt), '10011111'],
+      ['Ch5 ex2.2 dual != comp', valStr(DATA.ch5_ex22_dual_tt) !== valStr(DATA.ch5_ex22p_tt), true],
+
+      // Bölüm 5: Sınav anı Alıştırma 2.6
+      ['Ch5 exam F vals', valStr(DATA.ch5_ex26_F_tt), '01100000'],
+      ['Ch5 exam optA == Fp', valStr(DATA.ch5_ex26_optA_tt) === valStr(DATA.ch5_ex26_Fp_tt), true],
+      ['Ch5 exam optB != Fp', valStr(DATA.ch5_ex26_optB_tt) !== valStr(DATA.ch5_ex26_Fp_tt), true],
+      ['Ch5 exam optC != Fp', valStr(DATA.ch5_ex26_optC_tt) !== valStr(DATA.ch5_ex26_Fp_tt), true],
+      ['Ch5 exam optD != Fp', valStr(DATA.ch5_ex26_optD_tt) !== valStr(DATA.ch5_ex26_Fp_tt), true],
+      ['Ch5 exam optE != Fp', valStr(DATA.ch5_ex26_optE_tt) !== valStr(DATA.ch5_ex26_Fp_tt), true],
+
+      // Bölüm 6: Mj = (mj)' tüm 8 satırda
+      ['Ch6 Mj == mj\'', Array.from({ length: 8 }, (_, j) => {
+        for (let r = 0; r < 8; r++) {
+          const isMatch = r === j ? 1 : 0;
+          const mjVal = isMatch;
+          const MjVal = isMatch ^ 1;
+          if (MjVal !== (mjVal ^ 1)) return false;
+        }
+        return true;
+      }).every(Boolean), true],
+
+      // Bölüm 6: s.43 f1
+      ['Ch6 f1 vals', valStr(DATA.ch6_f1_tt), '01001001'],
+      ['Ch6 f1 minterms', arrEq(DATA.ch6_f1_min, [1, 4, 7]), true],
+      ['Ch6 f1 maxterms', arrEq(DATA.ch6_f1_max, [0, 2, 3, 5, 6]), true],
+
+      // Bölüm 6: Örnek 2.4 F = A + B'C
+      ['Ch6 ex2.4 minterms', arrEq(DATA.ch6_ex24_min, [1, 4, 5, 6, 7]), true],
+      ['Ch6 ex2.4 maxterms', arrEq(DATA.ch6_ex24_max, [0, 2, 3]), true],
+
+      // Bölüm 6: Sen dene Σ(0, 3)
+      ['Ch6 try vals', valStr(DATA.ch6_try_tt), '10010000'],
+      ['Ch6 try rows', arrEq(DATA.ch6_try_min, [0, 3]), true],
+
+      // Bölüm 7: Örnek 2.5 F = xy + x'z
+      ['Ch7 ex2.5 minterms', arrEq(DATA.ch7_ex25_min, [1, 3, 6, 7]), true],
+      ['Ch7 ex2.5 maxterms', arrEq(DATA.ch7_ex25_max, [0, 2, 4, 5]), true],
+
+      // Bölüm 7: Alıştırma 2.7 - 2.9
+      ['Ch7 ex2.7 Pi', arrEq(DATA.ch7_ex27_max, [0, 4, 6]), true],
+      ['Ch7 ex2.8 Sigma', arrEq(DATA.ch7_ex28_min, [0, 2, 5, 7]), true],
+      ['Ch7 ex2.9 vals', valStr(DATA.ch7_ex29_tt), '01011010'],
+      ['Ch7 ex2.9 Sigma', arrEq(DATA.ch7_ex29_min, [1, 3, 4, 6]), true],
+      ['Ch7 ex2.9 Pi', arrEq(DATA.ch7_ex29_max, [0, 2, 5, 7]), true],
+
+      // Bölüm 7: Yoklama s.51
+      ['Ch7 ex51 Pi', arrEq(DATA.ch7_ex51_max, [1, 3, 4, 6, 7]), true]
+    ];
+
+    let passed = 0;
+    const fails = [];
+    for (const [name, got, exp] of checks) {
+      if (got === exp) passed++;
+      else fails.push(`${name}: got ${got}, expected ${exp}`);
+    }
+    console.log(`selfTest: ${passed}/${checks.length} OK`);
+    if (fails.length > 0) {
+      console.error('selfTest failures:', fails);
+      const badge = document.createElement('div');
+      badge.className = 'selftest-err';
+      badge.textContent = `selfTest HATA: ${passed}/${checks.length}`;
+      document.body.appendChild(badge);
+    }
+    return { passed, total: checks.length, fails };
+  }
+
+  // ==========================================================
+  // 2. Ortak Görsel Bileşenler (Doğruluk Tablosu & 0-7 Şerit)
+  // ==========================================================
+  function drawTruthTable(ctx, cfg) {
+    const {
+      x = 44,
+      y = 148,
+      w = 540,
+      vars = ['x', 'y', 'z'],
+      rows = [],
+      showIndex = true,
+      extraCols = [], // [{ header, wRatio, values, colorMode: 'bool'|'minterm'|'maxterm'|'plain', highlightIndices }]
+      rowH = 42,
+      revealCount = 99,
+      activeRow = -1,
+      highlightOnes = true,
+      highlightZerosMode = null // null | 'lavender' | 'terracotta'
+    } = cfg;
+
+    const headH = 42;
+    const totalRows = Math.min(rows.length, revealCount);
+    const totalH = headH + rows.length * rowH;
+
+    drawCard(ctx, x, y, w, totalH, { radius: 20, stroke: 'rgba(36, 55, 45, 0.12)' });
+
+    // Compute columns
+    const cols = [];
+    if (showIndex) cols.push({ key: 'idx', header: 'j', width: Math.round(w * 0.11) });
+    const varW = Math.round(w * (extraCols.length > 1 ? 0.085 : 0.11));
+    vars.forEach((v, vi) => cols.push({ key: 'var', vi, header: v, width: varW }));
+    const usedW = cols.reduce((s, c) => s + c.width, 0);
+    const remW = w - usedW;
+    const totalRatio = extraCols.reduce((s, c) => s + (c.wRatio || 1), 0) || 1;
+    extraCols.forEach(ec => {
+      cols.push({ ...ec, key: 'extra', width: Math.round((remW * (ec.wRatio || 1)) / totalRatio) });
+    });
+
+    // Header bar
+    ctx.save();
+    ctx.fillStyle = PALETTE.ink;
+    roundRectPath(ctx, x, y, w, headH, 18);
+    ctx.fill();
+    ctx.fillRect(x, y + headH - 12, w, 12);
+
+    let cx = x;
+    cols.forEach(col => {
+      drawTextFit(ctx, col.header, cx + col.width / 2, y + headH / 2 + 1, col.width - 10, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: '#FFFFFF', align: 'center'
+      });
+      cx += col.width;
+    });
+
+    // Rows
+    for (let r = 0; r < rows.length; r++) {
+      const ry = y + headH + r * rowH;
+      const row = rows[r];
+      const isRevealed = r < totalRows;
+      const isLast = r === rows.length - 1;
+
+      if (r % 2 === 1) {
+        ctx.fillStyle = 'rgba(36, 55, 45, 0.03)';
+        if (isLast) {
+          roundRectPath(ctx, x, ry, w, rowH, 18);
+          ctx.fill();
+          ctx.fillRect(x, ry, w, 12);
+        } else {
+          ctx.fillRect(x, ry, w, rowH);
+        }
+      }
+      if (r === activeRow) {
+        ctx.fillStyle = 'rgba(227, 201, 160, 0.45)';
+        ctx.fillRect(x + 2, ry + 1, w - 4, rowH - 2);
+      }
+
+      if (!isRevealed) continue;
+
+      let curX = x;
+      cols.forEach(col => {
+        const midX = curX + col.width / 2;
+        const midY = ry + rowH / 2 + 1;
+
+        if (col.key === 'idx') {
+          ctx.font = `700 18px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = PALETTE.muted;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(row.idx), midX, midY);
+        } else if (col.key === 'var') {
+          const b = row.bits[col.vi];
+          ctx.font = `600 19px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = b === 1 ? PALETTE.ink : PALETTE.muted;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(b), midX, midY);
+        } else if (col.key === 'extra') {
+          const val = col.values[r];
+          if (col.colorMode === 'bool') {
+            const is1 = val === 1 || val === '1';
+            const isLitZero = !is1 && highlightZerosMode === 'lavender';
+            const isLitTerr = !is1 && highlightZerosMode === 'terracotta';
+            if (is1 && highlightOnes) {
+              ctx.fillStyle = 'rgba(156, 194, 154, 0.45)';
+              roundRectPath(ctx, curX + 4, ry + 3, col.width - 8, rowH - 6, 8);
+              ctx.fill();
+            } else if (isLitZero) {
+              ctx.fillStyle = 'rgba(182, 162, 219, 0.36)';
+              roundRectPath(ctx, curX + 4, ry + 3, col.width - 8, rowH - 6, 8);
+              ctx.fill();
+            } else if (isLitTerr) {
+              ctx.fillStyle = 'rgba(207, 138, 104, 0.32)';
+              roundRectPath(ctx, curX + 4, ry + 3, col.width - 8, rowH - 6, 8);
+              ctx.fill();
+            }
+            ctx.font = `700 22px 'JetBrains Mono', monospace`;
+            ctx.fillStyle = is1 ? PALETTE.green : (isLitZero ? '#5C4388' : (isLitTerr ? '#8E4B2D' : PALETTE.muted));
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(val), midX, midY);
+          } else {
+            const isHL = col.highlightSet && col.highlightSet.has(r);
+            if (isHL) {
+              ctx.fillStyle = col.colorMode === 'maxterm' ? 'rgba(182, 162, 219, 0.36)' : 'rgba(156, 194, 154, 0.42)';
+              roundRectPath(ctx, curX + 4, ry + 3, col.width - 8, rowH - 6, 8);
+              ctx.fill();
+            }
+            drawTextFit(ctx, String(val), midX, midY, col.width - 12, {
+              family: "'JetBrains Mono', monospace",
+              weight: isHL || col.bold ? 700 : 600,
+              size: 18,
+              minSize: 12,
+              color: isHL ? (col.colorMode === 'maxterm' ? '#5C4388' : PALETTE.green) : PALETTE.ink,
+              align: 'center'
+            });
+          }
+        }
+        curX += col.width;
+      });
+    }
+    ctx.restore();
+    return { x, y, w, h: totalH, headH, rowH };
+  }
+
+  function drawIndexStrip(ctx, cfg) {
+    // 0..7 şeridi (Chapter 7 Σ ↔ Π dönüşümü)
+    const {
+      cx = W / 2,
+      y = 240,
+      boxW = 96,
+      boxH = 96,
+      gap = 16,
+      sigmaSet = new Set(),
+      piSet = new Set(),
+      activeIdx = -1,
+      t = 0,
+      seed = 700
+    } = cfg;
+    const totalW = 8 * boxW + 7 * gap;
+    const startX = cx - totalW / 2;
+    const positions = [];
+
+    for (let i = 0; i < 8; i++) {
+      const bx = startX + i * (boxW + gap);
+      const isSigma = sigmaSet.has(i);
+      const isPi = piSet.has(i);
+      const fill = isSigma
+        ? 'rgba(156, 194, 154, 0.48)'
+        : (isPi ? 'rgba(182, 162, 219, 0.44)' : PALETTE.softFill);
+      const textCol = isSigma ? PALETTE.green : (isPi ? '#5C4388' : PALETTE.ink);
+
+      ctx.save();
+      ctx.fillStyle = fill;
+      roundRectPath(ctx, bx, y, boxW, boxH, 16);
+      ctx.fill();
+
+      drawSketchRect(ctx, bx, y, boxW, boxH, {
+        seed: seed + i * 19, t, progress: 1,
+        width: i === activeIdx ? 3.2 : 2.2,
+        color: isSigma ? PALETTE.green : (isPi ? PALETTE.lavender : 'rgba(36, 55, 45, 0.4)')
+      });
+
+      ctx.font = `700 42px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = textCol;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(i), bx + boxW / 2, y + boxH / 2 - 6);
+
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.fillText(isSigma ? 'F=1 (Σ)' : (isPi ? 'F=0 (Π)' : i.toString(2).padStart(3, '0')), bx + boxW / 2, y + boxH - 16);
+      ctx.restore();
+
+      positions.push({ x: bx, y, w: boxW, h: boxH, cx: bx + boxW / 2, cy: y + boxH / 2 });
+    }
+    return positions;
+  }
+
+  function drawQuoteCard(ctx, cfg) {
+    const {
+      badge = 'HOCA, 10.11',
+      quote = '',
+      sub = '',
+      x = 64,
+      y = 70,
+      w = 1152,
+      h = 152,
+      accent = PALETTE.terracotta,
+      punchZoom = 0
+    } = cfg;
+    ctx.save();
+    if (punchZoom > 0) {
+      ctx.translate(x + w / 2, y + h / 2);
+      ctx.scale(1 + punchZoom, 1 + punchZoom);
+      ctx.translate(-(x + w / 2), -(y + h / 2));
+    }
+    drawCard(ctx, x, y, w, h, { radius: 22, fill: 'rgba(227, 201, 160, 0.36)', stroke: accent });
+    ctx.font = `700 12px 'JetBrains Mono', monospace`;
+    const bw = ctx.measureText(badge).width + 32;
+    ctx.fillStyle = accent;
+    roundRectPath(ctx, x + 24, y + 18, bw, 28, 999);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badge, x + 24 + bw / 2, y + 32);
+
+    drawTextFit(ctx, quote, x + 28, y + (sub ? 84 : 96), w - 56, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 36, minSize: 20
+    });
+    if (sub) {
+      drawTextFit(ctx, sub, x + 28, y + h - 24, w - 56, {
+        family: "'JetBrains Mono', monospace", weight: 600, size: 15, minSize: 12, color: '#7E5A28'
+      });
+    }
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 3. Sahne Çizicileri (Bölüm 5–7)
+  // ==========================================================
+  function renderChapterScene(ctx, beat, lt, dur, t, chMeta) {
+    const p = clamp01(lt / Math.max(0.01, dur));
+    const s = beat.scene;
+
+    if (s === 'intro') { drawIntroCard(ctx, chMeta, lt, t); return; }
+    if (s === 'outro') { drawOutroCard(ctx, chMeta, lt, t); return; }
+
+    // --------------------------------------------------------
+    // BÖLÜM 5 — Fonksiyonun tümleyeni (s.35–39)
+    // --------------------------------------------------------
+    if (s === 'c5_hook') {
+      drawPrevTopicBadge(ctx, 'postülalar, teoremler, sadeleştirme');
+      drawHookQuestion(ctx, "F'nin tersini bulmak için tabloyu baştan mı çıkaracağız?", 'BÖLÜM 05 • FONKSİYONUN TÜMLEYENİ', lt, t);
+      return;
+    }
+
+    if (s === 'c5_sezgi_tab') {
+      drawTextFit(ctx, "Sezgi: F'nin tümleyeni F', tabloda 0 ile 1'in yer değiştirmesidir", W / 2, 102, 1120, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40, align: 'center'
+      });
+
+      drawTruthTable(ctx, {
+        x: 110, y: 170, w: 510,
+        vars: ['x', 'y'],
+        rows: DATA.ch5_xy_tt,
+        rowH: 64,
+        extraCols: [
+          { header: 'F = xy', wRatio: 1, values: DATA.ch5_xy_tt.map(r => r.val), colorMode: 'bool' },
+          { header: "F' = (xy)'", wRatio: 1.15, values: DATA.ch5_xyp_tt.map(r => r.val), colorMode: 'bool' }
+        ],
+        highlightOnes: true,
+        highlightZerosMode: 'terracotta'
+      });
+
+      drawCard(ctx, 680, 186, 490, 276, { radius: 22, stroke: PALETTE.terracotta });
+      drawTextFit(ctx, '0  ↔  1', 925, 274, 420, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 64, color: PALETTE.terracotta, align: 'center'
+      });
+      drawTextFit(ctx, "F = 1 olan satır  →  F' = 0", 925, 362, 430, {
+        family: "'JetBrains Mono', monospace", weight: 600, size: 22, align: 'center'
+      });
+      drawTextFit(ctx, "F = 0 olan satır  →  F' = 1", 925, 408, 430, {
+        family: "'JetBrains Mono', monospace", weight: 600, size: 22, color: PALETTE.green, align: 'center'
+      });
+      if (p > 0.35) drawFocusZink(ctx, 925, 274, 150, 52, lt - dur * 0.35, t, { color: PALETTE.terracotta });
+      drawColorLegend(ctx, [
+        { color: PALETTE.sage, label: 'çıkış = 1' },
+        { color: PALETTE.terracotta, label: "tümlenmiş 0" }
+      ]);
+      return;
+    }
+
+    if (s === 'c5_sezgi_why') {
+      drawTextFit(ctx, 'Peki 10 değişkenli bir fonksiyon gelirse?', W / 2, 114, 1080, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42, align: 'center'
+      });
+
+      drawCard(ctx, 90, 184, 520, 310, { radius: 24, stroke: PALETTE.error });
+      drawTextFit(ctx, 'TABLO ÇIKARIRSAN', 350, 236, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 20, color: PALETTE.error, align: 'center' });
+      drawTextFit(ctx, '2¹⁰ = 1024 satır!', 350, 336, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 48, color: PALETTE.error, align: 'center' });
+      drawTextFit(ctx, 'Sınavda zaman yetmez.', 350, 422, 460, { size: 22, color: PALETTE.muted, align: 'center' });
+
+      drawCard(ctx, 670, 184, 520, 310, { radius: 24, stroke: PALETTE.green });
+      drawTextFit(ctx, 'CEBİRSEL KURAL İLE', 930, 236, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 20, color: PALETTE.green, align: 'center' });
+      drawTextFit(ctx, 'Tek adımda F\'', 930, 336, 460, { family: "'Instrument Serif', serif", italic: true, weight: 400, size: 54, color: PALETTE.green, align: 'center' });
+      drawTextFit(ctx, 'Tabloya gerek kalmaz.', 930, 422, 460, { size: 22, color: PALETTE.muted, align: 'center' });
+      if (p > 0.45) drawFocusZink(ctx, 930, 336, 175, 52, lt - dur * 0.45, t, { color: PALETTE.green });
+      return;
+    }
+
+    if (s === 'c5_rule') {
+      const isDocked = p > 0.72;
+      drawStickyRuleCard(ctx, {
+        title: 'GENELLEŞTİRİLMİŞ DEMORGAN',
+        lines: ['VE ↔ VEYA değiştir, her harfi tümle.'],
+        docked: isDocked,
+        highlightTokens: p > 0.3 ? ['VE ↔ VEYA değiştir', 'her harfi tümle'] : [],
+        t
+      });
+      if (!isDocked) {
+        drawCard(ctx, 190, 474, 435, 86, { radius: 18, stroke: PALETTE.ice });
+        drawTextFit(ctx, "(A + B + C)' = A'B'C'", 407, 517, 400, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 26, align: 'center'
+        });
+        drawCard(ctx, 655, 474, 435, 86, { radius: 18, stroke: PALETTE.ice });
+        drawTextFit(ctx, "(ABC)' = A' + B' + C'", 872, 517, 400, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 26, align: 'center'
+        });
+      } else {
+        drawTextFit(ctx, "Şimdi Örnek 2.2'yi adım adım çözelim…", W / 2, 340, 900, {
+          family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40, color: PALETTE.muted, align: 'center'
+        });
+      }
+      return;
+    }
+
+    // Örnek 2.2 adım adım (F1 = x'yz' + x'y'z)
+    if (['c5_ex22_s1', 'c5_ex22_s2', 'c5_ex22_s3', 'c5_ex22_s4'].includes(s)) {
+      const stepIdx = { c5_ex22_s1: 1, c5_ex22_s2: 2, c5_ex22_s3: 3, c5_ex22_s4: 4 }[s];
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ['VE ↔ VEYA değiştir,', 'her harfi tümle.'],
+        docked: true,
+        highlightTokens: stepIdx === 1 ? ['VE ↔ VEYA değiştir'] : (stepIdx <= 3 ? ['her harfi tümle'] : []),
+        t
+      });
+
+      drawTextFit(ctx, "Örnek 2.2:   F1 = x'yz' + x'y'z", 44, 108, 810, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 30
+      });
+
+      drawCard(ctx, 44, 166, 1192, 392, { radius: 24 });
+
+      const lines = [
+        { k: 1, tag: 'ADIM 1 • Dıştan DeMorgan', text: "F1' = (x'yz' + x'y'z)' = (x'yz')' · (x'y'z)'", col: PALETTE.ink },
+        { k: 2, tag: 'ADIM 2 • İlk çarpımın tümleyeni', text: "(x'yz')'  =  x + y' + z", col: PALETTE.terracotta },
+        { k: 3, tag: 'ADIM 3 • İkinci çarpımın tümleyeni', text: "(x'y'z)'  =  x + y + z'", col: PALETTE.terracotta },
+        { k: 4, tag: 'SONUÇ • Birleştir', text: "F1' = (x + y' + z)(x + y + z')", col: PALETTE.green }
+      ];
+
+      lines.forEach((ln, idx) => {
+        if (ln.k > stepIdx) return;
+        const ry = 216 + idx * 88;
+        const isCurrent = ln.k === stepIdx;
+        if (isCurrent) {
+          drawCard(ctx, 72, ry - 32, 1136, 72, {
+            radius: 16,
+            fill: ln.k === 4 ? 'rgba(156, 194, 154, 0.24)' : 'rgba(227, 201, 160, 0.28)',
+            stroke: ln.k === 4 ? PALETTE.green : PALETTE.sand,
+            shadow: false
+          });
+        }
+        drawTextFit(ctx, ln.tag, 96, ry, 340, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 15, color: PALETTE.muted
+        });
+        drawTextFit(ctx, ln.text, 456, ry, 720, {
+          family: "'JetBrains Mono', monospace",
+          weight: 700,
+          size: ln.k === 4 ? 34 : 28,
+          minSize: 18,
+          color: ln.col
+        });
+      });
+
+      if (stepIdx === 4) {
+        drawFocusZink(ctx, 760, 480, 320, 38, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (s === 'c5_ex22_check' || s === 'c5_ex22_hold') {
+      drawTextFit(ctx, "Sağlama: F1 = x'yz' + x'y'z   vs   F1' = (x + y' + z)(x + y + z')", 44, 96, 1160, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 24
+      });
+
+      drawTruthTable(ctx, {
+        x: 64, y: 142, w: 720,
+        vars: ['x', 'y', 'z'],
+        rows: DATA.ch5_ex22_tt,
+        rowH: 44,
+        extraCols: [
+          { header: 'F1', wRatio: 1, values: DATA.ch5_ex22_tt.map(r => r.val), colorMode: 'bool' },
+          { header: "F1' (cebir)", wRatio: 1.2, values: DATA.ch5_ex22p_alg_tt.map(r => r.val), colorMode: 'bool' }
+        ],
+        highlightOnes: true,
+        highlightZerosMode: 'terracotta'
+      });
+
+      drawCard(ctx, 824, 186, 392, 310, { radius: 22, stroke: PALETTE.green });
+      drawTextFit(ctx, '8 / 8 SATIR TERS ✓', 1020, 260, 340, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: PALETTE.green, align: 'center'
+      });
+      drawTextFit(ctx, 'F1 = 1 (001, 010)', 1020, 342, 340, {
+        family: "'JetBrains Mono', monospace", weight: 600, size: 20, align: 'center'
+      });
+      drawTextFit(ctx, "F1' = 0 (001, 010)", 1020, 388, 340, {
+        family: "'JetBrains Mono', monospace", weight: 600, size: 20, color: PALETTE.terracotta, align: 'center'
+      });
+      drawTextFit(ctx, 'Diğer 6 satır tam tersi!', 1020, 446, 340, { size: 19, color: PALETTE.muted, align: 'center' });
+      drawFocusZink(ctx, 1020, 260, 155, 34, lt, t, { color: PALETTE.green });
+      return;
+    }
+
+    if (s === 'c5_ex23_dual') {
+      drawPrevTopicBadge(ctx, "F1' = (x + y' + z)(x + y + z')");
+      drawTextFit(ctx, 'Örnek 2.3 (Kısa yol): Düalini al, her harfi tümle', 44, 114, 1160, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40
+      });
+
+      const boxes = [
+        { lbl: '1. FONKSİYON', txt: "x'yz' + x'y'z", col: PALETTE.ice, x: 64 },
+        { lbl: '2. DÜALİ (VE ↔ VEYA)', txt: "(x' + y + z')(x' + y' + z)", col: PALETTE.sand, x: 454 },
+        { lbl: '3. HARFLERİ TÜMLE = F1\'', txt: "(x + y' + z)(x + y + z')", col: PALETTE.green, x: 844 }
+      ];
+      boxes.forEach((b, i) => {
+        if (i === 1 && p < 0.22) return;
+        if (i === 2 && p < 0.55) return;
+        drawCard(ctx, b.x, 198, 372, 224, { radius: 22, stroke: b.col });
+        drawTextFit(ctx, b.lbl, b.x + 186, 242, 336, { family: "'JetBrains Mono', monospace", weight: 700, size: 14, color: PALETTE.muted, align: 'center' });
+        drawTextFit(ctx, b.txt, b.x + 186, 326, 336, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, minSize: 15, color: i === 2 ? PALETTE.green : PALETTE.ink, align: 'center' });
+      });
+      if (p >= 0.22) drawSketchArrow(ctx, 438, 310, 452, 310, -10, { seed: 511, t, width: 3 });
+      if (p >= 0.55) {
+        drawSketchArrow(ctx, 828, 310, 842, 310, -10, { seed: 512, t, width: 3, color: PALETTE.green });
+        drawFocusZink(ctx, 1030, 326, 165, 36, lt - dur * 0.55, t, { color: PALETTE.green });
+      }
+      drawCard(ctx, 290, 466, 700, 72, { radius: 18, fill: 'rgba(156, 194, 154, 0.24)', stroke: PALETTE.sage, shadow: false });
+      drawTextFit(ctx, 'Sonuç, DeMorgan ile bulunanla birebir aynı! ✓', W / 2, 502, 650, {
+        weight: 700, size: 22, color: PALETTE.green, align: 'center'
+      });
+      return;
+    }
+
+    if (s === 'c5_ex23_trap') {
+      drawCard(ctx, 90, 120, 520, 390, { radius: 24, stroke: PALETTE.error });
+      drawTextFit(ctx, 'YALNIZ DÜAL ALMAK', 350, 180, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.error, align: 'center' });
+      drawTextFit(ctx, 'TÜMLEYEN ≠ DÜAL', 350, 286, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 42, color: PALETTE.error, align: 'center' });
+      drawTextFit(ctx, "(x' + y + z')(x' + y' + z) ≠ F1'", 350, 386, 460, { family: "'JetBrains Mono', monospace", weight: 600, size: 22, align: 'center' });
+
+      drawCard(ctx, 670, 120, 520, 390, { radius: 24, stroke: PALETTE.green });
+      drawTextFit(ctx, 'DOĞRU YÖNTEM', 930, 180, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.green, align: 'center' });
+      drawTextFit(ctx, 'DÜAL + HARF TÜMLE', 930, 286, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 38, color: PALETTE.green, align: 'center' });
+      drawTextFit(ctx, '2. adımı asla unutma!', 930, 386, 460, { size: 24, color: PALETTE.ink, align: 'center' });
+      if (p > 0.45) drawFocusZink(ctx, 350, 286, 200, 44, lt - dur * 0.45, t, { color: PALETTE.error });
+      return;
+    }
+
+    // Sınav anı: Alıştırma 2.6 (s.39)
+    if (['c5_exam_q', 'c5_exam_wait', 'c5_exam_a', 'c5_exam_traps'].includes(s)) {
+      const modeMap = { c5_exam_q: 'q', c5_exam_wait: 'wait', c5_exam_a: 'a', c5_exam_traps: 'traps' };
+      drawExam5Options(ctx, {
+        question: "Alıştırma 2.6: F = A'BC' + A'B'C fonksiyonunun tümleyeni nedir?",
+        correctKey: 'A',
+        badgeText: '⭐ Derste fotoğraflanan slayt • s.39',
+        mode: modeMap[s],
+        focusWrongKeys: s === 'c5_exam_traps' ? ['B', 'C', 'D', 'E'] : [],
+        p, lt, t,
+        options: [
+          { key: 'A', text: "F' = A + BC + B'C'", note: 'Doğru: F = A\'(BC\'+B\'C) → F\' = A + BC + B\'C\'' },
+          { key: 'B', text: "F' = A' + BC + B'C'", note: "A'yı tümlemeyi unutma hatası", showInTraps: true },
+          { key: 'C', text: "F' = AB'C + ABC'", note: 'Yalnız düal alma / işleci değiştirmeme', showInTraps: true },
+          { key: 'D', text: "F' = A + BC' + B'C", note: 'İçteki ifadeyi tümlemeden bırakma', showInTraps: true },
+          { key: 'E', text: "F' = A'B'C'", note: 'Yanlış sadeleştirme', showInTraps: true }
+        ]
+      });
+      return;
+    }
+
+    // Alıştırma 2.6 çözüm adımları (her biri bir beat)
+    if (['c5_exam_s1', 'c5_exam_s2', 'c5_exam_s3', 'c5_exam_s4', 'c5_exam_s5'].includes(s)) {
+      const stepIdx = { c5_exam_s1: 1, c5_exam_s2: 2, c5_exam_s3: 3, c5_exam_s4: 4, c5_exam_s5: 5 }[s];
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ['VE ↔ VEYA değiştir,', 'her harfi tümle.'],
+        docked: true,
+        highlightTokens: stepIdx === 2 || stepIdx === 3 ? ['VE ↔ VEYA değiştir', 'her harfi tümle'] : [],
+        t
+      });
+      drawTextFit(ctx, "Çözüm (Alıştırma 2.6):   F = A'BC' + A'B'C", 44, 104, 810, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 28
+      });
+
+      drawCard(ctx, 44, 148, 1192, 424, { radius: 22 });
+      const steps = [
+        { k: 1, tag: 'ADIM 1 • Ortak parantez', txt: "F  =  A'(BC' + B'C)", col: PALETTE.ink },
+        { k: 2, tag: 'ADIM 2 • Dıştan DeMorgan', txt: "F' =  A + (BC' + B'C)'", col: PALETTE.terracotta },
+        { k: 3, tag: 'ADIM 3 • İç paranteze DeMorgan', txt: "(BC')'(B'C)'  =  (B' + C)(B + C')", col: PALETTE.terracotta },
+        { k: 4, tag: 'ADIM 4 • Çarpımı aç (B\'B=0, CC\'=0)', txt: "B'B + B'C' + CB + CC'  =  B'C' + BC", col: PALETTE.ink },
+        { k: 5, tag: 'ADIM 5 • Birleştir (Şık A)', txt: "F' =  A + BC + B'C'", col: PALETTE.green }
+      ];
+
+      steps.forEach((st, idx) => {
+        if (st.k > stepIdx) return;
+        const ry = 192 + idx * 78;
+        const isCur = st.k === stepIdx;
+        if (isCur) {
+          drawCard(ctx, 68, ry - 28, 1144, 62, {
+            radius: 14,
+            fill: st.k === 5 ? 'rgba(156, 194, 154, 0.25)' : 'rgba(227, 201, 160, 0.28)',
+            stroke: st.k === 5 ? PALETTE.green : PALETTE.sand,
+            shadow: false
+          });
+        }
+        drawTextFit(ctx, st.tag, 90, ry, 390, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 15, color: PALETTE.muted
+        });
+        drawTextFit(ctx, st.txt, 496, ry, 690, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: st.k === 5 ? 32 : 26, minSize: 16, color: st.col
+        });
+      });
+
+      if (stepIdx === 5) drawFocusZink(ctx, 720, 504, 240, 32, lt, t, { color: PALETTE.green });
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 6 — Minterm ve maxterm (s.41–47)
+    // --------------------------------------------------------
+    if (s === 'c6_hook') {
+      drawPrevTopicBadge(ctx, "F' = VE↔VEYA + tümle");
+      drawHookQuestion(ctx, 'Her doğruluk tablosu tek bir formüle dönüşebilir mi?', 'BÖLÜM 06 • MİNTERM VE MAXTERM', lt, t);
+      return;
+    }
+
+    if (s === 'c6_tab_min' || s === 'c6_tab_max') {
+      const showMax = s === 'c6_tab_max';
+      const revRows = s === 'c6_tab_min' ? Math.min(8, Math.ceil(p * 9)) : 8;
+      drawTextFit(ctx, showMax ? "m0…m7 ve M0…M7 Tablosu (s.41)  •  Mj = (mj)'" : 'Minterm Tablosu (s.41): VE çarpımı • bit 0 → tümlü', 44, 96, 1180, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 36
+      });
+
+      const cols = [
+        { header: 'Minterm', wRatio: 1.5, values: DATA.ch6_minterms.map(m => m.expr), colorMode: 'minterm', highlightSet: new Set([5]) },
+        { header: 'Göst.', wRatio: 0.9, values: DATA.ch6_minterms.map(m => m.label), colorMode: 'minterm', bold: true, highlightSet: new Set([5]) }
+      ];
+      if (showMax) {
+        cols.push(
+          { header: 'Maxterm', wRatio: 1.9, values: DATA.ch6_maxterms.map(M => M.expr), colorMode: 'maxterm', highlightSet: new Set([5]) },
+          { header: 'Göst.', wRatio: 0.9, values: DATA.ch6_maxterms.map(M => M.label), colorMode: 'maxterm', bold: true, highlightSet: new Set([5]) }
+        );
+      }
+
+      drawTruthTable(ctx, {
+        x: 44, y: 138, w: showMax ? 790 : 590,
+        vars: ['x', 'y', 'z'],
+        rows: DATA.ch6_xyz_rows,
+        rowH: 46,
+        revealCount: revRows,
+        extraCols: cols
+      });
+
+      if (!showMax) {
+        drawCard(ctx, 670, 154, 566, 360, { radius: 22, stroke: PALETTE.sage });
+        drawTextFit(ctx, 'MİNTERM KURALI', 953, 200, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: PALETTE.green, align: 'center' });
+        drawTextFit(ctx, 'Bit 0  →  tümlü (x\')', 953, 266, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, align: 'center' });
+        drawTextFit(ctx, 'Bit 1  →  düz (x)', 953, 318, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, align: 'center' });
+        drawCard(ctx, 710, 370, 486, 114, { radius: 16, fill: 'rgba(156, 194, 154, 0.25)', stroke: PALETTE.green, shadow: false });
+        drawTextFit(ctx, `101 (5)  →  m5 = ${DATA.ch6_minterms[5].expr}`, 953, 427, 450, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 30, color: PALETTE.green, align: 'center'
+        });
+      } else {
+        drawCard(ctx, 864, 144, 372, 206, { radius: 22, stroke: PALETTE.lavender });
+        drawTextFit(ctx, 'MAXTERM KURALI', 1050, 184, 330, { family: "'JetBrains Mono', monospace", weight: 700, size: 16, color: '#5C4388', align: 'center' });
+        drawTextFit(ctx, 'Bit 1  →  tümlü', 1050, 232, 330, { family: "'JetBrains Mono', monospace", weight: 700, size: 24, align: 'center' });
+        drawTextFit(ctx, 'Bit 0  →  düz (VEYA)', 1050, 274, 330, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, align: 'center' });
+        drawTextFit(ctx, `M5 = ${DATA.ch6_maxterms[5].expr}`, 1050, 318, 330, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: '#5C4388', align: 'center' });
+
+        drawCard(ctx, 864, 368, 372, 174, { radius: 22, fill: 'rgba(227, 201, 160, 0.34)', stroke: PALETTE.sand });
+        drawTextFit(ctx, "Mj = (mj)'", 1050, 424, 330, { family: "'JetBrains Mono', monospace", weight: 700, size: 42, align: 'center' });
+        drawTextFit(ctx, "(xy'z)' = x' + y + z'", 1050, 492, 330, { family: "'JetBrains Mono', monospace", weight: 600, size: 20, color: PALETTE.muted, align: 'center' });
+        drawFocusZink(ctx, 1050, 424, 130, 38, lt - dur * 0.35, t, { color: PALETTE.terracotta });
+      }
+      return;
+    }
+
+    if (s === 'c6_quote_table') {
+      drawQuoteCard(ctx, {
+        badge: 'HOCA, 10.11',
+        quote: '"Size belki kıyak olsun diye… doğruluk tablosunu verebilirim."',
+        sub: 'Not: Garanti değil — m0…m7 sırasını kendin çıkarabil!',
+        y: 86, h: 164
+      });
+
+      drawCard(ctx, 110, 290, 500, 240, { radius: 22, stroke: PALETTE.ice });
+      drawTextFit(ctx, 'SINAVDA VERİLİRSE', 360, 340, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, 'Tablodan doğrudan oku', 360, 414, 440, { family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40, align: 'center' });
+      drawTextFit(ctx, 'Hız kazanırsın ✓', 360, 476, 440, { weight: 700, size: 22, color: PALETTE.green, align: 'center' });
+
+      drawCard(ctx, 670, 290, 500, 240, { radius: 22, stroke: PALETTE.terracotta });
+      drawTextFit(ctx, 'VERİLMEZSE', 920, 340, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 18, color: PALETTE.terracotta, align: 'center' });
+      drawTextFit(ctx, '101 → 5 → m5 = xy\'z', 920, 414, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 30, align: 'center' });
+      drawTextFit(ctx, 'Kuralı bilmen şart!', 920, 476, 440, { weight: 700, size: 22, color: '#8E4B2D', align: 'center' });
+      return;
+    }
+
+    if (s === 'c6_sezgi') {
+      drawTextFit(ctx, 'Sezgi: mj yalnızca j. satırda 1 olan terimdir', W / 2, 104, 1100, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42, align: 'center'
+      });
+
+      drawCard(ctx, 64, 166, 560, 370, { radius: 24, stroke: PALETTE.green });
+      drawTextFit(ctx, 'SATIR 5:  x y z = 1 0 1', 344, 214, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, `m5 = ${DATA.ch6_minterms[5].expr}`, 344, 290, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 44, color: PALETTE.green, align: 'center' });
+      drawTextFit(ctx, "1 · 0' · 1  =  1 · 1 · 1  =  1", 344, 372, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 24, align: 'center' });
+      drawTextFit(ctx, 'Yalnızca 101 satırında 1!', 344, 456, 500, { weight: 700, size: 24, color: PALETTE.green, align: 'center' });
+
+      drawCard(ctx, 656, 166, 560, 370, { radius: 24, stroke: PALETTE.lavender });
+      drawTextFit(ctx, 'SATIR 5:  x y z = 1 0 1', 936, 214, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, `M5 = ${DATA.ch6_maxterms[5].expr}`, 936, 290, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 40, color: '#5C4388', align: 'center' });
+      drawTextFit(ctx, "1' + 0 + 1'  =  0 + 0 + 0  =  0", 936, 372, 500, { family: "'JetBrains Mono', monospace", weight: 700, size: 24, align: 'center' });
+      drawTextFit(ctx, 'Yalnızca 101 satırında 0!', 936, 456, 500, { weight: 700, size: 24, color: '#5C4388', align: 'center' });
+      return;
+    }
+
+    if (s === 'c6_rule') {
+      const isDocked = p > 0.72;
+      drawStickyRuleCard(ctx, {
+        title: 'KANONİK BİÇİM KURALI',
+        lines: [
+          'F = 1 satırlar → minterm TOPLAMI (Σ).',
+          'F = 0 satırlar → maxterm ÇARPIMI (Π).'
+        ],
+        docked: isDocked,
+        highlightTokens: p > 0.35 ? ['TOPLAMI (Σ)', 'ÇARPIMI (Π)'] : [],
+        t
+      });
+      if (isDocked) {
+        drawTextFit(ctx, 'Ama dikkat: hangisi toplam, hangisi çarpım?', W / 2, 340, 900, {
+          family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42, color: PALETTE.muted, align: 'center'
+        });
+      }
+      return;
+    }
+
+    if (s === 'c6_quote_sumprod') {
+      drawQuoteCard(ctx, {
+        badge: 'HOCA, 10.11',
+        quote: '"Maxterm\'lerin çarpımı olabilir, toplamı olmaz. Minterm\'lerin toplamı olur, çarpımı olmaz."',
+        y: 78, h: 146
+      });
+
+      const cards = [
+        { x: 64, txt: 'Σ (mintermler)', ok: true, sub: 'Mintermlerin TOPLAMI ✓' },
+        { x: 356, txt: 'Π (maxtermler)', ok: true, sub: 'Maxtermlerin ÇARPIMI ✓' },
+        { x: 648, txt: 'Π (mintermler)', ok: false, sub: 'OLMAZ ✗' },
+        { x: 940, txt: 'Σ (maxtermler)', ok: false, sub: 'OLMAZ ✗' }
+      ];
+      cards.forEach((c, idx) => {
+        if (idx >= 2 && p < 0.45) return;
+        drawCard(ctx, c.x, 266, 276, 238, { radius: 22, stroke: c.ok ? PALETTE.green : PALETTE.error });
+        drawTextFit(ctx, c.txt, c.x + 138, 352, 244, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: c.ok ? PALETTE.green : PALETTE.error, align: 'center'
+        });
+        drawTextFit(ctx, c.sub, c.x + 138, 434, 244, {
+          weight: 700, size: 19, color: c.ok ? PALETTE.green : PALETTE.error, align: 'center'
+        });
+      });
+      return;
+    }
+
+    if (s === 'c6_f1_s1' || s === 'c6_f1_s2') {
+      const is2 = s === 'c6_f1_s2';
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ['F = 1 → minterm TOPLAMI (Σ)', 'F = 0 → maxterm ÇARPIMI (Π)'],
+        docked: true,
+        highlightTokens: ['F = 1 → minterm TOPLAMI (Σ)'],
+        t
+      });
+      drawTextFit(ctx, 'Tablodan okuma (s.43): f1 sütunu = 0 1 0 0 1 0 0 1', 44, 102, 810, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 36
+      });
+
+      drawTruthTable(ctx, {
+        x: 44, y: 148, w: 500,
+        vars: ['x', 'y', 'z'],
+        rows: DATA.ch6_f1_tt,
+        rowH: 46,
+        extraCols: [
+          { header: 'f1', wRatio: 1, values: DATA.ch6_f1_tt.map(r => r.val), colorMode: 'bool' },
+          { header: 'terim', wRatio: 1.5, values: DATA.ch6_f1_tt.map(r => r.val === 1 ? `m${r.idx}` : '—'), colorMode: 'minterm', highlightSet: new Set(DATA.ch6_f1_min) }
+        ]
+      });
+
+      drawCard(ctx, 574, 184, 662, 354, { radius: 22, stroke: is2 ? PALETTE.green : PALETTE.sage });
+      drawTextFit(ctx, '1 OLAN SATIRLAR', 905, 232, 600, { family: "'JetBrains Mono', monospace", weight: 700, size: 17, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, '001 (1),   100 (4),   111 (7)', 905, 290, 600, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 30, color: PALETTE.green, align: 'center'
+      });
+
+      if (is2) {
+        const expr = DATA.ch6_f1_min.map(i => mintermText(i, ['x', 'y', 'z'])).join(' + ');
+        const mExpr = DATA.ch6_f1_min.map(i => `m${i}`).join(' + ');
+        drawTextFit(ctx, `f1 = ${expr}`, 905, 386, 610, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 30, align: 'center'
+        });
+        drawTextFit(ctx, `= ${mExpr}`, 905, 456, 610, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 42, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, 905, 456, 220, 38, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    // Örnek 2.4 (s.46-47): F = A + B'C
+    if (['c6_ex24_s1', 'c6_ex24_s2', 'c6_ex24_s3', 'c6_ex24_hold'].includes(s)) {
+      const stage = s === 'c6_ex24_s1' ? 1 : (s === 'c6_ex24_s2' ? 2 : 3);
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ['F = 1 → minterm TOPLAMI (Σ)', 'F = 0 → maxterm ÇARPIMI (Π)'],
+        docked: true, highlightTokens: ['F = 1 → minterm TOPLAMI (Σ)'], t
+      });
+      drawTextFit(ctx, "Örnek 2.4 (Kolay yol):  F = A + B'C", 44, 102, 810, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38
+      });
+
+      const litRows = new Set(stage === 1 ? [4, 5, 6, 7] : DATA.ch6_ex24_min);
+      const colVals = DATA.ch6_ex24_tt.map(r => (litRows.has(r.idx) ? 1 : 0));
+
+      drawTruthTable(ctx, {
+        x: 44, y: 148, w: 500,
+        vars: ['A', 'B', 'C'],
+        rows: DATA.ch6_ex24_tt,
+        rowH: 46,
+        extraCols: [
+          { header: 'F', wRatio: 1, values: colVals, colorMode: 'bool' },
+          { header: 'neden?', wRatio: 1.5, values: DATA.ch6_ex24_tt.map(r => {
+            if (stage >= 2 && r.idx === 1) return 'BC = 01';
+            if (stage >= 2 && r.idx === 5) return 'A=1 ve BC=01';
+            if (r.idx >= 4) return 'A = 1';
+            return '—';
+          }), colorMode: 'minterm', highlightSet: litRows }
+        ]
+      });
+
+      drawCard(ctx, 574, 184, 662, 354, { radius: 22, stroke: stage === 3 ? PALETTE.green : PALETTE.sand });
+      drawTextFit(ctx, '1. A = 1 olan satırlar → 4, 5, 6, 7', 610, 246, 590, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.green
+      });
+      if (stage >= 2) {
+        drawTextFit(ctx, "2. B'C (BC = 01) olanlar → 1, 5", 610, 314, 590, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.terracotta
+        });
+      }
+      if (stage === 3) {
+        drawTextFit(ctx, `F = Σ(${DATA.ch6_ex24_min.join(', ')})`, 905, 434, 600, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 46, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, 905, 434, 240, 42, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (s === 'c6_try_q' || s === 'c6_try_wait' || s === 'c6_try_a') {
+      drawCard(ctx, 140, 66, 1000, 92, { radius: 20, stroke: PALETTE.ice });
+      drawTextFit(ctx, 'SEN DENE: F = Σ(0, 3) için 3 değişkenli tabloda hangi satırlar 1?', W / 2, 112, 940, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 24, align: 'center'
+      });
+
+      if (s === 'c6_try_wait') {
+        drawCountdownRing(ctx, W / 2, 330, p, 5);
+        drawTextFit(ctx, 'Kendin dene… (5 sn)', W / 2, 408, 400, { size: 22, color: PALETTE.muted, align: 'center' });
+      } else if (s === 'c6_try_a') {
+        drawTruthTable(ctx, {
+          x: 84, y: 184, w: 500,
+          vars: ['x', 'y', 'z'],
+          rows: DATA.ch6_try_tt,
+          rowH: 44,
+          extraCols: [
+            { header: 'F', wRatio: 1, values: DATA.ch6_try_tt.map(r => r.val), colorMode: 'bool' }
+          ]
+        });
+        drawCard(ctx, 640, 210, 560, 280, { radius: 22, stroke: PALETTE.green });
+        drawTextFit(ctx, 'CEVAP: 000 ve 011', 920, 290, 500, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 44, color: PALETTE.green, align: 'center'
+        });
+        drawTextFit(ctx, `m0 = ${mintermText(0)} (000)`, 920, 376, 500, { family: "'JetBrains Mono', monospace", weight: 600, size: 24, align: 'center' });
+        drawTextFit(ctx, `m3 = ${mintermText(3)} (011)`, 920, 424, 500, { family: "'JetBrains Mono', monospace", weight: 600, size: 24, align: 'center' });
+        drawFocusZink(ctx, 920, 290, 220, 44, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 7 — ⭐⭐ Σ ↔ Π dönüşümü (s.48–51)
+    // --------------------------------------------------------
+    if (s === 'c7_quote_star') {
+      const punch = !reducedMotion ? ease.outExpo(clamp01(lt / 0.35)) * 0.05 : 0;
+      drawQuoteCard(ctx, {
+        badge: '⭐⭐ HOCA, 10.11 • EN BÜYÜK VURGU',
+        quote: '"Bu şekilde ben sınavda sorarsam sorarım."',
+        sub: 'Bölüm 2.6 • Σ ↔ Π Kanonik Dönüşümü (s.48–51)',
+        y: 140, h: 210, accent: PALETTE.terracotta, punchZoom: punch
+      });
+      if (p > 0.35) {
+        drawFocusZink(ctx, W / 2, 245, 595, 118, lt - dur * 0.35, t, { color: PALETTE.terracotta, width: 5 });
+      }
+      drawCard(ctx, 310, 404, 660, 96, { radius: 20, stroke: PALETTE.sage });
+      drawTextFit(ctx, 'Σ(…)  ↔  Π(…) dönüşümünü adım adım öğrenelim', W / 2, 452, 600, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.green, align: 'center'
+      });
+      return;
+    }
+
+    if (s === 'c7_hook') {
+      drawPrevTopicBadge(ctx, 'Σ: F=1 satırları | Π: F=0 satırları');
+      drawHookQuestion(ctx, "Σ verilince Π'yi saniyede nasıl yazarız?", 'BÖLÜM 07 • Σ ↔ Π DÖNÜŞÜMÜ', lt, t);
+      return;
+    }
+
+    if (s === 'c7_sezgi') {
+      drawTextFit(ctx, 'Sezgi: 3 değişkende 8 satır (0–7) iki kümeye ayrılır', W / 2, 104, 1100, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40, align: 'center'
+      });
+
+      const pos = drawIndexStrip(ctx, {
+        y: 190,
+        sigmaSet: new Set([1, 3, 6, 7]),
+        piSet: new Set([0, 2, 4, 5]),
+        t
+      });
+
+      drawCard(ctx, 140, 344, 460, 140, { radius: 20, stroke: PALETTE.green });
+      drawTextFit(ctx, 'F = 1  →  Σ listesi', 370, 392, 410, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: PALETTE.green, align: 'center' });
+      drawTextFit(ctx, '1, 3, 6, 7', 370, 444, 410, { family: "'JetBrains Mono', monospace", weight: 700, size: 26, align: 'center' });
+
+      drawCard(ctx, 680, 344, 460, 140, { radius: 20, stroke: PALETTE.lavender });
+      drawTextFit(ctx, 'F = 0  →  Π listesi', 910, 392, 410, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: '#5C4388', align: 'center' });
+      drawTextFit(ctx, '0, 2, 4, 5 (tamamlayıcısı)', 910, 444, 410, { family: "'JetBrains Mono', monospace", weight: 700, size: 24, align: 'center' });
+
+      drawColorLegend(ctx, [
+        { color: PALETTE.sage, label: 'F = 1 (Σ)' },
+        { color: PALETTE.lavender, label: 'F = 0 (Π)' }
+      ]);
+      void pos;
+      return;
+    }
+
+    if (s === 'c7_rule') {
+      const isDocked = p > 0.72;
+      drawStickyRuleCard(ctx, {
+        title: 'Σ ↔ Π KURALI',
+        lines: ["Σ ile Π'yi değiştir, listede OLMAYAN indisleri yaz."],
+        docked: isDocked,
+        highlightTokens: p > 0.3 ? ['OLMAYAN indisleri yaz'] : [],
+        t
+      });
+      if (isDocked) {
+        drawTextFit(ctx, "Şimdi Örnek 2.5'i tablo ve 0–7 şeridi üstünde görelim…", W / 2, 340, 920, {
+          family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38, color: PALETTE.muted, align: 'center'
+        });
+      }
+      return;
+    }
+
+    if (['c7_ex25_s1', 'c7_ex25_s2', 'c7_ex25_hold'].includes(s)) {
+      const is2 = s !== 'c7_ex25_s1';
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ["Σ ↔ Π değiştir,", "OLMAYAN indisleri yaz."],
+        docked: true,
+        highlightTokens: is2 ? ['OLMAYAN indisleri yaz'] : [],
+        t
+      });
+      drawTextFit(ctx, "Örnek 2.5 (s.48):  F = xy + x'z", 44, 102, 810, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 38
+      });
+
+      drawTruthTable(ctx, {
+        x: 44, y: 148, w: 460,
+        vars: ['x', 'y', 'z'],
+        rows: DATA.ch7_ex25_tt,
+        rowH: 46,
+        extraCols: [
+          { header: 'F', wRatio: 1, values: DATA.ch7_ex25_tt.map(r => r.val), colorMode: 'bool' },
+          { header: 'terim', wRatio: 1.2, values: DATA.ch7_ex25_tt.map(r => r.val === 1 ? `m${r.idx}` : `M${r.idx}`), colorMode: 'minterm', highlightSet: new Set(DATA.ch7_ex25_min) }
+        ],
+        highlightZerosMode: is2 ? 'lavender' : null
+      });
+
+      // Right side: 0..7 strip + results
+      const sigSet = new Set(DATA.ch7_ex25_min);
+      const piSet = is2 ? new Set(DATA.ch7_ex25_max) : new Set();
+      drawIndexStrip(ctx, {
+        cx: 886, y: 204, boxW: 72, boxH: 82, gap: 10,
+        sigmaSet: sigSet, piSet, t, seed: 725
+      });
+
+      drawCard(ctx, 540, 326, 696, 98, { radius: 18, stroke: PALETTE.green });
+      drawTextFit(ctx, `F = Σ(${DATA.ch7_ex25_min.join(', ')})`, 888, 375, 640, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 34, color: PALETTE.green, align: 'center'
+      });
+
+      if (is2) {
+        drawSketchArrow(ctx, 888, 294, 888, 434, -22, { seed: 726, t, progress: clamp01(p / 0.4), color: PALETTE.lavender });
+        drawCard(ctx, 540, 442, 696, 102, { radius: 18, stroke: PALETTE.lavender });
+        drawTextFit(ctx, `= Π(${DATA.ch7_ex25_max.join(', ')})`, 888, 493, 640, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 36, color: '#5C4388', align: 'center'
+        });
+        drawFocusZink(ctx, 888, 493, 210, 36, lt, t, { color: PALETTE.lavender });
+      }
+      return;
+    }
+
+    if (s === 'c7_ex27_q' || s === 'c7_ex27_a') {
+      const isA = s === 'c7_ex27_a';
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ["Σ ↔ Π değiştir,", "OLMAYAN indisleri yaz."],
+        docked: true, highlightTokens: isA ? ['OLMAYAN indisleri yaz'] : [], t
+      });
+      drawTextFit(ctx, `Alıştırma 2.7:  F(x, y, z) = Σ(${DATA.ch7_ex27_min.join(', ')})  →  Π ?`, 44, 106, 810, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 28
+      });
+
+      drawIndexStrip(ctx, {
+        y: 210,
+        sigmaSet: new Set(DATA.ch7_ex27_min),
+        piSet: isA ? new Set(DATA.ch7_ex27_max) : new Set(),
+        t, seed: 727
+      });
+
+      if (isA) {
+        drawCard(ctx, 320, 376, 640, 120, { radius: 22, stroke: PALETTE.lavender });
+        drawTextFit(ctx, `Olmayanlar: ${DATA.ch7_ex27_max.join(', ')}   →   Π(${DATA.ch7_ex27_max.join(', ')})`, W / 2, 436, 590, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 34, color: '#5C4388', align: 'center'
+        });
+        drawFocusZink(ctx, 810, 436, 130, 38, lt, t, { color: PALETTE.lavender });
+      }
+      return;
+    }
+
+    if (s === 'c7_ex28_q' || s === 'c7_ex28_a') {
+      const isA = s === 'c7_ex28_a';
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ["Σ ↔ Π değiştir,", "OLMAYAN indisleri yaz."],
+        docked: true, highlightTokens: isA ? ['OLMAYAN indisleri yaz'] : [], t
+      });
+      drawTextFit(ctx, `Alıştırma 2.8:  F = Π(${DATA.ch7_ex28_max.join(', ')})  →  Σ ?`, 44, 106, 810, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 28
+      });
+
+      drawIndexStrip(ctx, {
+        y: 210,
+        piSet: new Set(DATA.ch7_ex28_max),
+        sigmaSet: isA ? new Set(DATA.ch7_ex28_min) : new Set(),
+        t, seed: 728
+      });
+
+      if (isA) {
+        drawCard(ctx, 300, 376, 680, 120, { radius: 22, stroke: PALETTE.green });
+        drawTextFit(ctx, `Olmayanlar: ${DATA.ch7_ex28_min.join(', ')}   →   Σ(${DATA.ch7_ex28_min.join(', ')})`, W / 2, 436, 630, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 34, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, 820, 436, 145, 38, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (s === 'c7_ex29_q' || s === 'c7_ex29_a') {
+      const isA = s === 'c7_ex29_a';
+      drawStickyRuleCard(ctx, {
+        title: 'KURAL KARTI',
+        lines: ['F = 1 → Σ', 'F = 0 → Π'],
+        docked: true, highlightTokens: isA ? ['F = 1 → Σ', 'F = 0 → Π'] : [], t
+      });
+      drawTextFit(ctx, 'Alıştırma 2.9: F sütunu = 0 1 0 1 1 0 1 0', 44, 104, 810, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 28
+      });
+
+      drawTruthTable(ctx, {
+        x: 64, y: 150, w: 460,
+        vars: ['x', 'y', 'z'],
+        rows: DATA.ch7_ex29_tt,
+        rowH: 46,
+        extraCols: [
+          { header: 'F', wRatio: 1.1, values: DATA.ch7_ex29_tt.map(r => r.val), colorMode: 'bool' }
+        ],
+        highlightZerosMode: isA ? 'lavender' : null
+      });
+
+      if (isA) {
+        drawCard(ctx, 576, 200, 640, 128, { radius: 22, stroke: PALETTE.green });
+        drawTextFit(ctx, `1'ler  →  Σ(${DATA.ch7_ex29_min.join(', ')})`, 896, 264, 590, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 36, color: PALETTE.green, align: 'center'
+        });
+        drawCard(ctx, 576, 360, 640, 128, { radius: 22, stroke: PALETTE.lavender });
+        drawTextFit(ctx, `0'lar  →  Π(${DATA.ch7_ex29_max.join(', ')})`, 896, 424, 590, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 36, color: '#5C4388', align: 'center'
+        });
+      }
+      return;
+    }
+
+    if (['c7_exam_q', 'c7_exam_wait', 'c7_exam_a', 'c7_exam_trapA', 'c7_exam_trapCE'].includes(s)) {
+      const modeMap = {
+        c7_exam_q: 'q', c7_exam_wait: 'wait', c7_exam_a: 'a',
+        c7_exam_trapA: 'traps', c7_exam_trapCE: 'traps'
+      };
+      const focusMap = {
+        c7_exam_trapA: ['A'],
+        c7_exam_trapCE: ['C', 'E']
+      };
+      drawExam5Options(ctx, {
+        question: 'F(x, y, z) = Σ(0, 2, 5) ise F hangi maxterm çarpımına eşittir?',
+        correctKey: 'B',
+        badgeText: '⭐ s.51 yoklaması • Derste soruldu',
+        mode: modeMap[s],
+        focusWrongKeys: focusMap[s] || [],
+        p, lt, t,
+        options: [
+          { key: 'A', text: 'Π(0, 2, 5)', note: 'EN SIK YAPILAN HATA: aynı indisleri yazmak!', showInTraps: true },
+          { key: 'B', text: `Π(${DATA.ch7_ex51_max.join(', ')})`, note: 'Doğru: 0–7 arasında 0, 2, 5 dışında kalanlar' },
+          { key: 'C', text: 'Π(1, 3, 4, 6)', note: "7'yi unutma! (0–7 sekiz satır vardır)", showInTraps: true },
+          { key: 'D', text: 'Π(2, 5, 7)', note: 'Yanlış küme seçimi' },
+          { key: 'E', text: 'Σ(1, 3, 4, 6, 7)', note: "Σ'yı Π'ye çevirmeyi unutma!", showInTraps: true }
+        ]
+      });
+      return;
+    }
+
+    // Kısım sonu hızlı tekrar
+    if (s === 'c7_rev1' || s === 'c7_rev2' || s === 'c7_rev3') {
+      const items = [
+        { tag: 'B5', star: false, code: "F' = VE ↔ VEYA + harf tümle", desc: 'Genelleştirilmiş DeMorgan (yalnız düal yetmez)' },
+        { tag: '⭐', star: true,  code: "A'BC' + A'B'C → A + BC + B'C'", desc: 'Alıştırma 2.6: ortak parantez + DeMorgan' },
+        { tag: 'B6', star: false, code: 'Minterm: bit 0 → tümlü', desc: "Maxterm: bit 1 → tümlü  |  Mj = (mj)'" },
+        { tag: 'B6', star: false, code: 'F = 1 → Σ(m)  |  F = 0 → Π(M)', desc: 'Hoca: "Mintermlerin toplamı, maxtermlerin çarpımı"' },
+        { tag: '⭐⭐', star: true, code: 'Σ ↔ Π: olmayan indisler', desc: 'Hoca, 10.11: "Bu şekilde sınavda sorarsam sorarım."' },
+        { tag: '⭐', star: true,  code: `Σ(0, 2, 5) = Π(${DATA.ch7_ex51_max.join(', ')})`, desc: 'Aynı indisleri yazma tuzağına düşme!' }
+      ];
+      const visible = s === 'c7_rev1' ? (p < 0.5 ? 1 : 2) : (s === 'c7_rev2' ? (p < 0.5 ? 3 : 4) : (p < 0.5 ? 5 : 6));
+
+      ctx.save();
+      ctx.font = `italic 400 40px 'Instrument Serif', serif`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'center';
+      ctx.fillText('Kısım 2/2 Hızlı Tekrar', W / 2, 74);
+      ctx.restore();
+
+      items.forEach((it, idx) => {
+        if (idx >= visible) return;
+        const rowY = 108 + idx * 74;
+        drawCard(ctx, 84, rowY, 1112, 62, { radius: 16, stroke: it.star ? PALETTE.terracotta : 'rgba(36,55,45,0.09)' });
+        ctx.fillStyle = it.star ? PALETTE.terracotta : PALETTE.sage;
+        roundRectPath(ctx, 102, rowY + 14, 54, 34, 9);
+        ctx.fill();
+        ctx.font = `700 13px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(it.tag, 129, rowY + 31);
+
+        drawTextFit(ctx, it.code, 174, rowY + 31, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 20 });
+        drawTextFit(ctx, it.desc, 626, rowY + 31, 550, { size: 18, color: PALETTE.muted });
+      });
+
+      if (s === 'c7_rev3' && p > 0.6) {
+        drawHandwrittenNote(ctx, 'Sınavda başarılar!', W / 2, 576, clamp01((p - 0.6) / 0.3), {
+          color: PALETTE.green, size: 32, align: 'center'
+        });
+      }
+    }
+  }
+
+
+  // ==========================================================
+  // 7. Kinetic Subtitles & 4-Segment Progress Bar (5–8)
+  // ==========================================================
+  function drawProgressBar(ctx, t, exportScope) {
+    const barX = 44, barY = 14, barW = W - 88, barH = 5;
+    ctx.save();
+    if (exportScope) {
+      const ch = exportScope.chapter;
+      const p = clamp01((t - ch.start) / Math.max(0.01, ch.duration));
+      ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+      roundRectPath(ctx, barX, barY, barW, barH, 3);
+      ctx.fill();
+      ctx.fillStyle = ch.accent;
+      roundRectPath(ctx, barX, barY, barW * p, barH, 3);
+      ctx.fill();
+    } else {
+      const n = TIMELINE.chapters.length;
+      const gap = 10;
+      const segW = (barW - gap * (n - 1)) / n;
+      TIMELINE.chapters.forEach((ch, idx) => {
+        const sx = barX + idx * (segW + gap);
+        ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+        roundRectPath(ctx, sx, barY, segW, barH, 3);
+        ctx.fill();
+        const fillP = clamp01((t - ch.start) / Math.max(0.01, ch.duration));
+        if (fillP > 0) {
+          ctx.fillStyle = ch.accent;
+          roundRectPath(ctx, sx, barY, segW * fillP, barH, 3);
+          ctx.fill();
+        }
+      });
+    }
+    ctx.restore();
+  }
+
+  function drawKineticSubtitles(ctx, beat, lt) {
+    if (!state.subtitlesOn || !beat || !beat.text) return;
+    const words = beat.text.trim().split(/\s+/);
+    if (!words.length) return;
+
+    const totalChars = words.reduce((s, w) => s + w.length + 1, 0);
+    const activeStart = 0.08;
+    const activeEnd = Math.max(activeStart + 0.4, beat.duration - 0.15);
+    const span = activeEnd - activeStart;
+    let cur = activeStart;
+    let activeIdx = 0;
+    for (let i = 0; i < words.length; i++) {
+      const wDur = ((words[i].length + 1) / totalChars) * span;
+      if (lt >= cur && lt <= cur + wDur) { activeIdx = i; break; }
+      if (lt > cur + wDur) activeIdx = i;
+      cur += wDur;
+    }
+
+    ctx.save();
+    ctx.font = `600 28px 'Inter', sans-serif`;
+    const maxLineW = 1060;
+    const spaceW = ctx.measureText(' ').width;
+    const lines = [[]];
+    let lineW = 0;
+    words.forEach((w, idx) => {
+      const ww = ctx.measureText(w).width;
+      if (lineW > 0 && lineW + spaceW + ww > maxLineW) { lines.push([]); lineW = 0; }
+      lines[lines.length - 1].push({ word: w, idx, w: ww });
+      lineW += (lineW > 0 ? spaceW : 0) + ww;
+    });
+    const shownLines = lines.slice(0, 2);
+
+    const baseTop = shownLines.length === 1 ? 658 : 630;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    shownLines.forEach((ln, lIdx) => {
+      const totalW = ln.reduce((acc, item, i) => acc + item.w + (i > 0 ? spaceW : 0), 0);
+      let x = (W - totalW) / 2;
+      const y = baseTop + lIdx * 38;
+      ln.forEach((item, i) => {
+        if (i > 0) x += spaceW;
+        if (item.idx === activeIdx) {
+          ctx.fillStyle = PALETTE.sand;
+          roundRectPath(ctx, x - 5, y + 6, item.w + 10, 11, 5);
+          ctx.fill();
+        }
+        ctx.fillStyle = item.idx === activeIdx ? PALETTE.ink : 'rgba(36, 55, 45, 0.72)';
+        ctx.fillText(item.word, x, y);
+        x += item.w;
+      });
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 8. SFX Synthesis Engine (Shared Live + Offline MP4)
+  // ==========================================================
+  const noiseBufferCache = new WeakMap();
+  function getNoiseBuffer(ctx) {
+    if (noiseBufferCache.has(ctx)) return noiseBufferCache.get(ctx);
+    const len = Math.floor(ctx.sampleRate * 1.0);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    const rng = mulberry32(991122);
+    for (let i = 0; i < len; i++) data[i] = rng() * 2 - 1;
+    noiseBufferCache.set(ctx, buf);
+    return buf;
+  }
+
+  function scheduleSFX(ctx, dest, type, when, gainVal = 0.2, dur = 0.25) {
+    const t0 = Math.max(0, when);
+    const masterGain = gainVal * 0.22;
+
+    if (type === 'pop') {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, t0);
+      osc.frequency.exponentialRampToValueAtTime(190, t0 + 0.085);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 1.1, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.095);
+      osc.connect(g).connect(dest);
+      osc.start(t0); osc.stop(t0 + 0.11);
+    } else if (type === 'tick') {
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(2200, t0);
+      filt.Q.setValueAtTime(3.2, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.9, t0 + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.045);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0, 0, 0.06);
+    } else if (type === 'scribble') {
+      const d = clamp(dur || 0.45, 0.18, 0.8);
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      src.loop = true;
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(1450, t0);
+      filt.frequency.linearRampToValueAtTime(1900, t0 + d * 0.6);
+      filt.Q.setValueAtTime(2.0, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.55, t0 + 0.04);
+      g.gain.setValueAtTime(masterGain * 0.5, t0 + d - 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0); src.stop(t0 + d + 0.02);
+    } else if (type === 'zink') {
+      [880, 1108.73].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'triangle';
+        const st = t0 + i * 0.045;
+        osc.frequency.setValueAtTime(freq, st);
+        g.gain.setValueAtTime(0.001, st);
+        g.gain.linearRampToValueAtTime(masterGain * 1.15, st + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0005, st + 0.28);
+        osc.connect(g).connect(dest);
+        osc.start(st); osc.stop(st + 0.30);
+      });
+    } else if (type === 'whoosh') {
+      const d = 0.26;
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(360, t0);
+      filt.frequency.exponentialRampToValueAtTime(1600, t0 + d * 0.6);
+      filt.frequency.exponentialRampToValueAtTime(480, t0 + d);
+      filt.Q.setValueAtTime(1.4, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.7, t0 + d * 0.45);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0, 0, d + 0.02);
+    } else if (type === 'ding') {
+      [783.99, 1046.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        const st = t0 + i * 0.07;
+        osc.frequency.setValueAtTime(freq, st);
+        g.gain.setValueAtTime(0.001, st);
+        g.gain.linearRampToValueAtTime(masterGain * 1.15, st + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0005, st + 0.34);
+        osc.connect(g).connect(dest);
+        osc.start(st); osc.stop(st + 0.36);
+      });
+    } else if (type === 'buzz') {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(165, t0);
+      osc.frequency.linearRampToValueAtTime(130, t0 + 0.16);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.9, t0 + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.18);
+      osc.connect(g).connect(dest);
+      osc.start(t0); osc.stop(t0 + 0.2);
+    } else if (type === 'riser') {
+      const d = 0.55;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, t0);
+      osc.frequency.exponentialRampToValueAtTime(560, t0 + d);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.65, t0 + d * 0.85);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      osc.connect(g).connect(dest);
+      osc.start(t0); osc.stop(t0 + d + 0.02);
+    }
+  }
+
+  // ==========================================================
+  // 9. Safe Pure renderFrame(t) & Playback Loop
+  // ==========================================================
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  let renderErrorLogged = false;
+
+  function renderFrame(t, exportScope = null) {
+    try {
+      const clampedT = clamp(t, 0, Math.max(0, TIMELINE.duration - 0.001));
+      ctx.drawImage(paperCanvas, 0, 0);
+
+      let beat = TIMELINE.beats[0];
+      for (let i = 0; i < TIMELINE.beats.length; i++) {
+        if (clampedT >= TIMELINE.beats[i].start && clampedT < TIMELINE.beats[i].end) {
+          beat = TIMELINE.beats[i];
+          break;
+        }
+      }
+      if (!beat && TIMELINE.beats.length) beat = TIMELINE.beats[TIMELINE.beats.length - 1];
+
+      const chMeta = TIMELINE.chapters.find(c => c.num === beat.chapter) || TIMELINE.chapters[0];
+      const lt = clampedT - beat.start;
+
+      drawProgressBar(ctx, clampedT, exportScope);
+
+      if (beat.scene !== 'intro' && beat.scene !== 'outro') {
+        ctx.save();
+        ctx.font = `600 11px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`BÖLÜM 0${chMeta.num} • ${chMeta.title.toUpperCase()}`, 44, 38);
+        ctx.restore();
+      }
+
+      renderChapterScene(ctx, beat, lt, beat.duration, clampedT, chMeta);
+      drawKineticSubtitles(ctx, beat, lt);
+    } catch (err) {
+      if (!renderErrorLogged) {
+        console.error('safeRender error:', err);
+        renderErrorLogged = true;
+      }
+    }
+  }
+
+  const state = {
+    time: 0,
+    playing: false,
+    speed: 1,
+    narrationOn: false,
+    sfxOn: true,
+    subtitlesOn: true,
+    lastFrameTs: 0,
+    activeBeatIdx: -1,
+    audioCtx: null,
+    compNode: null,
+    narrationBuffer: null,
+    narrationSource: null,
+    lastSfxIdx: -1
+  };
+
+  function ensureLiveAudioCtx() {
+    if (!state.audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      state.audioCtx = new AC();
+      const comp = state.audioCtx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 12;
+      comp.ratio.value = 4;
+      comp.connect(state.audioCtx.destination);
+      state.compNode = comp;
+    }
+    if (state.audioCtx.state === 'suspended') state.audioCtx.resume().catch(() => {});
+    return state.audioCtx;
+  }
+
+  async function decodeEmbeddedNarration() {
+    if (!TIMELINE.narrationAudio || !TIMELINE.narrationAudio.src) return null;
+    if (state.narrationBuffer) return state.narrationBuffer;
+    try {
+      const res = await fetch(TIMELINE.narrationAudio.src);
+      const buf = await res.arrayBuffer();
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      state.narrationBuffer = await ac.decodeAudioData(buf);
+      await ac.close();
+      return state.narrationBuffer;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function stopLiveNarration() {
+    if (state.narrationSource) {
+      try { state.narrationSource.stop(); } catch (e) {}
+      state.narrationSource = null;
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+  }
+
+  function speakBeatWebSpeech(beat) {
+    if (!state.narrationOn || !beat || !beat.text || TIMELINE.narrationAudio) return;
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(beat.text);
+      u.lang = 'tr-TR';
+      u.rate = state.speed;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  function syncSfxIndexToTime(t) {
+    let idx = -1;
+    for (let i = 0; i < TIMELINE.sfxEvents.length; i++) {
+      if (TIMELINE.sfxEvents[i].t < t) idx = i;
+      else break;
+    }
+    state.lastSfxIdx = idx;
+  }
+
+  function triggerLiveSfxInRange(prevT, curT) {
+    if (!state.sfxOn || curT <= prevT) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    for (let i = state.lastSfxIdx + 1; i < TIMELINE.sfxEvents.length; i++) {
+      const ev = TIMELINE.sfxEvents[i];
+      if (ev.t <= curT + 0.015) {
+        if (ev.t >= prevT - 0.05) scheduleSFX(ctx, state.compNode, ev.type, ctx.currentTime + 0.005, ev.gain, ev.dur);
+        state.lastSfxIdx = i;
+      } else break;
+    }
+  }
+
+  function playCurrentNarrationSliceIfEmbedded(t) {
+    if (!state.narrationOn || !state.narrationBuffer || !TIMELINE.narrationAudio) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    stopLiveNarration();
+    const beat = TIMELINE.beats.find(b => t >= b.start && t < b.end);
+    if (!beat || !beat.audioSlice) return;
+    const [s, e] = beat.audioSlice;
+    const offsetInBeat = t - beat.start;
+    const rem = (e - s) - offsetInBeat;
+    if (rem > 0.05) {
+      const src = ctx.createBufferSource();
+      src.buffer = state.narrationBuffer;
+      src.playbackRate.value = state.speed;
+      src.connect(state.compNode);
+      src.start(ctx.currentTime, s + offsetInBeat, rem);
+      state.narrationSource = src;
+    }
+  }
+
+  function seekTo(newT) {
+    state.time = clamp(newT, 0, Math.max(0, TIMELINE.duration - 0.02));
+    syncSfxIndexToTime(state.time);
+    stopLiveNarration();
+    state.activeBeatIdx = -1;
+    if (state.playing) {
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        state.activeBeatIdx = beat.index;
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    }
+    renderFrame(state.time);
+    updateUI();
+  }
+
+  function togglePlay(forceState) {
+    const next = typeof forceState === 'boolean' ? forceState : !state.playing;
+    if (next && state.time >= TIMELINE.duration - 0.05) {
+      state.time = 0;
+      syncSfxIndexToTime(0);
+    }
+    state.playing = next;
+    if (state.playing) {
+      ensureLiveAudioCtx();
+      state.lastFrameTs = performance.now();
+      syncSfxIndexToTime(state.time);
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        state.activeBeatIdx = beat.index;
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    } else {
+      stopLiveNarration();
+    }
+    updateUI();
+  }
+
+  function animLoop(now) {
+    if (state.playing) {
+      const dt = Math.min(0.1, (now - state.lastFrameTs) / 1000) * state.speed;
+      state.lastFrameTs = now;
+      const prevT = state.time;
+      state.time += dt;
+      if (state.time >= TIMELINE.duration) {
+        state.time = TIMELINE.duration;
+        state.playing = false;
+        stopLiveNarration();
+      } else {
+        triggerLiveSfxInRange(prevT, state.time);
+        const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+        if (beat && beat.index !== state.activeBeatIdx) {
+          state.activeBeatIdx = beat.index;
+          if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+          else speakBeatWebSpeech(beat);
+        }
+      }
+      renderFrame(state.time);
+      updateUI();
+    }
+    requestAnimationFrame(animLoop);
+  }
+
+  // ==========================================================
+  // 10. UI Controls & Chapter Cards
+  // ==========================================================
+  const btnPlay = document.getElementById('btnPlay');
+  const btnBack = document.getElementById('btnBack');
+  const btnFwd = document.getElementById('btnFwd');
+  const btnSpeed = document.getElementById('btnSpeed');
+  const btnNar = document.getElementById('btnNar');
+  const btnSfx = document.getElementById('btnSfx');
+  const btnSub = document.getElementById('btnSub');
+  const timeReadout = document.getElementById('timeReadout');
+  const chapterStrip = document.getElementById('chapterStrip');
+  const toastEl = document.getElementById('toast');
+
+  function formatMMSS(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toastEl.classList.remove('show'), 3600);
+  }
+
+  function buildChapterCards() {
+    chapterStrip.innerHTML = '';
+    TIMELINE.chapters.forEach((ch) => {
+      const card = document.createElement('div');
+      card.className = 'ch-card';
+      card.dataset.chapter = String(ch.num);
+      card.innerHTML = `
+        <div>
+          <div class="ch-head">
+            <span class="ch-num">BÖLÜM 0${ch.num}</span>
+            <span>${formatMMSS(ch.duration)}</span>
+          </div>
+          <div class="ch-title" style="margin-top:8px;">${ch.title}</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn" data-watch="${ch.num}">▶ İzle</button>
+          <button class="btn export-btn" data-mp4="${ch.num}">⬇ MP4</button>
+        </div>
+      `;
+      chapterStrip.appendChild(card);
+    });
+
+    chapterStrip.querySelectorAll('[data-watch]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ch = TIMELINE.chapters.find(c => c.num === Number(btn.dataset.watch));
+        if (ch) { seekTo(ch.start); togglePlay(true); }
+      });
+    });
+
+    chapterStrip.querySelectorAll('[data-mp4]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ch = TIMELINE.chapters.find(c => c.num === Number(btn.dataset.mp4));
+        if (ch) exportRangeMP4({ start: ch.start, end: ch.end, chapter: ch, filename: ch.filename });
+      });
+    });
+  }
+
+  function updateUI() {
+    btnPlay.textContent = state.playing ? '❚❚ Duraklat' : '▶ Oynat';
+    timeReadout.textContent = `${formatMMSS(state.time)} / ${formatMMSS(TIMELINE.duration)}`;
+    btnSpeed.textContent = `${state.speed}×`;
+    btnNar.textContent = state.narrationOn ? '🗣️ Anlatım: Açık' : '🗣️ Anlatım: Kapalı';
+    btnNar.classList.toggle('active-pill', state.narrationOn);
+    btnSfx.textContent = state.sfxOn ? '🔊 SFX: Açık' : '🔇 SFX: Kapalı';
+    btnSfx.classList.toggle('active-pill', state.sfxOn);
+    btnSub.textContent = state.subtitlesOn ? '💬 Altyazı: Açık' : '💬 Altyazı: Kapalı';
+    btnSub.classList.toggle('active-pill', state.subtitlesOn);
+
+    const activeCh = TIMELINE.chapters.find(c => state.time >= c.start && state.time < c.end) || TIMELINE.chapters[0];
+    document.querySelectorAll('.ch-card').forEach(el => {
+      el.classList.toggle('active', activeCh && Number(el.dataset.chapter) === activeCh.num);
+    });
+  }
+
+  function toggleNarration() {
+    state.narrationOn = !state.narrationOn;
+    if (!state.narrationOn) stopLiveNarration();
+    else if (state.playing) {
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    }
+    updateUI();
+  }
+
+  canvas.addEventListener('click', () => togglePlay());
+  btnPlay.addEventListener('click', () => togglePlay());
+  btnBack.addEventListener('click', () => seekTo(state.time - 5));
+  btnFwd.addEventListener('click', () => seekTo(state.time + 5));
+  btnSpeed.addEventListener('click', () => {
+    state.speed = state.speed === 0.75 ? 1 : (state.speed === 1 ? 1.25 : 0.75);
+    if (state.narrationSource) state.narrationSource.playbackRate.value = state.speed;
+    updateUI();
+  });
+  btnNar.addEventListener('click', toggleNarration);
+  btnSfx.addEventListener('click', () => { state.sfxOn = !state.sfxOn; updateUI(); });
+  btnSub.addEventListener('click', () => { state.subtitlesOn = !state.subtitlesOn; renderFrame(state.time); updateUI(); });
+
+  document.getElementById('btnExportFull').addEventListener('click', () => {
+    exportRangeMP4({ start: 0, end: TIMELINE.duration, chapter: null, filename: META.onek + '-tam-video.mp4' });
+  });
+
+  document.getElementById('btnExportAll').addEventListener('click', async () => {
+    for (let i = 0; i < TIMELINE.chapters.length; i++) {
+      const ch = TIMELINE.chapters[i];
+      const res = await exportRangeMP4({ start: ch.start, end: ch.end, chapter: ch, filename: ch.filename }, true);
+      if (res && res.cancelled) break;
+      await new Promise(r => setTimeout(r, 350));
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); seekTo(state.time - 5); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); seekTo(state.time + 5); }
+    else if (e.key === 'n' || e.key === 'N') toggleNarration();
+    else if (e.key === 'm' || e.key === 'M') { state.sfxOn = !state.sfxOn; updateUI(); }
+    else if (e.key === 'c' || e.key === 'C') { state.subtitlesOn = !state.subtitlesOn; renderFrame(state.time); updateUI(); }
+    else if (e.key >= '5' && e.key <= '8') {
+      const ch = TIMELINE.chapters.find(c => c.num === Number(e.key));
+      if (ch) { seekTo(ch.start); togglePlay(true); }
+    }
+  });
+
+  // ==========================================================
+  // 11. Deterministic MP4 + AAC Export (WebCodecs + OfflineAudioContext + MediaRecorder fallback)
+  // ==========================================================
+  const exportModal = document.getElementById('exportModal');
+  const exportTitle = document.getElementById('exportTitle');
+  const exportSubtext = document.getElementById('exportSubtext');
+  const exportBar = document.getElementById('exportBar');
+  const exportPct = document.getElementById('exportPct');
+  const exportFrames = document.getElementById('exportFrames');
+  const exportMethodNote = document.getElementById('exportMethodNote');
+  const btnCancelExport = document.getElementById('btnCancelExport');
+
+  let cancelRequested = false;
+  btnCancelExport.addEventListener('click', () => { cancelRequested = true; });
+
+  async function renderOfflineAudioBuffer(start, end) {
+    const dur = Math.max(0.1, end - start);
+    const narBuf = await decodeEmbeddedNarration();
+    const sr = narBuf ? narBuf.sampleRate : 44100;
+    const offCtx = new OfflineAudioContext(2, Math.ceil(dur * sr), sr);
+
+    const comp = offCtx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 12;
+    comp.ratio.value = 4;
+    comp.connect(offCtx.destination);
+
+    if (narBuf) {
+      TIMELINE.beats.forEach(beat => {
+        if (beat.end > start && beat.start < end && beat.audioSlice) {
+          const [as, ae] = beat.audioSlice;
+          const relStart = Math.max(0, beat.start - start);
+          const trimHead = Math.max(0, start - beat.start);
+          const playDur = Math.min(ae - as - trimHead, end - Math.max(start, beat.start));
+          if (playDur > 0.02) {
+            const src = offCtx.createBufferSource();
+            src.buffer = narBuf;
+            src.connect(comp);
+            src.start(relStart, as + trimHead, playDur);
+          }
+        }
+      });
+    }
+
+    TIMELINE.sfxEvents.forEach(ev => {
+      if (ev.t >= start && ev.t < end) scheduleSFX(offCtx, comp, ev.type, ev.t - start, ev.gain, ev.dur);
+    });
+
+    return await offCtx.startRendering();
+  }
+
+  async function pickAudioEncoderConfig(sampleRate) {
+    if (typeof AudioEncoder === 'undefined') return null;
+    const candidates = [
+      { codec: 'mp4a.40.2', muxCodec: 'aac', sampleRate, numberOfChannels: 2, bitrate: 128_000 },
+      { codec: 'opus', muxCodec: 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: 128_000 }
+    ];
+    for (const c of candidates) {
+      try {
+        const res = await AudioEncoder.isConfigSupported({
+          codec: c.codec, sampleRate: c.sampleRate, numberOfChannels: c.numberOfChannels, bitrate: c.bitrate
+        });
+        if (res && res.supported) return c;
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  async function muxOfflineAudio(muxer, audioBuffer, audioCfg) {
+    const encoder = new AudioEncoder({
+      output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+      error: (err) => { throw err; }
+    });
+    encoder.configure({
+      codec: audioCfg.codec, sampleRate: audioCfg.sampleRate,
+      numberOfChannels: audioCfg.numberOfChannels, bitrate: audioCfg.bitrate
+    });
+
+    const sr = audioCfg.sampleRate;
+    const chCount = audioCfg.numberOfChannels;
+    const totalSamples = audioBuffer.length;
+    for (let offset = 0; offset < totalSamples; offset += 1024) {
+      if (cancelRequested) break;
+      const count = Math.min(1024, totalSamples - offset);
+      const planar = new Float32Array(count * chCount);
+      for (let ch = 0; ch < chCount; ch++) {
+        const srcCh = Math.min(ch, audioBuffer.numberOfChannels - 1);
+        planar.set(audioBuffer.getChannelData(srcCh).subarray(offset, offset + count), ch * count);
+      }
+      const ad = new AudioData({
+        format: 'f32-planar', sampleRate: sr, numberOfFrames: count,
+        numberOfChannels: chCount, timestamp: Math.round((offset / sr) * 1_000_000), data: planar
+      });
+      encoder.encode(ad);
+      ad.close();
+    }
+    await encoder.flush();
+    encoder.close();
+  }
+
+  async function exportMediaRecorderFallback(scope, filename) {
+    const start = scope.start, end = scope.end, dur = end - start;
+    exportSubtext.textContent = 'WebCodecs bulunamadı; MediaRecorder yedeği çalışıyor…';
+    const stream = canvas.captureStream(FPS);
+    const ac = ensureLiveAudioCtx();
+    const dest = ac ? ac.createMediaStreamDestination() : null;
+    if (dest) dest.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+
+    const mime = MediaRecorder.isTypeSupported('video/mp4')
+      ? 'video/mp4'
+      : (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm');
+    const outName = mime.includes('mp4') ? filename : filename.replace(/\.mp4$/, '.webm');
+    exportMethodNote.textContent = `Yöntem: MediaRecorder (${mime}).`;
+
+    const chunks = [];
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 });
+    rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    const recDone = new Promise(resolve => { rec.onstop = resolve; });
+    rec.start(250);
+
+    if (ac && dest) {
+      const baseTime = ac.currentTime + 0.05;
+      TIMELINE.sfxEvents.forEach(ev => {
+        if (ev.t >= start && ev.t < end) scheduleSFX(ac, dest, ev.type, baseTime + (ev.t - start), ev.gain, ev.dur);
+      });
+    }
+
+    const tStart = performance.now();
+    const totalFrames = Math.ceil(dur * FPS);
+    while (!cancelRequested) {
+      const elapsed = (performance.now() - tStart) / 1000;
+      if (elapsed >= dur) break;
+      renderFrame(start + elapsed, scope.chapter ? scope : null);
+      const pct = Math.min(100, Math.round((elapsed / dur) * 100));
+      exportBar.style.width = `${pct}%`;
+      exportPct.textContent = `%${pct}`;
+      exportFrames.textContent = `${Math.min(totalFrames, Math.floor(elapsed * FPS))} / ${totalFrames} kare`;
+      await new Promise(r => setTimeout(r, 16));
+    }
+    rec.stop();
+    await recDone;
+    if (cancelRequested) return { cancelled: true };
+
+    triggerDownload(new Blob(chunks, { type: mime }), outName);
+    showToast(`${outName} indirildi.`);
+    return { ok: true };
+  }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+  }
+
+  async function exportRangeMP4(scope) {
+    togglePlay(false);
+    cancelRequested = false;
+    exportModal.classList.add('open');
+    exportBar.style.width = '0%';
+    exportPct.textContent = '%0';
+    exportTitle.textContent = scope.chapter ? `Bölüm ${scope.chapter.num}: ${scope.chapter.title}` : 'Tam Video MP4';
+    exportSubtext.textContent = `Hazırlanıyor: ${scope.filename}`;
+
+    const speechNote = TIMELINE.narrationAudio
+      ? 'Gömülü anlatım WAV ve tüm SFX olayları dahil ediliyor.'
+      : 'Not: Gömülü anlatım sesi henüz eklenmediği için Web Speech MP4 dosyasına girmez; tüm SFX sesleri dahil edilir.';
+
+    try {
+      let supportedCfg = null;
+      if (typeof VideoEncoder !== 'undefined' && typeof Mp4Muxer !== 'undefined') {
+        for (const codec of ['avc1.4d002a', 'avc1.640028', 'avc1.42001f']) {
+          const cfg = { codec, width: W, height: H, bitrate: 6_000_000, framerate: FPS };
+          try {
+            const res = await VideoEncoder.isConfigSupported(cfg);
+            if (res && res.supported) { supportedCfg = cfg; break; }
+          } catch (e) {}
+        }
+      }
+
+      if (!supportedCfg) {
+        const res = await exportMediaRecorderFallback(scope, scope.filename);
+        exportModal.classList.remove('open');
+        renderFrame(state.time);
+        return res;
+      }
+
+      exportSubtext.textContent = 'Ses izi (OfflineAudioContext) hazırlanıyor…';
+      let offlineBuf = await renderOfflineAudioBuffer(scope.start, scope.end);
+      const audioCfg = await pickAudioEncoderConfig(offlineBuf.sampleRate);
+
+      if (audioCfg && audioCfg.sampleRate !== offlineBuf.sampleRate) {
+        const dur = Math.max(0.1, scope.end - scope.start);
+        const off48 = new OfflineAudioContext(2, Math.ceil(dur * audioCfg.sampleRate), audioCfg.sampleRate);
+        const src = off48.createBufferSource();
+        src.buffer = offlineBuf;
+        src.connect(off48.destination);
+        src.start(0);
+        offlineBuf = await off48.startRendering();
+      }
+
+      const audioLabel = audioCfg ? `${audioCfg.muxCodec.toUpperCase()} ses kodlama` : 'Sessiz MP4';
+      exportMethodNote.textContent = `Yöntem: WebCodecs H.264 + ${audioLabel}. ${speechNote}`;
+
+      const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: { codec: 'avc', width: W, height: H },
+        ...(audioCfg ? { audio: { codec: audioCfg.muxCodec, numberOfChannels: audioCfg.numberOfChannels, sampleRate: audioCfg.sampleRate } } : {}),
+        fastStart: 'in-memory'
+      });
+
+      let encodeErr = null;
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => { encodeErr = e; }
+      });
+      encoder.configure(supportedCfg);
+
+      const dur = scope.end - scope.start;
+      const totalFrames = Math.max(1, Math.round(dur * FPS));
+      const frameDurUs = Math.round(1_000_000 / FPS);
+      exportSubtext.textContent = `Kareler kodlanıyor: ${scope.filename}`;
+
+      for (let f = 0; f < totalFrames; f++) {
+        if (cancelRequested || encodeErr) break;
+        const t = scope.start + f / FPS;
+        renderFrame(t, scope.chapter ? scope : null);
+
+        const frame = new VideoFrame(canvas, { timestamp: f * frameDurUs, duration: frameDurUs });
+        encoder.encode(frame, { keyFrame: f % (FPS * 2) === 0 });
+        frame.close();
+
+        if (f % 15 === 0 || f === totalFrames - 1) {
+          const pct = Math.min(100, Math.round(((f + 1) / totalFrames) * 100));
+          exportBar.style.width = `${pct}%`;
+          exportPct.textContent = `%${pct}`;
+          exportFrames.textContent = `${f + 1} / ${totalFrames} kare (${formatMMSS(f / FPS)} / ${formatMMSS(dur)})`;
+          await new Promise(r => setTimeout(r, 0));
+        }
+        while (encoder.encodeQueueSize > 12 && !cancelRequested) {
+          await new Promise(r => setTimeout(r, 4));
+        }
+      }
+
+      if (cancelRequested) {
+        try { encoder.close(); } catch (e) {}
+        exportModal.classList.remove('open');
+        renderFrame(state.time);
+        return { cancelled: true };
+      }
+      if (encodeErr) throw encodeErr;
+
+      await encoder.flush();
+      encoder.close();
+
+      if (audioCfg) {
+        exportSubtext.textContent = `Ses izi (${audioCfg.muxCodec.toUpperCase()}) birleştiriliyor…`;
+        await muxOfflineAudio(muxer, offlineBuf, audioCfg);
+      }
+
+      muxer.finalize();
+      triggerDownload(new Blob([muxer.target.buffer], { type: 'video/mp4' }), scope.filename);
+      exportModal.classList.remove('open');
+      renderFrame(state.time);
+      showToast(`${scope.filename} indirildi.`);
+      return { ok: true };
+    } catch (err) {
+      console.error('Export error:', err);
+      exportModal.classList.remove('open');
+      renderFrame(state.time);
+      showToast(`Dışa aktarma hatası: ${err.message || err}`);
+      return { error: err };
+    }
+  }
+
+  // ==========================================================
+  // 12. Boot
+  // ==========================================================
+  async function init() {
+    selfTest();
+    buildTimeline();
+    buildChapterCards();
+    updateUI();
+
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    document.getElementById('fontStatus').textContent = `${TIMELINE.chapters.length} Bölüm • ${formatMMSS(TIMELINE.duration)} • 1280×720 30 FPS`;
+    decodeEmbeddedNarration();
+    renderFrame(0);
+    requestAnimationFrame(animLoop);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

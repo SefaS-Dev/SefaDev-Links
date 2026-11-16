@@ -1,0 +1,3760 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mantıksal Tasarım 1A — Sayı Sistemleri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+<style>
+  :root {
+    --bg: #F2F3ED;
+    --card: #FFFFFF;
+    --ink: #24372D;
+    --muted: #7C8A7E;
+    --sage: #9CC29A;
+    --lavender: #B6A2DB;
+    --terracotta: #CF8A68;
+    --sand: #E3C9A0;
+    --ice: #9FC3D6;
+    --border: rgba(36, 55, 45, 0.09);
+    --shadow: 0 10px 30px rgba(36, 55, 45, 0.06), 0 2px 8px rgba(36, 55, 45, 0.04);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px 20px 42px;
+  }
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .brand-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--ink);
+    margin: 0;
+  }
+  .topbar-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .stage-shell {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #F2F3ED;
+  }
+  canvas#stage {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+  }
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: #F7F8F3;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 13px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+  }
+  .btn:hover { background: #ECEFE4; border-color: rgba(36, 55, 45, 0.18); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary {
+    background: var(--ink);
+    color: #F2F3ED;
+    border-color: var(--ink);
+  }
+  .btn.primary:hover { background: #2F473B; }
+  .btn.active-pill {
+    background: rgba(156, 194, 154, 0.35);
+    border-color: rgba(36, 55, 45, 0.25);
+  }
+  .btn.export-btn {
+    background: rgba(227, 201, 160, 0.35);
+  }
+  .btn.export-btn:hover {
+    background: rgba(227, 201, 160, 0.58);
+  }
+  .time-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 0 6px;
+    min-width: 112px;
+    text-align: center;
+  }
+  .chapter-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  @media (max-width: 960px) {
+    .chapter-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px) {
+    .chapter-strip { grid-template-columns: 1fr; }
+  }
+  .ch-card {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 13px 14px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+  }
+  .ch-card.active {
+    border-color: var(--terracotta);
+    background: #FFFFFF;
+  }
+  .ch-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ch-num {
+    background: #F2F3ED;
+    color: var(--ink);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .ch-card.active .ch-num {
+    background: rgba(207, 138, 104, 0.22);
+    color: #8E4B2D;
+  }
+  .ch-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 20px;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .ch-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .ch-actions .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 6px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+  .kbd-hint {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(36, 55, 45, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 22px 24px;
+    box-shadow: 0 24px 60px rgba(36, 55, 45, 0.22);
+    border: 1px solid var(--border);
+  }
+  .modal h3 {
+    margin: 0 0 6px;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--ink);
+  }
+  .modal p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .prog-track {
+    height: 10px;
+    background: #ECEFE4;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 14px 0 10px;
+  }
+  .prog-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--terracotta);
+    border-radius: 999px;
+    transition: width 0.08s linear;
+  }
+  .modal-stats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .modal-note {
+    background: #F6F7F1;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink);
+    margin: 10px 0 14px;
+    border: 1px solid var(--border);
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink);
+    color: #F2F3ED;
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 120;
+    box-shadow: 0 8px 24px rgba(36,55,45,0.2);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .selftest-err {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #C55A4B;
+    color: #FFFFFF;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 200;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-kicker">MANTIKSAL TASARIM • BÖLÜM 1 • KISIM 1/2</span>
+      <h1 class="brand-title">Sayı Sistemleri ve Taban Dönüşümleri</h1>
+    </div>
+    <div class="topbar-meta" id="fontStatus">Yazı tipleri hazırlanıyor…</div>
+  </div>
+
+  <div class="stage-shell">
+    <div class="canvas-wrap">
+      <canvas id="stage" width="1280" height="720"></canvas>
+    </div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <button class="btn primary" id="btnPlay">▶ Oynat</button>
+      <button class="btn" id="btnBack">↺ -5 sn</button>
+      <button class="btn" id="btnFwd">+5 sn ↻</button>
+      <span class="time-readout" id="timeReadout">00:00 / 00:00</span>
+      <button class="btn" id="btnSpeed">1×</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="btn" id="btnNar">🗣️ Anlatım: Kapalı</button>
+      <button class="btn active-pill" id="btnSfx">🔊 SFX: Açık</button>
+      <button class="btn active-pill" id="btnSub">💬 Altyazı: Açık</button>
+      <button class="btn export-btn" id="btnExportFull">⬇ Tam Video MP4</button>
+      <button class="btn export-btn" id="btnExportAll">⬇ Tümünü İndir (4 MP4)</button>
+    </div>
+  </div>
+
+  <div class="chapter-strip" id="chapterStrip"></div>
+
+  <div class="kbd-hint">
+    Kısayollar: [Space] Oynat/Duraklat • [← / →] ±5 sn • [1–4] Bölüme atla • [N] Anlatım • [M] SFX • [C] Altyazı
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportModal">
+  <div class="modal">
+    <h3 id="exportTitle">MP4 Dışa Aktarılıyor</h3>
+    <p id="exportSubtext">Kare kare deterministik kodlama hazırlanıyor…</p>
+    <div class="prog-track"><div class="prog-fill" id="exportBar"></div></div>
+    <div class="modal-stats">
+      <span id="exportPct">%0</span>
+      <span id="exportFrames">0 / 0 kare</span>
+    </div>
+    <div class="modal-note" id="exportMethodNote"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btnCancelExport">İptal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="narration-data">
+[
+  {"id":"c1b00","chapter":1,"text":"","seconds":1.4},
+  {"id":"c1b01","chapter":1,"text":"Sıfır bir bir bir bit dizisi sence hangi sayıyı gösterir?","seconds":4.5},
+  {"id":"c1b02","chapter":1,"text":"Bu hangi tabanda okunduğuna bağlı. İkilikte yedi, onlukta yüz on bir. Alt simge tabanı söyler.","seconds":7.2},
+  {"id":"c1b03","chapter":1,"text":"Onluk sistemi zaten biliyoruz. Yedi bin üç yüz doksan ikide her basamak bir öncekinin on katıdır.","seconds":7.4},
+  {"id":"c1b04","chapter":1,"text":"İkilik tabanda ise her basamak iki katıdır: bir, iki, dört, sekiz, on altı.","seconds":6.2},
+  {"id":"c1b05","chapter":1,"text":"Kural kartımız şu: her basamağı tabanın kuvvetiyle çarp, sonra hepsini topla.","seconds":6.0},
+  {"id":"c1b06","chapter":1,"text":"Bak şimdi, bir bir sıfır bir sıfır virgül bir bir ikilik sayısını bit kutularına ayıralım.","seconds":7.0},
+  {"id":"c1b07","chapter":1,"text":"Önce tam kısmın ağırlıklarını sağdan sola yazıyoruz: bir, iki, dört, sekiz ve on altı.","seconds":6.8},
+  {"id":"c1b08","chapter":1,"text":"Virgülün sağında yarım ve çeyrek var: sıfır virgül beş ve sıfır virgül yirmi beş.","seconds":6.6},
+  {"id":"c1b09","chapter":1,"text":"Şuna dikkat: sıfır olan kutular söner, çünkü sıfır toplama hiç katkı yapmaz.","seconds":6.3},
+  {"id":"c1b10","chapter":1,"text":"Yanan ağırlıkları toplayalım: on altı, sekiz daha yirmi dört, iki daha yirmi altı.","seconds":6.5},
+  {"id":"c1b11","chapter":1,"text":"Yarım ve çeyreği de ekleyince yirmi altı virgül beş ve sonuç yirmi altı virgül yetmiş beş.","seconds":7.0},
+  {"id":"c1b12","chapter":1,"text":"","seconds":1.0},
+  {"id":"c1b13","chapter":1,"text":"Pratik yol: yalnız birlerin ağırlığını topla. Otuz iki, on altı, dört, bir; toplam elli üç.","seconds":7.2},
+  {"id":"c1b14","chapter":1,"text":"Sen dene! Bir bir sıfır bir ikilik tabanda kaça eşittir? Beş saniyen var.","seconds":5.9},
+  {"id":"c1b15","chapter":1,"text":"","seconds":5.0},
+  {"id":"c1b16","chapter":1,"text":"Sekiz, dört ve bir yanar; toplam on üç eder.","seconds":4.0},
+  {"id":"c1b17","chapter":1,"text":"Sınav anı! Bu kuvvet toplamının sonucu aşağıdakilerden hangisidir?","seconds":5.2},
+  {"id":"c1b18","chapter":1,"text":"","seconds":4.0},
+  {"id":"c1b19","chapter":1,"text":"Doğru cevap B, yirmi bir! On altı artı dört artı bir.","seconds":4.6},
+  {"id":"c1b20","chapter":1,"text":"A şıkkı iki üzeri sıfırı unutur; C ve D ise sıfır katsayılı terimleri toplar.","seconds":6.3},
+  {"id":"c1b21","chapter":1,"text":"","seconds":1.2},
+
+  {"id":"c2b00","chapter":2,"text":"","seconds":1.4},
+  {"id":"c2b01","chapter":2,"text":"İkilik tabanda bir artı bir neden on yazar?","seconds":3.8},
+  {"id":"c2b02","chapter":2,"text":"Onlukta dokuz artı birde basamak taşar ve on olur. İkilide rakam birdir; bir artı birde taşar.","seconds":7.4},
+  {"id":"c2b03","chapter":2,"text":"Kural kartımız: bir artı bir on, yani yaz sıfır elde bir; üç tane bir on bir.","seconds":6.2},
+  {"id":"c2b04","chapter":2,"text":"Bak şimdi, kırk beş ile otuz dokuzu ikilide sağdan sola sütun sütun toplayalım.","seconds":6.4},
+  {"id":"c2b05","chapter":2,"text":"Birinci sütun: bir artı bir eşittir on. Sıfırı yaz, elde bir sola atlar.","seconds":5.7},
+  {"id":"c2b06","chapter":2,"text":"İkinci sütun: sıfır, bir ve elde bir eşittir on. Sıfır yaz, elde bir sola.","seconds":5.9},
+  {"id":"c2b07","chapter":2,"text":"Üçüncü sütun: bir, bir ve elde bir eşittir on bir. Bir yaz, elde bir sola.","seconds":6.0},
+  {"id":"c2b08","chapter":2,"text":"Dördüncü sütun: bir, sıfır ve elde bir eşittir on. Sıfır yaz, elde bir sola.","seconds":5.9},
+  {"id":"c2b09","chapter":2,"text":"Beşinci sütun: sıfır, sıfır ve elde bir eşittir bir. Bu kez elde sıfır.","seconds":5.7},
+  {"id":"c2b10","chapter":2,"text":"Altıncı sütun: bir artı bir eşittir on. Sıfır yaz, elde bir en sola iner.","seconds":5.9},
+  {"id":"c2b11","chapter":2,"text":"Sonuç bir sıfır bir sıfır bir sıfır sıfır. Altmış dört artı on altı artı dört, seksen dört. Doğru!","seconds":7.6},
+  {"id":"c2b12","chapter":2,"text":"","seconds":1.0},
+  {"id":"c2b13","chapter":2,"text":"Şimdi ikili çıkarma. Onlukta borç alınca on eklenir, ikilide ise sadece iki eklenir.","seconds":6.4},
+  {"id":"c2b14","chapter":2,"text":"Sıfırdan bir çıkmazsa soldan bir ödünç al; sıfır iki olur, ikiden bir çıkınca bir kalır.","seconds":6.9},
+  {"id":"c2b15","chapter":2,"text":"Kırk beşten otuz dokuzu çıkaralım. İkinci ve üçüncü sütun komşudan iki borç alır; sonuç altı.","seconds":7.2},
+  {"id":"c2b16","chapter":2,"text":"İkili çarpmada çarpan birse çarpılanı aynen yaz, sıfırsa sıfır satırı yaz.","seconds":6.0},
+  {"id":"c2b17","chapter":2,"text":"Bir sıfır bir bir çarpı bir sıfır birde satırları kaydırıp topla: sonuç elli beş.","seconds":6.6},
+  {"id":"c2b18","chapter":2,"text":"Sen dene! İkilik tabanda bir artı bir artı bir nedir? Beş saniyen var.","seconds":5.8},
+  {"id":"c2b19","chapter":2,"text":"","seconds":5.0},
+  {"id":"c2b20","chapter":2,"text":"Cevap on bir: yaz bir, elde bir.","seconds":3.5},
+  {"id":"c2b21","chapter":2,"text":"","seconds":1.2},
+
+  {"id":"c3b00","chapter":3,"text":"","seconds":1.4},
+  {"id":"c3b01","chapter":3,"text":"Kırk bir sayısını onluk tabandan ikilik tabana nasıl çeviririz?","seconds":5.0},
+  {"id":"c3b02","chapter":3,"text":"Sayıyı ikiye böldüğünde kalan, sayının tek mi çift mi olduğunu yani en sağdaki biti verir.","seconds":7.0},
+  {"id":"c3b03","chapter":3,"text":"İlk kalan en sağa yazıldığı için kalanları aşağıdan yukarıya doğru okuruz.","seconds":6.2},
+  {"id":"c3b04","chapter":3,"text":"Kural kartımız: tam kısmı sürekli tabana böl, kalanları aşağıdan yukarı oku.","seconds":6.0},
+  {"id":"c3b05","chapter":3,"text":"Birinci satır: kırk biri ikiye bölüyoruz; bölüm yirmi, kalan bir.","seconds":5.2},
+  {"id":"c3b06","chapter":3,"text":"İkinci satır: yirmiyi ikiye bölüyoruz; bölüm on, kalan sıfır.","seconds":5.0},
+  {"id":"c3b07","chapter":3,"text":"Üçüncü satır: onu ikiye bölüyoruz; bölüm beş, kalan sıfır.","seconds":4.8},
+  {"id":"c3b08","chapter":3,"text":"Dördüncü satır: beşi ikiye bölüyoruz; bölüm iki, kalan bir.","seconds":4.8},
+  {"id":"c3b09","chapter":3,"text":"Beşinci satır: ikiyi ikiye bölüyoruz; bölüm bir, kalan sıfır.","seconds":4.8},
+  {"id":"c3b10","chapter":3,"text":"Altıncı satır: biri ikiye bölüyoruz; bölüm sıfır, kalan bir. Sıfır olunca dur!","seconds":5.9},
+  {"id":"c3b11","chapter":3,"text":"Aşağıdan yukarı okuyalım: bir, sıfır, bir, sıfır, sıfır, bir.","seconds":5.0},
+  {"id":"c3b12","chapter":3,"text":"Sağlamasını yapalım: otuz iki artı sekiz artı bir eşittir kırk bir, doğru!","seconds":5.8},
+  {"id":"c3b13","chapter":3,"text":"","seconds":1.0},
+  {"id":"c3b14","chapter":3,"text":"Başka tabanda da aynı: yüz elli üçü sekize böl. Kalanlar bir, üç, iki; sonuç iki yüz otuz bir.","seconds":7.5},
+  {"id":"c3b15","chapter":3,"text":"Sen dene! On üç sayısını ikilik tabana çevir. Beş saniyen var.","seconds":5.2},
+  {"id":"c3b16","chapter":3,"text":"","seconds":5.0},
+  {"id":"c3b17","chapter":3,"text":"Kalanlar bir, sıfır, bir, bir. Aşağıdan yukarı: bir bir sıfır bir.","seconds":5.5},
+  {"id":"c3b18","chapter":3,"text":"Sınav anı! Kırk bir onluk tabanda, ikilik tabanda hangisine eşittir?","seconds":5.4},
+  {"id":"c3b19","chapter":3,"text":"","seconds":4.0},
+  {"id":"c3b20","chapter":3,"text":"Cevap B! A kalanları ters okuma tuzağıdır; D ve E ise son biti yanlış yazar.","seconds":6.2},
+  {"id":"c3b21","chapter":3,"text":"","seconds":1.2},
+
+  {"id":"c4b00","chapter":4,"text":"","seconds":1.4},
+  {"id":"c4b01","chapter":4,"text":"Peki virgülden sonrası? Sıfır virgül altı bin sekiz yüz yetmiş beş ikilikte nedir?","seconds":6.3},
+  {"id":"c4b02","chapter":4,"text":"Kesri ikiyle çarpınca tam kısma geçen rakam ilk bittir. O yüzden oklar zıt yöne, yukarıdan aşağı bakar.","seconds":7.8},
+  {"id":"c4b03","chapter":4,"text":"Kural kartımız: kesri sürekli tabanla çarp, tam kısımları yukarıdan aşağı oku. Kesir sıfır olunca dur.","seconds":7.5},
+  {"id":"c4b04","chapter":4,"text":"Birinci satır: sıfır virgül altı sekiz yedi beş çarpı iki, bir virgül üç yüz yetmiş beş. Tam bir.","seconds":7.4},
+  {"id":"c4b05","chapter":4,"text":"İkinci satır: sıfır virgül üç yüz yetmiş beş çarpı iki, sıfır virgül yetmiş beş. Tam sıfır.","seconds":7.2},
+  {"id":"c4b06","chapter":4,"text":"Üçüncü satır: sıfır virgül yetmiş beş çarpı iki, bir virgül beş. Tam bir, kalan sıfır virgül beş.","seconds":7.3},
+  {"id":"c4b07","chapter":4,"text":"Dördüncü satır: sıfır virgül beş çarpı iki, bir virgül sıfır. Tam bir, kesir sıfırlandı; dur!","seconds":7.0},
+  {"id":"c4b08","chapter":4,"text":"Yukarıdan aşağı oku: sıfır virgül bir sıfır bir bir. Yarım, sekizde bir, on altıda bir; doğru!","seconds":7.5},
+  {"id":"c4b09","chapter":4,"text":"Şimdi birleştirelim: kırk birin ikilisi köşeden geliyor. Birlikte kırk bir virgül altı sekiz yedi beş hazır!","seconds":7.9},
+  {"id":"c4b10","chapter":4,"text":"","seconds":1.0},
+  {"id":"c4b11","chapter":4,"text":"Uyarı: sıfır virgül bir ikilikte sonlanmaz, sıfır sıfır bir bir tekrarlar. Kaç basamak derse orada kes.","seconds":7.7},
+  {"id":"c4b12","chapter":4,"text":"Derste fotoğraflanan slayt, şimdi sen dene: yüz on yedi virgül yirmi üçü sekizliye dört basamakla çevir.","seconds":7.7},
+  {"id":"c4b13","chapter":4,"text":"","seconds":5.0},
+  {"id":"c4b14","chapter":4,"text":"Tam kısım yüz altmış beş. Kesir dört adımda bir, altı, beş, altı verir: yüz altmış beş virgül bir altı beş altı.","seconds":8.3},
+  {"id":"c4b15","chapter":4,"text":"Üçüncü madde: bir bir sıfır bir virgül bir sıfır bir; sekiz, dört, bir, yarım ve sıfır yüz yirmi beş, on üç virgül altı yüz yirmi beş.","seconds":9.2},
+  {"id":"c4b16","chapter":4,"text":"Hızlı tekrar: ağırlık taban üssü konum; ikilikte bir artı bir eşittir on.","seconds":5.9},
+  {"id":"c4b17","chapter":4,"text":"Tamı böl, kalanları aşağıdan yukarı oku. Kesri çarp, tam kısımları yukarıdan aşağı oku.","seconds":6.6},
+  {"id":"c4b18","chapter":4,"text":"","seconds":1.5}
+]
+</script>
+
+<script type="application/json" id="narration-audio">{}</script>
+
+<script>
+(() => {
+  'use strict';
+
+  const W = 1280;
+  const H = 720;
+  const FPS = 30;
+
+  // Constant semantic palette
+  const PALETTE = {
+    bg: '#F2F3ED',
+    card: '#FFFFFF',
+    ink: '#24372D',
+    muted: '#7C8A7E',
+    sage: '#9CC29A',       // 1 olan bit
+    lavender: '#B6A2DB',   // kalan
+    terracotta: '#CF8A68', // elde / borç
+    sand: '#E3C9A0',       // kural kartı
+    ice: '#9FC3D6',
+    green: '#2E7D4F',
+    error: '#C55A4B',
+    softFill: '#F7F8F3',
+    dimBit: 'rgba(124, 138, 126, 0.12)'
+  };
+
+  const CHAPTER_META = [
+    { num: 1, title: 'Aynı bitler, farklı sayı', filename: 'mt1a-01-ayni-bitler-farkli-sayi.mp4', accent: PALETTE.ice },
+    { num: 2, title: 'İkili toplama ve çıkarma', filename: 'mt1a-02-ikili-toplama-ve-cikarma.mp4', accent: PALETTE.sage },
+    { num: 3, title: 'Tam kısım: bölme merdiveni', filename: 'mt1a-03-tam-kisim-bolme-merdiveni.mp4', accent: PALETTE.terracotta },
+    { num: 4, title: 'Kesir kısmı: çarpma', filename: 'mt1a-04-kesir-kismi-carpma.mp4', accent: PALETTE.lavender }
+  ];
+
+  // ==========================================================
+  // Pure Math Helpers + selfTest()
+  // ==========================================================
+  const DIGITS = '0123456789ABCDEF';
+
+  function toBase(n, b) {
+    if (n === 0) return '0';
+    let v = Math.floor(Math.abs(n));
+    let out = '';
+    while (v > 0) {
+      out = DIGITS[v % b] + out;
+      v = Math.floor(v / b);
+    }
+    return n < 0 ? '-' + out : out;
+  }
+
+  function divLadder(n, b) {
+    const rows = [];
+    let cur = Math.floor(n);
+    if (cur === 0) {
+      rows.push({ dividend: 0, divisor: b, quotient: 0, rem: 0, remChar: '0' });
+      return { result: '0', rows };
+    }
+    let res = '';
+    while (cur > 0) {
+      const q = Math.floor(cur / b);
+      const r = cur % b;
+      const rc = DIGITS[r];
+      rows.push({ dividend: cur, divisor: b, quotient: q, rem: r, remChar: rc });
+      res = rc + res;
+      cur = q;
+    }
+    return { result: res, rows };
+  }
+
+  function fracToBase(x, b, k = 8) {
+    const steps = [];
+    let cur = Math.round(x * 1e10) / 1e10;
+    let digits = '';
+    let terminated = false;
+    for (let i = 0; i < k; i++) {
+      if (cur <= 1e-10) {
+        terminated = true;
+        break;
+      }
+      const prod = Math.round(cur * b * 1e10) / 1e10;
+      const intPart = Math.floor(prod + 1e-10);
+      const fracPart = Math.max(0, Math.round((prod - intPart) * 1e10) / 1e10);
+      const ch = DIGITS[intPart];
+      steps.push({
+        inVal: cur,
+        factor: b,
+        product: prod,
+        intPart,
+        digitChar: ch,
+        fracPart
+      });
+      digits += ch;
+      cur = fracPart;
+      if (cur <= 1e-10) {
+        terminated = true;
+        break;
+      }
+    }
+    return { digits, steps, terminated };
+  }
+
+  function addColumns(a, b, base = 2) {
+    const len = Math.max(a.length, b.length);
+    const pa = a.padStart(len, '0');
+    const pb = b.padStart(len, '0');
+    const cols = [];
+    let carry = 0;
+    let res = '';
+    let carryStr = '';
+    for (let i = len - 1; i >= 0; i--) {
+      const da = parseInt(pa[i], base);
+      const db = parseInt(pb[i], base);
+      const sum = da + db + carry;
+      const outDigit = sum % base;
+      const nextCarry = Math.floor(sum / base);
+      cols.push({
+        fromRight: len - 1 - i,
+        aDigit: pa[i],
+        bDigit: pb[i],
+        carryIn: carry,
+        sum,
+        sumBase: toBase(sum, base),
+        outDigit: DIGITS[outDigit],
+        carryOut: nextCarry
+      });
+      res = DIGITS[outDigit] + res;
+      carryStr = (nextCarry ? String(nextCarry) : '0') + carryStr;
+      carry = nextCarry;
+    }
+    if (carry > 0) res = DIGITS[carry] + res;
+    return { result: res, finalCarry: carry, cols, carryRow: carryStr.slice(1) + ' ' };
+  }
+
+  function subColumns(a, b, base = 2) {
+    const len = Math.max(a.length, b.length);
+    const pa = a.padStart(len, '0');
+    const pb = b.padStart(len, '0');
+    const cols = [];
+    let borrow = 0;
+    let res = '';
+    for (let i = len - 1; i >= 0; i--) {
+      const da = parseInt(pa[i], base);
+      const db = parseInt(pb[i], base);
+      let top = da - borrow;
+      let borrowOut = 0;
+      if (top < db) {
+        top += base;
+        borrowOut = 1;
+      }
+      const diff = top - db;
+      cols.push({
+        fromRight: len - 1 - i,
+        aDigit: pa[i],
+        bDigit: pb[i],
+        borrowIn: borrow,
+        effectiveTop: top,
+        diffDigit: DIGITS[diff],
+        borrowOut
+      });
+      res = DIGITS[diff] + res;
+      borrow = borrowOut;
+    }
+    return { result: res, borrowOut: borrow, cols };
+  }
+
+  function nineComp(str) {
+    return str.split('').map(ch => String(9 - Number(ch))).join('');
+  }
+
+  function tenComp(str) {
+    const n9 = nineComp(str);
+    return addColumns(n9, '1'.padStart(str.length, '0'), 10).result.slice(-str.length);
+  }
+
+  function onesComp(bits) {
+    return bits.split('').map(b => b === '1' ? '0' : '1').join('');
+  }
+
+  function twosComp(bits) {
+    const o = onesComp(bits);
+    return addColumns(o, '1'.padStart(bits.length, '0'), 2).result.slice(-bits.length);
+  }
+
+  function complementSubtract(M, N, base, kind = 'r') {
+    const len = Math.max(M.length, N.length);
+    const pm = M.padStart(len, '0');
+    const pn = N.padStart(len, '0');
+    let compN;
+    if (base === 10) compN = kind === 'r-1' ? nineComp(pn) : tenComp(pn);
+    else compN = kind === 'r-1' ? onesComp(pn) : twosComp(pn);
+
+    const added = addColumns(pm, compN, base);
+    const hasCarry = added.result.length > len;
+    const rawSum = added.result.slice(-len);
+
+    if (hasCarry) {
+      if (kind === 'r-1') {
+        const endAround = addColumns(rawSum, '1'.padStart(len, '0'), base).result.slice(-len);
+        return { negative: false, hasCarry: true, compN, rawSum: added.result, result: endAround };
+      }
+      return { negative: false, hasCarry: true, compN, rawSum: added.result, result: rawSum };
+    } else {
+      let mag;
+      if (base === 10) mag = kind === 'r-1' ? nineComp(rawSum) : tenComp(rawSum);
+      else mag = kind === 'r-1' ? onesComp(rawSum) : twosComp(rawSum);
+      return { negative: true, hasCarry: false, compN, rawSum, result: '-' + mag };
+    }
+  }
+
+  function binaryFracToDec(binStr) {
+    const [intS, fracS = ''] = binStr.split('.');
+    let total = 0;
+    const terms = [];
+    for (let i = 0; i < intS.length; i++) {
+      const bit = Number(intS[i]);
+      const pwr = intS.length - 1 - i;
+      const w = Math.pow(2, pwr);
+      if (bit === 1) total += w;
+      terms.push({ bit, pwr, weight: w });
+    }
+    for (let j = 0; j < fracS.length; j++) {
+      const bit = Number(fracS[j]);
+      const pwr = -(j + 1);
+      const w = Math.pow(2, pwr);
+      if (bit === 1) total += w;
+      terms.push({ bit, pwr, weight: w });
+    }
+    return { total, terms };
+  }
+
+  // Precomputed verified math structures for scenes
+  const MATH = {
+    ch1_11010_11: binaryFracToDec('11010.11'),
+    ch1_110101: binaryFracToDec('110101'),
+    ch1_1101: binaryFracToDec('1101'),
+    ch1_exam_poly: 1 * Math.pow(2, 4) + 0 * Math.pow(2, 3) + 1 * Math.pow(2, 2) + 0 * Math.pow(2, 1) + 1 * Math.pow(2, 0),
+    ch2_add: addColumns('101101', '100111', 2),
+    ch2_sub: subColumns('101101', '100111', 2),
+    ch2_mul: toBase(parseInt('1011', 2) * parseInt('101', 2), 2),
+    ch2_try: toBase(1 + 1 + 1, 2),
+    ch3_41: divLadder(41, 2),
+    ch3_153: divLadder(153, 8),
+    ch3_13: divLadder(13, 2),
+    ch4_06875: fracToBase(0.6875, 2, 6),
+    ch4_01: fracToBase(0.1, 2, 9),
+    ch4_117: divLadder(117, 8),
+    ch4_023: fracToBase(0.23, 8, 4),
+    ch4_1101_101: binaryFracToDec('1101.101')
+  };
+
+  function selfTest() {
+    const checks = [
+      ['(0111)2 === 7', parseInt('0111', 2) === 7],
+      ['(0111)10 === 111', parseInt('0111', 10) === 111],
+      ['7392 expansion', 7 * 1000 + 3 * 100 + 9 * 10 + 2 * 1 === 7392],
+      ['(11010.11)2 === 26.75', MATH.ch1_11010_11.total === 26.75],
+      ['(110101)2 === 53', MATH.ch1_110101.total === 53],
+      ['(1101)2 === 13', MATH.ch1_1101.total === 13],
+      ['Alıştırma 1.1 === 21', MATH.ch1_exam_poly === 21],
+      ['45+39 bin === 1010100', MATH.ch2_add.result === '1010100'],
+      ['1010100 === 84', parseInt(MATH.ch2_add.result, 2) === 84],
+      ['45+39 col0', MATH.ch2_add.cols[0].outDigit === '0' && MATH.ch2_add.cols[0].carryOut === 1],
+      ['45+39 col1', MATH.ch2_add.cols[1].outDigit === '0' && MATH.ch2_add.cols[1].carryOut === 1],
+      ['45+39 col2', MATH.ch2_add.cols[2].outDigit === '1' && MATH.ch2_add.cols[2].carryOut === 1],
+      ['45+39 col3', MATH.ch2_add.cols[3].outDigit === '0' && MATH.ch2_add.cols[3].carryOut === 1],
+      ['45+39 col4', MATH.ch2_add.cols[4].outDigit === '1' && MATH.ch2_add.cols[4].carryOut === 0],
+      ['45+39 col5', MATH.ch2_add.cols[5].outDigit === '0' && MATH.ch2_add.cols[5].carryOut === 1],
+      ['45-39 bin === 000110', MATH.ch2_sub.result === '000110'],
+      ['000110 === 6', parseInt(MATH.ch2_sub.result, 2) === 6],
+      ['1011 * 101 === 110111', MATH.ch2_mul === '110111' && parseInt(MATH.ch2_mul, 2) === 55],
+      ['1+1+1 === 11', MATH.ch2_try === '11'],
+      ['41 -> bin === 101001', MATH.ch3_41.result === '101001'],
+      ['41 ladder rows === 6', MATH.ch3_41.rows.length === 6 && MATH.ch3_41.rows.map(r => r.rem).join('') === '100101'],
+      ['41 check', 32 + 8 + 1 === 41],
+      ['153 -> oct === 231', MATH.ch3_153.result === '231' && 2 * 64 + 3 * 8 + 1 === 153],
+      ['13 -> bin === 1101', MATH.ch3_13.result === '1101'],
+      ['0.6875 -> bin === 1011', MATH.ch4_06875.digits === '1011' && MATH.ch4_06875.terminated === true],
+      ['0.6875 check', 0.5 + 0.125 + 0.0625 === 0.6875],
+      ['41.6875 combined', MATH.ch3_41.result + ',' + MATH.ch4_06875.digits === '101001,1011'],
+      ['0.1 -> bin infinite', MATH.ch4_01.digits === '000110011' && MATH.ch4_01.terminated === false],
+      ['117 -> oct === 165', MATH.ch4_117.result === '165'],
+      ['0.23 -> oct 4d === 1656', MATH.ch4_023.digits === '1656'],
+      ['(1101.101)2 === 13.625', MATH.ch4_1101_101.total === 13.625],
+      ['nineComp(2389) === 7610', nineComp('2389') === '7610'],
+      ['tenComp(2389) === 7611', tenComp('2389') === '7611'],
+      ['onesComp(101100) === 010011', onesComp('101100') === '010011'],
+      ['twosComp(101100) === 010100', twosComp('101100') === '010100'],
+      ['compSub 72532-3250', complementSubtract('72532', '03250', 10, 'r').result === '69282'],
+      ['compSub bin 84-67', complementSubtract('1010100', '1000011', 2, 'r').result === '0010001']
+    ];
+    let passed = 0;
+    const failed = [];
+    checks.forEach(([name, ok]) => {
+      if (ok) passed++;
+      else failed.push(name);
+    });
+    if (failed.length === 0) {
+      console.log(`selfTest: ${passed}/${checks.length} OK`);
+    } else {
+      console.error(`selfTest FAILED (${passed}/${checks.length}):`, failed);
+      const warn = document.createElement('div');
+      warn.className = 'selftest-err';
+      warn.textContent = `selfTest HATA: ${failed.join(', ')}`;
+      document.body.appendChild(warn);
+    }
+  }
+
+  // ==========================================================
+  // Easing & Deterministic Helpers
+  // ==========================================================
+  const ease = {
+    outCubic: (p) => 1 - Math.pow(1 - clamp01(p), 3),
+    inOutCubic: (p) => {
+      const t = clamp01(p);
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    },
+    outBack: (p) => {
+      const t = clamp01(p);
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    },
+    outExpo: (p) => {
+      const t = clamp01(p);
+      return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    }
+  };
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function fmtTr(num) { return String(num).replace('.', ','); }
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Deterministic paper texture
+  const paperCanvas = document.createElement('canvas');
+  paperCanvas.width = W;
+  paperCanvas.height = H;
+  (function buildPaperTexture() {
+    const pctx = paperCanvas.getContext('2d');
+    pctx.fillStyle = PALETTE.bg;
+    pctx.fillRect(0, 0, W, H);
+    const rng = mulberry32(20260416);
+    for (let i = 0; i < 3400; i++) {
+      const x = rng() * W;
+      const y = rng() * H;
+      const r = 0.4 + rng() * 1.1;
+      const a = 0.013 + rng() * 0.02;
+      pctx.fillStyle = rng() > 0.5 ? `rgba(36, 55, 45, ${a})` : `rgba(255, 255, 255, ${a * 1.4})`;
+      pctx.beginPath();
+      pctx.arc(x, y, r, 0, Math.PI * 2);
+      pctx.fill();
+    }
+  })();
+
+  // Hand-drawn Sketch Helpers (boil ONLY on lines, never on text)
+  function getBoilOffset(seed, t, amp = 1.0) {
+    if (reducedMotion) return [0, 0];
+    const boilFrame = Math.floor(t * 7);
+    const rng = mulberry32((seed * 73856093) ^ (boilFrame * 19349663));
+    return [(rng() - 0.5) * 2 * amp, (rng() - 0.5) * 2 * amp];
+  }
+
+  function subdividePolyline(points, segLen = 14) {
+    if (points.length < 2) return points.slice();
+    const out = [points[0]];
+    for (let i = 0; i < points.length - 1; i++) {
+      const [x1, y1] = points[i];
+      const [x2, y2] = points[i + 1];
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      const steps = Math.max(1, Math.round(dist / segLen));
+      for (let s = 1; s <= steps; s++) {
+        out.push([lerp(x1, x2, s / steps), lerp(y1, y2, s / steps)]);
+      }
+    }
+    return out;
+  }
+
+  function slicePolylineByProgress(pts, progress) {
+    const p = clamp01(progress);
+    if (p <= 0 || pts.length === 0) return [];
+    if (p >= 1) return pts;
+    const lengths = [0];
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) {
+      total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      lengths.push(total);
+    }
+    if (total === 0) return [pts[0]];
+    const target = total * p;
+    const res = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      if (lengths[i] <= target) res.push(pts[i]);
+      else {
+        const prev = lengths[i - 1];
+        const seg = lengths[i] - prev;
+        const local = seg > 0 ? (target - prev) / seg : 0;
+        res.push([lerp(pts[i - 1][0], pts[i][0], local), lerp(pts[i - 1][1], pts[i][1], local)]);
+        break;
+      }
+    }
+    return res;
+  }
+
+  function drawSketchLine(ctx, points, opts = {}) {
+    const { seed = 1, t = 0, progress = 1, width = 3, color = PALETTE.ink, amp = 0.9, dash = null, dotTip = false, segLen = 14 } = opts;
+    if (points.length < 2 || progress <= 0.001) return null;
+    const sub = subdividePolyline(points, segLen);
+    const sliced = slicePolylineByProgress(sub, progress);
+    if (sliced.length < 2) return sliced[0] || null;
+    const jittered = sliced.map((pt, idx) => {
+      const fade = (idx === 0 || idx === sliced.length - 1) ? 0.35 : 1;
+      const [ox, oy] = getBoilOffset(seed + idx * 17, t, amp * fade);
+      return [pt[0] + ox, pt[1] + oy];
+    });
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (dash) ctx.setLineDash(dash);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(jittered[0][0], jittered[0][1]);
+    for (let i = 1; i < jittered.length; i++) ctx.lineTo(jittered[i][0], jittered[i][1]);
+    ctx.stroke();
+    if (!dash) {
+      ctx.globalAlpha *= 0.32;
+      ctx.lineWidth = Math.max(1, width * 0.55);
+      ctx.beginPath();
+      for (let i = 0; i < jittered.length; i++) {
+        const [ox2, oy2] = getBoilOffset(seed + 900 + i * 13, t, amp * 0.5);
+        if (i === 0) ctx.moveTo(jittered[i][0] + ox2, jittered[i][1] + oy2);
+        else ctx.lineTo(jittered[i][0] + ox2, jittered[i][1] + oy2);
+      }
+      ctx.stroke();
+    }
+    const tip = jittered[jittered.length - 1];
+    if (dotTip && progress > 0.02 && progress < 0.995) {
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(tip[0], tip[1], Math.max(3, width * 0.85), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return tip;
+  }
+
+  function drawSketchRect(ctx, x, y, w, h, opts = {}) {
+    return drawSketchLine(ctx, [[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]], opts);
+  }
+
+  function drawSketchEllipse(ctx, cx, cy, rx, ry, opts = {}) {
+    const { seed = 42, t = 0, progress = 1, width = 4, color = PALETTE.terracotta, turns = 1.12, amp = 1.1, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const steps = 40;
+    const pts = [];
+    const startAngle = -Math.PI * 0.65;
+    for (let i = 0; i <= steps; i++) {
+      const a = startAngle + (i / steps) * Math.PI * 2 * turns;
+      const spiral = 1 + (i / steps - 0.5) * 0.035;
+      pts.push([cx + Math.cos(a) * rx * spiral, cy + Math.sin(a) * ry * spiral]);
+    }
+    drawSketchLine(ctx, pts, { seed, t, progress, width, color, amp, dotTip, segLen: 20 });
+  }
+
+  function drawSketchArrow(ctx, x1, y1, x2, y2, curve = -24, opts = {}) {
+    const { seed = 77, t = 0, progress = 1, width = 3.2, color = PALETTE.terracotta, amp = 0.85, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+    const cpx = mx + nx * curve;
+    const cpy = my + ny * curve;
+    const pts = [];
+    for (let i = 0; i <= 18; i++) {
+      const u = i / 18;
+      pts.push([
+        (1 - u) * (1 - u) * x1 + 2 * (1 - u) * u * cpx + u * u * x2,
+        (1 - u) * (1 - u) * y1 + 2 * (1 - u) * u * cpy + u * u * y2
+      ]);
+    }
+    const lineProg = clamp01(progress / 0.85);
+    drawSketchLine(ctx, pts, { seed, t, progress: lineProg, width, color, amp, dotTip: dotTip && progress < 0.85, segLen: 16 });
+    if (progress > 0.78) {
+      const headProg = clamp01((progress - 0.78) / 0.22);
+      const angle = Math.atan2(y2 - cpy, x2 - cpx);
+      const headLen = 13 * ease.outCubic(headProg);
+      const wing1 = [x2 - Math.cos(angle - 0.48) * headLen, y2 - Math.sin(angle - 0.48) * headLen];
+      const wing2 = [x2 - Math.cos(angle + 0.48) * headLen, y2 - Math.sin(angle + 0.48) * headLen];
+      drawSketchLine(ctx, [wing1, [x2, y2], wing2], { seed: seed + 300, t, progress: 1, width, color, amp: amp * 0.65, dotTip: false });
+    }
+  }
+
+  function drawSketchWaveUnderline(ctx, x, y, w, opts = {}) {
+    const { seed = 31, t = 0, progress = 1, width = 3, color = PALETTE.terracotta } = opts;
+    if (progress <= 0.001 || w <= 2) return;
+    const pts = [];
+    const steps = Math.max(8, Math.round(w / 10));
+    for (let i = 0; i <= steps; i++) pts.push([x + (i / steps) * w, y + Math.sin(i * 1.45) * 2.4]);
+    drawSketchLine(ctx, pts, { seed, t, progress, width, color, amp: 0.65, dotTip: false, segLen: 12 });
+  }
+
+  function drawHighlighterStrip(ctx, x, y, w, h, progress, color = 'rgba(227, 201, 160, 0.72)') {
+    const p = ease.outCubic(clamp01(progress));
+    if (p <= 0.01) return;
+    ctx.save();
+    ctx.fillStyle = color;
+    roundRectPath(ctx, x - 4, y, (w + 8) * p, h, 7);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHandwrittenNote(ctx, text, x, y, progress, opts = {}) {
+    const { color = PALETTE.terracotta, size = 28, align = 'left' } = opts;
+    const p = clamp01(progress);
+    if (p <= 0.01) return;
+    const chars = Math.max(1, Math.round(text.length * p));
+    ctx.save();
+    ctx.font = `700 ${size}px 'Caveat', cursive`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text.slice(0, chars), x, y);
+    ctx.restore();
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawCard(ctx, x, y, w, h, opts = {}) {
+    const { fill = PALETTE.card, radius = 22, shadow = true, stroke = 'rgba(36, 55, 45, 0.09)' } = opts;
+    ctx.save();
+    if (shadow) {
+      ctx.shadowColor = 'rgba(36, 55, 45, 0.07)';
+      ctx.shadowBlur = 22;
+      ctx.shadowOffsetY = 7;
+    }
+    ctx.fillStyle = fill;
+    roundRectPath(ctx, x, y, w, h, radius);
+    ctx.fill();
+    if (stroke) {
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawTextFit(ctx, text, x, y, maxW, opts = {}) {
+    const {
+      family = "'Inter', sans-serif",
+      weight = 600,
+      size = 24,
+      minSize = 13,
+      color = PALETTE.ink,
+      align = 'left',
+      baseline = 'middle',
+      italic = false
+    } = opts;
+    ctx.save();
+    let s = size;
+    while (s > minSize) {
+      ctx.font = `${italic ? 'italic ' : ''}${weight} ${s}px ${family}`;
+      if (ctx.measureText(text).width <= maxW) break;
+      s -= 1;
+    }
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+    return s;
+  }
+
+  function drawWrappedText(ctx, text, x, y, maxW, lineH, opts = {}) {
+    const { family = "'Inter', sans-serif", weight = 600, size = 18, color = PALETTE.ink, align = 'left' } = opts;
+    ctx.save();
+    ctx.font = `${weight} ${size}px ${family}`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    const words = text.split(' ');
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW && cur) {
+        lines.push(cur);
+        cur = w;
+      } else cur = test;
+    }
+    if (cur) lines.push(cur);
+    const startY = y - ((lines.length - 1) * lineH) / 2;
+    lines.forEach((ln, i) => ctx.fillText(ln, x, startY + i * lineH));
+    ctx.restore();
+    return lines.length;
+  }
+
+  function drawFocusZink(ctx, cx, cy, rx, ry, localSinceStart, t, opts = {}) {
+    if (localSinceStart < 0) return;
+    const drawDur = 0.35;
+    const drawP = ease.outCubic(clamp01(localSinceStart / drawDur));
+    let scale = 1;
+    if (localSinceStart > drawDur) {
+      const popT = clamp01((localSinceStart - drawDur) / 0.22);
+      scale = 1 + 0.07 * Math.sin(popT * Math.PI) * (1 - popT * 0.25);
+    }
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    drawSketchEllipse(ctx, 0, 0, rx, ry, {
+      seed: opts.seed || 111, t, progress: drawP, width: opts.width || 4,
+      color: opts.color || PALETTE.terracotta, turns: 1.12, dotTip: drawP < 0.99
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // Persistent UI Helpers: Rule Card (Top-Right / Center) & "az önce"
+  // ==========================================================
+  function drawRuleCard(ctx, cfg) {
+    const {
+      ruleText = '',
+      highlightWord = '',
+      mode = 'corner', // 'center' | 'corner'
+      t = 0,
+      lt = 1,
+      highlightProg = 1
+    } = cfg;
+
+    if (mode === 'center') {
+      const pop = ease.outBack(clamp01(lt / 0.42));
+      ctx.save();
+      ctx.translate(W / 2, 290);
+      ctx.scale(lerp(0.92, 1, pop), lerp(0.92, 1, pop));
+      drawCard(ctx, -460, -110, 920, 220, { fill: '#FFFDF8', radius: 22, stroke: PALETTE.sand });
+
+      // Sand header pill
+      ctx.fillStyle = PALETTE.sand;
+      roundRectPath(ctx, -110, -82, 220, 32, 999);
+      ctx.fill();
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('KURAL KARTI', 0, -66);
+
+      drawWrappedText(ctx, ruleText, 0, 14, 820, 42, {
+        family: "'Inter', sans-serif", weight: 700, size: 30, align: 'center'
+      });
+      ctx.restore();
+      return;
+    }
+
+    // Compact fixed top-right corner card
+    const rx = 772, ry = 52, rw = 464, rh = 86;
+    drawCard(ctx, rx, ry, rw, rh, { fill: '#FFFDF8', radius: 16, stroke: PALETTE.sand, shadow: true });
+
+    ctx.fillStyle = PALETTE.sand;
+    roundRectPath(ctx, rx + 14, ry + 11, 78, 22, 999);
+    ctx.fill();
+    ctx.font = `700 11px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('KURAL', rx + 53, ry + 22);
+
+    // Draw wrapped lines with optional phosphor highlight on highlightWord
+    ctx.save();
+    let fSize = 15;
+    ctx.font = `600 ${fSize}px 'Inter', sans-serif`;
+    const maxW = rw - 32;
+    const words = ruleText.split(' ');
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) lines.push(cur);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const startY = lines.length === 1 ? ry + 58 : ry + 48;
+    lines.slice(0, 2).forEach((ln, idx) => {
+      const ly = startY + idx * 21;
+      const lx = rx + 16;
+      if (highlightWord) {
+        const pos = ln.toLowerCase().indexOf(highlightWord.toLowerCase());
+        if (pos >= 0) {
+          const preW = ctx.measureText(ln.slice(0, pos)).width;
+          const tokW = ctx.measureText(ln.slice(pos, pos + highlightWord.length)).width;
+          drawHighlighterStrip(ctx, lx + preW, ly - 10, tokW, 20, highlightProg, 'rgba(227, 201, 160, 0.85)');
+        }
+      }
+      ctx.fillStyle = PALETTE.ink;
+      ctx.fillText(ln, lx, ly);
+    });
+    ctx.restore();
+  }
+
+  function drawPrevBadge(ctx, text) {
+    if (!text) return;
+    ctx.save();
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    const label = `az önce: ${text}`;
+    const w = Math.min(460, ctx.measureText(label).width + 26);
+    drawCard(ctx, 44, 54, w, 34, { fill: 'rgba(255,255,255,0.85)', radius: 10, shadow: false, stroke: 'rgba(36,55,45,0.14)' });
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 57, 71);
+    ctx.restore();
+  }
+
+  function drawSlidePhotoBadge(ctx, x, y, lt) {
+    const label = '⭐ derste fotoğraflanan slayt';
+    const p = ease.outBack(clamp01(lt / 0.35));
+    ctx.save();
+    ctx.font = `700 13px 'JetBrains Mono', monospace`;
+    const bw = ctx.measureText(label).width + 32;
+    ctx.translate(x + bw / 2, y);
+    ctx.scale(p, p);
+    ctx.fillStyle = 'rgba(227, 201, 160, 0.45)';
+    roundRectPath(ctx, -bw / 2, -16, bw, 32, 999);
+    ctx.fill();
+    ctx.strokeStyle = PALETTE.terracotta;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#7A3E22';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  }
+
+  function drawColorLegend(ctx, items, x, y) {
+    // items: [{ color, label }]
+    ctx.save();
+    let cx = x;
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    items.forEach((it) => {
+      ctx.fillStyle = it.color;
+      roundRectPath(ctx, cx, y - 8, 16, 16, 5);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(36, 55, 45, 0.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = PALETTE.ink;
+      ctx.fillText(it.label, cx + 22, y);
+      cx += 22 + ctx.measureText(it.label).width + 20;
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // Bit Boxes (>= 52px), Division Ladder (>= 40px digits), Column Math
+  // ==========================================================
+  function drawBitBoxes(ctx, cfg) {
+    const {
+      bits = [],
+      cx = W / 2,
+      y = 200,
+      boxW = 64,
+      boxH = 72,
+      gap = 12,
+      dotAfterIdx = -1,
+      topLabels = null,
+      bottomLabels = null,
+      fills = null,
+      textColors = null,
+      flipScalesY = null, // optional per-box vertical flip scale (1 -> 0 -> 1)
+      subscript = '',
+      stagger = 10,
+      staggerStep = 0.06,
+      seed = 40,
+      t = 0
+    } = cfg;
+
+    const n = bits.length;
+    const dotSpace = dotAfterIdx >= 0 ? 22 : 0;
+    const totalW = n * boxW + Math.max(0, n - 1) * gap + dotSpace;
+    let curX = cx - totalW / 2;
+    const boxes = [];
+
+    for (let i = 0; i < n; i++) {
+      const localAge = stagger - i * staggerStep;
+      const pop = ease.outBack(clamp01(localAge / 0.24));
+      const bx = curX;
+      const by = y;
+      const fill = Array.isArray(fills) ? fills[i] : (typeof fills === 'function' ? fills(bits[i], i) : PALETTE.softFill);
+      const tc = Array.isArray(textColors) ? textColors[i] : (typeof textColors === 'function' ? textColors(bits[i], i) : PALETTE.ink);
+      const fy = flipScalesY ? flipScalesY[i] : 1;
+
+      ctx.save();
+      ctx.translate(bx + boxW / 2, by + boxH / 2);
+      ctx.scale(pop, pop * fy);
+      ctx.fillStyle = fill;
+      roundRectPath(ctx, -boxW / 2, -boxH / 2, boxW, boxH, 14);
+      ctx.fill();
+      ctx.restore();
+
+      if (pop > 0.25 && Math.abs(fy) > 0.2) {
+        drawSketchRect(ctx, bx, by + (boxH * (1 - Math.abs(fy))) / 2, boxW, boxH * Math.abs(fy), {
+          seed: seed + i * 17, t, progress: 1, width: 2.2, color: 'rgba(36, 55, 45, 0.45)', amp: 0.6, segLen: 20
+        });
+      }
+
+      if (pop > 0.15) {
+        ctx.save();
+        ctx.globalAlpha *= clamp01(pop);
+        ctx.font = `700 ${Math.round(boxH * 0.48)}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = tc;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(bits[i]), bx + boxW / 2, by + boxH / 2 + 1);
+
+        if (topLabels && topLabels[i] !== undefined && topLabels[i] !== '') {
+          ctx.font = `600 16px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = PALETTE.muted;
+          ctx.fillText(String(topLabels[i]), bx + boxW / 2, by - 20);
+        }
+        if (bottomLabels && bottomLabels[i] !== undefined && bottomLabels[i] !== '') {
+          ctx.font = `700 18px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = tc === PALETTE.muted ? PALETTE.muted : PALETTE.ink;
+          ctx.fillText(String(bottomLabels[i]), bx + boxW / 2, by + boxH + 24);
+        }
+        ctx.restore();
+      }
+
+      boxes.push({ x: bx, y: by, w: boxW, h: boxH, cx: bx + boxW / 2, cy: by + boxH / 2 });
+      curX += boxW + gap;
+
+      if (i === dotAfterIdx) {
+        ctx.save();
+        ctx.fillStyle = PALETTE.ink;
+        ctx.font = `700 42px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(',', curX + 4, by + boxH - 14);
+        ctx.restore();
+        curX += dotSpace;
+      }
+    }
+
+    let subAnchor = null;
+    if (subscript) {
+      const sx = curX - gap + 12;
+      const sy = y + boxH - 6;
+      ctx.save();
+      ctx.font = `700 24px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.terracotta;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(subscript, sx, sy);
+      ctx.restore();
+      subAnchor = { cx: sx + 10, cy: sy, rx: 24, ry: 22 };
+    }
+
+    return { boxes, subAnchor, leftX: cx - totalW / 2, rightX: curX - gap };
+  }
+
+  function drawDivisionLadderRows(ctx, cfg) {
+    const {
+      x, y, w, h,
+      title = 'BÖLME MERDİVENİ',
+      rows = [],
+      visibleCount = 0, // integer number of rows visible
+      newestProgress = 1, // 0..1 entrance for the newest row
+      arrowProgress = 0,
+      t = 0
+    } = cfg;
+    drawCard(ctx, x, y, w, h, { radius: 22 });
+    ctx.font = `700 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(title, x + 26, y + 24);
+
+    // Legend inside ladder top-right
+    drawColorLegend(ctx, [{ color: PALETTE.lavender, label: 'kalan' }], x + w - 115, y + 24);
+
+    const maxRows = Math.max(rows.length, 6);
+    const rowH = Math.min(54, (h - 84) / maxRows);
+    const startY = y + 72;
+    const eqX = x + 242;
+    const remX = x + w - 134;
+
+    const remCenters = [];
+    for (let i = 0; i < Math.min(visibleCount, rows.length); i++) {
+      const r = rows[i];
+      const rp = i === visibleCount - 1 ? ease.outCubic(clamp01(newestProgress)) : 1;
+      const ry = startY + i * rowH;
+
+      ctx.save();
+      ctx.globalAlpha = rp;
+      // Merdiven rakamları >= 40 px!
+      ctx.font = `700 40px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${r.dividend} ÷ ${r.divisor}`, eqX - 14, ry);
+
+      ctx.textAlign = 'left';
+      ctx.fillText(`= ${r.quotient}`, eqX - 4, ry);
+
+      // Kalan kutusu = lavanta!
+      ctx.fillStyle = 'rgba(182, 162, 219, 0.36)';
+      roundRectPath(ctx, remX - 28, ry - 22, 56, 44, 12);
+      ctx.fill();
+      ctx.strokeStyle = PALETTE.lavender;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = `700 40px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#4B3770';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(r.remChar), remX, ry + 1);
+      ctx.restore();
+
+      remCenters.push({ x: remX, y: ry });
+    }
+
+    const arrowX = x + w - 50;
+    const topY = startY - 12;
+    const botY = startY + (rows.length - 1) * rowH + 12;
+    if (arrowProgress > 0.02 && rows.length > 0) {
+      drawSketchArrow(ctx, arrowX, botY, arrowX, topY, -14, {
+        seed: 811, t, progress: arrowProgress, width: 4, color: PALETTE.terracotta
+      });
+      drawHandwrittenNote(ctx, 'aşağıdan yukarı ↑', x + 28, y + h - 22, arrowProgress, {
+        color: PALETTE.terracotta, size: 25, align: 'left'
+      });
+    }
+    return { remCenters, arrowAnchor: { cx: arrowX, cy: (topY + botY) / 2, rx: 32, ry: (botY - topY) / 2 + 16 } };
+  }
+
+  function drawMultStepsRows(ctx, cfg) {
+    const {
+      x, y, w, h,
+      title = 'KESİR ÇARPIMI',
+      rows = [],
+      visibleCount = 0,
+      newestProgress = 1,
+      arrowProgress = 0,
+      t = 0
+    } = cfg;
+    drawCard(ctx, x, y, w, h, { radius: 22 });
+    ctx.font = `700 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(title, x + 26, y + 24);
+
+    drawColorLegend(ctx, [{ color: PALETTE.sage, label: 'tam kısım' }], x + w - 150, y + 24);
+
+    const rowH = Math.min(68, (h - 90) / Math.max(1, rows.length));
+    const startY = y + 78;
+    const tamX = x + w - 210;
+
+    for (let i = 0; i < Math.min(visibleCount, rows.length); i++) {
+      const r = rows[i];
+      const rp = i === visibleCount - 1 ? ease.outCubic(clamp01(newestProgress)) : 1;
+      const ry = startY + i * rowH;
+
+      ctx.save();
+      ctx.globalAlpha = rp;
+      ctx.font = `700 28px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${fmtTr(r.inVal)} × ${r.factor} =`, x + 26, ry);
+
+      ctx.fillStyle = 'rgba(156, 194, 154, 0.42)';
+      roundRectPath(ctx, tamX - 24, ry - 22, 48, 44, 12);
+      ctx.fill();
+      ctx.strokeStyle = PALETTE.sage;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = `700 32px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.green;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(r.digitChar), tamX, ry + 1);
+
+      ctx.font = `600 26px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'left';
+      ctx.fillText(`+ ${fmtTr(r.fracPart)}`, tamX + 34, ry);
+      ctx.restore();
+    }
+
+    const arrowX = x + w - 48;
+    const topY = startY - 12;
+    const botY = startY + (rows.length - 1) * rowH + 12;
+    if (arrowProgress > 0.02 && rows.length > 0) {
+      drawSketchArrow(ctx, arrowX, topY, arrowX, botY, 14, {
+        seed: 844, t, progress: arrowProgress, width: 4, color: PALETTE.green
+      });
+      drawHandwrittenNote(ctx, 'yukarıdan aşağı ↓', x + 28, y + h - 22, arrowProgress, {
+        color: PALETTE.green, size: 25, align: 'left'
+      });
+    }
+    return { arrowAnchor: { cx: arrowX, cy: (topY + botY) / 2, rx: 32, ry: (botY - topY) / 2 + 16 } };
+  }
+
+  // ==========================================================
+  // Shared Intro / Outro / Hook / Countdown / 5-Option Exam
+  // ==========================================================
+  function drawIntroCard(ctx, chMeta, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.45));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 20);
+    ctx.scale(lerp(0.92, 1, p), lerp(0.92, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.25);
+
+    drawCard(ctx, -400, -145, 800, 290, { radius: 22 });
+
+    ctx.fillStyle = chMeta.accent;
+    roundRectPath(ctx, -78, -96, 156, 32, 999);
+    ctx.fill();
+    ctx.font = `700 13px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num}`, 0, -80);
+
+    drawTextFit(ctx, chMeta.title, 0, -6, 720, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 54, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[-140, 46], [140, 46]], {
+      seed: 10 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.65)), width: 3.5, color: chMeta.accent
+    });
+
+    ctx.font = `500 15px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'center';
+    ctx.fillText('Mantıksal Tasarım • Bölüm 1 • Kısım 1/2', 0, 88);
+    ctx.restore();
+  }
+
+  function drawOutroCard(ctx, chMeta, lt, t) {
+    const p = ease.outCubic(clamp01(lt / 0.35));
+    ctx.save();
+    ctx.globalAlpha = p;
+    drawCard(ctx, W / 2 - 410, H / 2 - 145, 820, 290, { radius: 22 });
+
+    ctx.font = `600 14px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num} TAMAMLANDI`, W / 2, H / 2 - 72);
+
+    drawTextFit(ctx, `Sıradaki: ${chMeta.nextTitle}`, W / 2, H / 2 - 8, 750, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 40, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[W / 2 - 120, H / 2 + 44], [W / 2 + 120, H / 2 + 44]], {
+      seed: 90 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.6)), width: 3, color: PALETTE.sage
+    });
+    ctx.restore();
+  }
+
+  function drawHookQuestion(ctx, question, badge, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.42));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 34);
+    ctx.scale(lerp(0.9, 1, p), lerp(0.9, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.2);
+
+    ctx.fillStyle = 'rgba(227, 201, 160, 0.5)';
+    roundRectPath(ctx, -175, -124, 350, 32, 999);
+    ctx.fill();
+    ctx.font = `700 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badge, 0, -108);
+
+    ctx.font = `italic 400 52px 'Instrument Serif', serif`;
+    ctx.fillStyle = PALETTE.ink;
+    const words = question.split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+      const test = cur ? `${cur} ${w}` : w;
+      if (ctx.measureText(test).width > 960) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+    lines.forEach((ln, i) => ctx.fillText(ln, 0, -14 + (i - (lines.length - 1) / 2) * 64));
+
+    const lineY = lines.length * 36 + 24;
+    drawSketchWaveUnderline(ctx, -160, lineY, 320, {
+      seed: 333, t, progress: ease.inOutCubic(clamp01((lt - 0.18) / 0.55)), color: PALETTE.terracotta, width: 3.5
+    });
+    ctx.restore();
+  }
+
+  function drawCountdownRing(ctx, cx, cy, progress, totalSec = 5) {
+    const rem = Math.ceil((1 - clamp01(progress)) * totalSec);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(36, 55, 45, 0.14)';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = PALETTE.terracotta;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - clamp01(progress)));
+    ctx.stroke();
+
+    ctx.font = `700 28px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(Math.max(1, rem)), cx, cy + 1);
+    ctx.restore();
+  }
+
+  // 5-Option Multiple Choice Exam Layout (A, B, C top row; D, E bottom row)
+  function drawExam5Layout(ctx, cfg) {
+    const {
+      question = '',
+      options = [], // 5 items: [{ key:'A', text:'...', note:'...' }]
+      correctKey = 'B',
+      mode = 'q',   // 'q' | 'wait' | 'a' | 'traps'
+      p = 0,
+      lt = 0,
+      t = 0
+    } = cfg;
+
+    drawCard(ctx, 64, 70, 1152, 108, { radius: 22 });
+    ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+    roundRectPath(ctx, 90, 86, 122, 26, 999);
+    ctx.fill();
+    ctx.font = `700 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#8E4B2D';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SINAV ANI', 151, 99);
+
+    drawTextFit(ctx, question, 90, 144, 920, {
+      family: "'Inter', sans-serif", weight: 700, size: 24, align: 'left'
+    });
+
+    if (mode === 'wait') {
+      drawCountdownRing(ctx, 1146, 124, p, 4);
+    } else if (mode === 'a' || mode === 'traps') {
+      const pop = mode === 'a' ? ease.outBack(clamp01(lt / 0.35)) : 1;
+      ctx.save();
+      ctx.translate(1118, 124);
+      ctx.scale(pop, pop);
+      ctx.fillStyle = 'rgba(46, 125, 79, 0.14)';
+      roundRectPath(ctx, -64, -24, 128, 48, 14);
+      ctx.fill();
+      ctx.strokeStyle = PALETTE.green;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = `700 18px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.green;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`CEVAP ${correctKey}`, 0, 0);
+      ctx.restore();
+    }
+
+    const showResult = mode === 'a' || mode === 'traps';
+    const showTraps = mode === 'traps';
+
+    let correctRect = null;
+    options.forEach((opt, idx) => {
+      let ox, oy, ow, oh;
+      if (idx < 3) {
+        ow = 368; oh = 178;
+        ox = 64 + idx * (368 + 24);
+        oy = 194;
+      } else {
+        ow = 480; oh = 178;
+        ox = 144 + (idx - 3) * (480 + 32);
+        oy = 392;
+      }
+
+      const isCorrect = opt.key === correctKey;
+      const cardAlpha = showResult && !isCorrect ? (showTraps ? 0.92 : 0.62) : 1;
+      const stroke = showResult && isCorrect ? PALETTE.green : (showTraps ? 'rgba(197,90,75,0.45)' : 'rgba(36, 55, 45, 0.1)');
+
+      ctx.save();
+      ctx.globalAlpha = cardAlpha;
+      drawCard(ctx, ox, oy, ow, oh, { radius: 20, stroke });
+
+      ctx.fillStyle = showResult && isCorrect ? PALETTE.green : (showResult ? PALETTE.error : PALETTE.ink);
+      roundRectPath(ctx, ox + 20, oy + 20, 42, 42, 12);
+      ctx.fill();
+      ctx.font = `700 20px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(opt.key, ox + 41, oy + 41);
+
+      drawTextFit(ctx, opt.text, ox + 76, oy + 41, ow - 96, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 28, minSize: 16, align: 'left'
+      });
+
+      if ((showResult && isCorrect) || (showTraps && !isCorrect)) {
+        drawWrappedText(ctx, opt.note, ox + 22, oy + 122, ow - 44, 22, {
+          family: "'Inter', sans-serif",
+          weight: 600,
+          size: 16,
+          color: isCorrect ? PALETTE.green : PALETTE.error,
+          align: 'left'
+        });
+      }
+      ctx.restore();
+
+      if (isCorrect) correctRect = { cx: ox + ow / 2, cy: oy + oh / 2, rx: ow / 2 + 8, ry: oh / 2 + 8 };
+    });
+
+    if (mode === 'a' && correctRect) {
+      drawFocusZink(ctx, correctRect.cx, correctRect.cy, correctRect.rx, correctRect.ry, lt, t, {
+        color: PALETTE.green, width: 4.5
+      });
+    }
+  }
+
+  // ==========================================================
+  // Timeline & Beat Specs (4 Chapters, Step-by-Step)
+  // ==========================================================
+  const BEAT_SPECS = {
+    // Bölüm 1
+    c1b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.55 }] },
+    c1b01: { scene: 'c1_hook', sfx: [{ at: 0.08, type: 'riser', gain: 0.6 }, { at: 0.3, type: 'pop', gain: 0.7 }] },
+    c1b02: { scene: 'c1_0111', sfx: [{ at: 0.18, type: 'pop', gain: 0.7 }, { at: 0.45, type: 'pop', gain: 0.7 }, { at: 0.72, type: 'zink', gain: 0.85 }] },
+    c1b03: { scene: 'c1_sezgi_10', sfx: [{ at: 0.2, type: 'tick', gain: 0.6 }, { at: 0.45, type: 'tick', gain: 0.6 }, { at: 0.7, type: 'pop', gain: 0.7 }] },
+    c1b04: { scene: 'c1_sezgi_2', sfx: [{ at: 0.2, type: 'tick', gain: 0.6 }, { at: 0.45, type: 'tick', gain: 0.6 }, { at: 0.7, type: 'zink', gain: 0.8 }] },
+    c1b05: { scene: 'c1_rule', sfx: [{ at: 0.15, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c1b06: { scene: 'c1_ex_boxes', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.55 }, { at: 0.4, type: 'pop', gain: 0.7 }, { at: 0.65, type: 'pop', gain: 0.7 }] },
+    c1b07: { scene: 'c1_ex_w_int', sfx: [{ at: 0.2, type: 'tick', gain: 0.6 }, { at: 0.45, type: 'tick', gain: 0.6 }, { at: 0.75, type: 'tick', gain: 0.6 }] },
+    c1b08: { scene: 'c1_ex_w_frac', sfx: [{ at: 0.25, type: 'tick', gain: 0.6 }, { at: 0.65, type: 'tick', gain: 0.6 }] },
+    c1b09: { scene: 'c1_ex_dim0', sfx: [{ at: 0.25, type: 'pop', gain: 0.65 }, { at: 0.6, type: 'pop', gain: 0.65 }] },
+    c1b10: { scene: 'c1_ex_sum1', sfx: [{ at: 0.2, type: 'tick', gain: 0.65 }, { at: 0.5, type: 'tick', gain: 0.65 }, { at: 0.78, type: 'tick', gain: 0.65 }] },
+    c1b11: { scene: 'c1_ex_sum2', sfx: [{ at: 0.25, type: 'tick', gain: 0.65 }, { at: 0.65, type: 'ding', gain: 0.85 }] },
+    c1b12: { scene: 'c1_ex_hold', sfx: [] },
+    c1b13: { scene: 'c1_pratik_53', sfx: [{ at: 0.18, type: 'pop', gain: 0.7 }, { at: 0.52, type: 'tick', gain: 0.6 }, { at: 0.8, type: 'ding', gain: 0.85 }] },
+    c1b14: { scene: 'c1_try_q', sfx: [{ at: 0.12, type: 'zink', gain: 0.75 }] },
+    c1b15: { scene: 'c1_try_wait', sfx: [{ at: 0.05, type: 'tick', gain: 0.4 }, { at: 0.25, type: 'tick', gain: 0.4 }, { at: 0.45, type: 'tick', gain: 0.4 }, { at: 0.65, type: 'tick', gain: 0.4 }, { at: 0.85, type: 'tick', gain: 0.4 }] },
+    c1b16: { scene: 'c1_try_a', sfx: [{ at: 0.15, type: 'pop', gain: 0.7 }, { at: 0.6, type: 'ding', gain: 0.95 }] },
+    c1b17: { scene: 'c1_exam_q', sfx: [{ at: 0.12, type: 'zink', gain: 0.75 }] },
+    c1b18: { scene: 'c1_exam_wait', sfx: [{ at: 0.1, type: 'tick', gain: 0.4 }, { at: 0.35, type: 'tick', gain: 0.4 }, { at: 0.6, type: 'tick', gain: 0.4 }, { at: 0.85, type: 'tick', gain: 0.4 }] },
+    c1b19: { scene: 'c1_exam_a', sfx: [{ at: 0.12, type: 'ding', gain: 0.95 }] },
+    c1b20: { scene: 'c1_exam_traps', sfx: [{ at: 0.25, type: 'buzz', gain: 0.6 }, { at: 0.68, type: 'buzz', gain: 0.6 }] },
+    c1b21: { scene: 'outro', sfx: [] },
+
+    // Bölüm 2
+    c2b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.55 }] },
+    c2b01: { scene: 'c2_hook', sfx: [{ at: 0.08, type: 'riser', gain: 0.6 }, { at: 0.3, type: 'pop', gain: 0.7 }] },
+    c2b02: { scene: 'c2_sezgi', sfx: [{ at: 0.2, type: 'pop', gain: 0.7 }, { at: 0.62, type: 'zink', gain: 0.8 }] },
+    c2b03: { scene: 'c2_rule', sfx: [{ at: 0.15, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c2b04: { scene: 'c2_add_setup', sfx: [{ at: 0.15, type: 'whoosh', gain: 0.55 }, { at: 0.55, type: 'pop', gain: 0.7 }] },
+    c2b05: { scene: 'c2_add_c0', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.68, type: 'pop', gain: 0.75 }] },
+    c2b06: { scene: 'c2_add_c1', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.68, type: 'pop', gain: 0.75 }] },
+    c2b07: { scene: 'c2_add_c2', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.68, type: 'pop', gain: 0.75 }] },
+    c2b08: { scene: 'c2_add_c3', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.68, type: 'pop', gain: 0.75 }] },
+    c2b09: { scene: 'c2_add_c4', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.68, type: 'pop', gain: 0.75 }] },
+    c2b10: { scene: 'c2_add_c5', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.72, type: 'zink', gain: 0.8 }] },
+    c2b11: { scene: 'c2_add_check', sfx: [{ at: 0.25, type: 'tick', gain: 0.6 }, { at: 0.72, type: 'ding', gain: 0.9 }] },
+    c2b12: { scene: 'c2_add_hold', sfx: [] },
+    c2b13: { scene: 'c2_sub_sezgi1', sfx: [{ at: 0.2, type: 'pop', gain: 0.7 }, { at: 0.65, type: 'zink', gain: 0.8 }] },
+    c2b14: { scene: 'c2_sub_sezgi2', sfx: [{ at: 0.25, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.7, type: 'pop', gain: 0.7 }] },
+    c2b15: { scene: 'c2_sub_ex', sfx: [{ at: 0.18, type: 'tick', gain: 0.65 }, { at: 0.42, type: 'pop', gain: 0.7 }, { at: 0.65, type: 'pop', gain: 0.7 }, { at: 0.86, type: 'ding', gain: 0.85 }] },
+    c2b16: { scene: 'c2_mul_1', sfx: [{ at: 0.22, type: 'pop', gain: 0.7 }, { at: 0.62, type: 'pop', gain: 0.7 }] },
+    c2b17: { scene: 'c2_mul_2', sfx: [{ at: 0.25, type: 'tick', gain: 0.65 }, { at: 0.75, type: 'ding', gain: 0.85 }] },
+    c2b18: { scene: 'c2_try_q', sfx: [{ at: 0.12, type: 'zink', gain: 0.75 }] },
+    c2b19: { scene: 'c2_try_wait', sfx: [{ at: 0.05, type: 'tick', gain: 0.4 }, { at: 0.25, type: 'tick', gain: 0.4 }, { at: 0.45, type: 'tick', gain: 0.4 }, { at: 0.65, type: 'tick', gain: 0.4 }, { at: 0.85, type: 'tick', gain: 0.4 }] },
+    c2b20: { scene: 'c2_try_a', sfx: [{ at: 0.15, type: 'ding', gain: 0.95 }] },
+    c2b21: { scene: 'outro', sfx: [] },
+
+    // Bölüm 3
+    c3b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.55 }] },
+    c3b01: { scene: 'c3_hook', sfx: [{ at: 0.08, type: 'riser', gain: 0.6 }, { at: 0.3, type: 'pop', gain: 0.7 }] },
+    c3b02: { scene: 'c3_sezgi1', sfx: [{ at: 0.2, type: 'pop', gain: 0.7 }, { at: 0.68, type: 'zink', gain: 0.8 }] },
+    c3b03: { scene: 'c3_sezgi2', sfx: [{ at: 0.25, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.7, type: 'pop', gain: 0.7 }] },
+    c3b04: { scene: 'c3_rule', sfx: [{ at: 0.15, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c3b05: { scene: 'c3_lad1', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c3b06: { scene: 'c3_lad2', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c3b07: { scene: 'c3_lad3', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c3b08: { scene: 'c3_lad4', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c3b09: { scene: 'c3_lad5', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c3b10: { scene: 'c3_lad6', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.72, type: 'zink', gain: 0.8 }] },
+    c3b11: { scene: 'c3_lad_read', sfx: [{ at: 0.15, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.55, type: 'pop', gain: 0.75 }, { at: 0.8, type: 'pop', gain: 0.75 }] },
+    c3b12: { scene: 'c3_lad_check', sfx: [{ at: 0.25, type: 'tick', gain: 0.6 }, { at: 0.72, type: 'ding', gain: 0.9 }] },
+    c3b13: { scene: 'c3_lad_hold', sfx: [] },
+    c3b14: { scene: 'c3_oct_153', sfx: [{ at: 0.18, type: 'tick', gain: 0.65 }, { at: 0.45, type: 'tick', gain: 0.65 }, { at: 0.75, type: 'ding', gain: 0.85 }] },
+    c3b15: { scene: 'c3_try_q', sfx: [{ at: 0.12, type: 'zink', gain: 0.75 }] },
+    c3b16: { scene: 'c3_try_wait', sfx: [{ at: 0.05, type: 'tick', gain: 0.4 }, { at: 0.25, type: 'tick', gain: 0.4 }, { at: 0.45, type: 'tick', gain: 0.4 }, { at: 0.65, type: 'tick', gain: 0.4 }, { at: 0.85, type: 'tick', gain: 0.4 }] },
+    c3b17: { scene: 'c3_try_a', sfx: [{ at: 0.15, type: 'pop', gain: 0.7 }, { at: 0.65, type: 'ding', gain: 0.95 }] },
+    c3b18: { scene: 'c3_exam_q', sfx: [{ at: 0.12, type: 'zink', gain: 0.75 }] },
+    c3b19: { scene: 'c3_exam_wait', sfx: [{ at: 0.1, type: 'tick', gain: 0.4 }, { at: 0.35, type: 'tick', gain: 0.4 }, { at: 0.6, type: 'tick', gain: 0.4 }, { at: 0.85, type: 'tick', gain: 0.4 }] },
+    c3b20: { scene: 'c3_exam_traps', sfx: [{ at: 0.12, type: 'ding', gain: 0.9 }, { at: 0.55, type: 'buzz', gain: 0.6 }] },
+    c3b21: { scene: 'outro', sfx: [] },
+
+    // Bölüm 4
+    c4b00: { scene: 'intro', sfx: [{ at: 0.1, type: 'whoosh', gain: 0.55 }] },
+    c4b01: { scene: 'c4_hook', sfx: [{ at: 0.08, type: 'riser', gain: 0.6 }, { at: 0.3, type: 'pop', gain: 0.7 }] },
+    c4b02: { scene: 'c4_sezgi', sfx: [{ at: 0.2, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.68, type: 'zink', gain: 0.85 }] },
+    c4b03: { scene: 'c4_rule', sfx: [{ at: 0.15, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.6, type: 'zink', gain: 0.85 }] },
+    c4b04: { scene: 'c4_mul1', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c4b05: { scene: 'c4_mul2', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c4b06: { scene: 'c4_mul3', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.7, type: 'pop', gain: 0.75 }] },
+    c4b07: { scene: 'c4_mul4', sfx: [{ at: 0.35, type: 'tick', gain: 0.7 }, { at: 0.72, type: 'zink', gain: 0.8 }] },
+    c4b08: { scene: 'c4_read_check', sfx: [{ at: 0.2, type: 'scribble', gain: 0.6, dur: 0.45 }, { at: 0.72, type: 'ding', gain: 0.9 }] },
+    c4b09: { scene: 'c4_merge', sfx: [{ at: 0.2, type: 'whoosh', gain: 0.65 }, { at: 0.7, type: 'ding', gain: 0.9 }] },
+    c4b10: { scene: 'c4_hold', sfx: [] },
+    c4b11: { scene: 'c4_warn_01', sfx: [{ at: 0.2, type: 'buzz', gain: 0.7 }, { at: 0.68, type: 'zink', gain: 0.8 }] },
+    c4b12: { scene: 'c4_try_q', sfx: [{ at: 0.12, type: 'whoosh', gain: 0.6 }, { at: 0.45, type: 'zink', gain: 0.8 }] },
+    c4b13: { scene: 'c4_try_wait', sfx: [{ at: 0.05, type: 'tick', gain: 0.4 }, { at: 0.25, type: 'tick', gain: 0.4 }, { at: 0.45, type: 'tick', gain: 0.4 }, { at: 0.65, type: 'tick', gain: 0.4 }, { at: 0.85, type: 'tick', gain: 0.4 }] },
+    c4b14: { scene: 'c4_try_a1', sfx: [{ at: 0.18, type: 'tick', gain: 0.65 }, { at: 0.55, type: 'pop', gain: 0.7 }, { at: 0.82, type: 'ding', gain: 0.85 }] },
+    c4b15: { scene: 'c4_try_a2', sfx: [{ at: 0.2, type: 'pop', gain: 0.7 }, { at: 0.78, type: 'ding', gain: 0.9 }] },
+    c4b16: { scene: 'c4_review1', sfx: [{ at: 0.2, type: 'pop', gain: 0.7 }, { at: 0.65, type: 'pop', gain: 0.7 }] },
+    c4b17: { scene: 'c4_review2', sfx: [{ at: 0.2, type: 'pop', gain: 0.7 }, { at: 0.75, type: 'ding', gain: 0.95 }] },
+    c4b18: { scene: 'outro', sfx: [] }
+  };
+
+  let TIMELINE = { beats: [], chapters: [], duration: 0, sfxEvents: [], narrationAudio: null };
+
+  function buildTimeline() {
+    const rawData = JSON.parse(document.getElementById('narration-data').textContent.trim() || '[]');
+    let rawAudio = {};
+    try {
+      rawAudio = JSON.parse(document.getElementById('narration-audio').textContent.trim() || '{}');
+    } catch (e) { rawAudio = {}; }
+
+    const hasAudioOffsets = rawAudio && rawAudio.src && Array.isArray(rawAudio.offsets);
+    let cursor = 0;
+    const beats = [];
+    const sfxEvents = [];
+
+    rawData.forEach((item, idx) => {
+      let dur = Number(item.seconds) || 3.0;
+      let audioSlice = null;
+      if (hasAudioOffsets && rawAudio.offsets[idx]) {
+        const [s, e] = rawAudio.offsets[idx];
+        if (typeof s === 'number' && typeof e === 'number' && e - s > 0.25) {
+          dur = e - s;
+          audioSlice = [s, e];
+        }
+      }
+      const spec = BEAT_SPECS[item.id] || { scene: 'intro', sfx: [] };
+      const beat = {
+        index: idx,
+        id: item.id,
+        chapter: item.chapter,
+        text: item.text || '',
+        start: cursor,
+        end: cursor + dur,
+        duration: dur,
+        scene: spec.scene,
+        audioSlice
+      };
+      beats.push(beat);
+
+      (spec.sfx || []).forEach((ev, sIdx) => {
+        sfxEvents.push({
+          id: `${item.id}_sfx_${sIdx}`,
+          t: cursor + clamp01(ev.at) * dur,
+          type: ev.type,
+          gain: ev.gain ?? 0.75,
+          dur: ev.dur ?? 0.3
+        });
+      });
+
+      cursor += dur;
+    });
+
+    const chapters = CHAPTER_META.map((meta, mIdx) => {
+      const chBeats = beats.filter(b => b.chapter === meta.num);
+      const start = chBeats.length ? chBeats[0].start : 0;
+      const end = chBeats.length ? chBeats[chBeats.length - 1].end : 0;
+      const nextMeta = CHAPTER_META[mIdx + 1] || null;
+      return {
+        ...meta,
+        start,
+        end,
+        duration: end - start,
+        nextTitle: nextMeta ? `Bölüm ${nextMeta.num}: ${nextMeta.title}` : '2. kısım — Sekizli, onaltılı ve tümleyenler'
+      };
+    });
+
+    sfxEvents.sort((a, b) => a.t - b.t);
+    TIMELINE = {
+      beats,
+      chapters,
+      duration: cursor,
+      sfxEvents,
+      narrationAudio: (rawAudio && rawAudio.src) ? rawAudio : null
+    };
+  }
+
+  // ==========================================================
+  // Chapter Scene Renderers (1..4) — Transforming Objects!
+  // ==========================================================
+  function renderChapterScene(ctx, beat, lt, dur, t, chMeta) {
+    const p = clamp01(lt / Math.max(0.01, dur));
+    const s = beat.scene;
+
+    if (s === 'intro') { drawIntroCard(ctx, chMeta, lt, t); return; }
+    if (s === 'outro') { drawOutroCard(ctx, chMeta, lt, t); return; }
+
+    // --------------------------------------------------------
+    // BÖLÜM 1 — Aynı bitler, farklı sayı
+    // --------------------------------------------------------
+    if (s === 'c1_hook') {
+      drawHookQuestion(ctx, '0111 hangi sayı?', 'BÖLÜM 01 • KONUMSAL GÖSTERİM', lt, t);
+      return;
+    }
+
+    if (s === 'c1_0111') {
+      const bitAnc = drawBitBoxes(ctx, {
+        bits: ['0', '1', '1', '1'],
+        cx: W / 2, y: 100, boxW: 78, boxH: 82, gap: 14,
+        fills: (b) => b === '1' ? 'rgba(156, 194, 154, 0.38)' : PALETTE.dimBit,
+        textColors: (b) => b === '1' ? PALETTE.ink : PALETTE.muted,
+        stagger: lt * 2.5, seed: 12, t
+      });
+
+      if (p > 0.12) {
+        const lp = ease.outBack(clamp01((p - 0.12) / 0.22));
+        ctx.save();
+        ctx.globalAlpha = lp;
+        drawCard(ctx, 140, 274, 430, 200, { radius: 22, stroke: PALETTE.ice });
+        drawTextFit(ctx, '(0111)₂ = 7', 355, 344, 380, { family: "'JetBrains Mono', monospace", weight: 700, size: 40, align: 'center' });
+        drawTextFit(ctx, 'ikilik taban → 4 + 2 + 1', 355, 412, 380, { size: 19, color: PALETTE.muted, align: 'center' });
+        ctx.restore();
+      }
+      if (p > 0.36) {
+        const rp = ease.outBack(clamp01((p - 0.36) / 0.22));
+        ctx.save();
+        ctx.globalAlpha = rp;
+        drawCard(ctx, 710, 274, 430, 200, { radius: 22, stroke: PALETTE.terracotta });
+        drawTextFit(ctx, '(0111)₁₀ = 111', 925, 344, 380, { family: "'JetBrains Mono', monospace", weight: 700, size: 40, align: 'center' });
+        drawTextFit(ctx, 'onluk taban → yüz on bir', 925, 412, 380, { size: 19, color: PALETTE.muted, align: 'center' });
+        ctx.restore();
+      }
+      if (p > 0.65) {
+        drawCard(ctx, 300, 508, 680, 62, { radius: 16, stroke: PALETTE.terracotta });
+        drawTextFit(ctx, 'Alt simge (₂ veya ₁₀) tabanı söyler!', W / 2, 539, 640, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: '#8E4B2D', align: 'center'
+        });
+        drawFocusZink(ctx, W / 2, 539, 340, 32, lt - dur * 0.65, t);
+      }
+      return;
+    }
+
+    if (s === 'c1_sezgi_10' || s === 'c1_sezgi_2') {
+      if (s === 'c1_sezgi_10') {
+        drawBitBoxes(ctx, {
+          bits: ['7', '3', '9', '2'],
+          cx: W / 2, y: 148, boxW: 92, boxH: 92, gap: 22,
+          topLabels: ['10³', '10²', '10¹', '10⁰'],
+          bottomLabels: ['× 1000', '× 100', '× 10', '× 1'],
+          fills: 'rgba(159, 195, 214, 0.25)',
+          subscript: '10',
+          stagger: lt * 2, seed: 20, t
+        });
+        drawCard(ctx, 180, 324, 920, 148, { radius: 22, stroke: PALETTE.ice });
+        drawTextFit(ctx, '7392 = 7×1000 + 3×100 + 9×10 + 2×1', W / 2, 376, 860, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 28, align: 'center'
+        });
+        drawTextFit(ctx, 'Onlukta her basamak sağdakinin 10 katıdır.', W / 2, 430, 860, {
+          size: 21, color: PALETTE.muted, align: 'center'
+        });
+      } else {
+        drawBitBoxes(ctx, {
+          bits: ['1', '1', '0', '1', '1'],
+          cx: W / 2, y: 148, boxW: 84, boxH: 88, gap: 18,
+          topLabels: ['2⁴', '2³', '2²', '2¹', '2⁰'],
+          bottomLabels: ['16', '8', '4', '2', '1'],
+          fills: (b) => b === '1' ? 'rgba(156, 194, 154, 0.36)' : PALETTE.dimBit,
+          textColors: (b) => b === '1' ? PALETTE.ink : PALETTE.muted,
+          subscript: '2',
+          stagger: lt * 2, seed: 24, t
+        });
+        drawCard(ctx, 220, 324, 840, 148, { radius: 22, stroke: PALETTE.sage });
+        drawTextFit(ctx, 'İkilide her basamak sağdakinin 2 katıdır!', W / 2, 378, 780, {
+          family: "'Inter', sans-serif", weight: 700, size: 28, align: 'center'
+        });
+        drawTextFit(ctx, '← ×2   ← ×2   ← ×2   ← ×2', W / 2, 430, 780, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.green, align: 'center'
+        });
+      }
+      return;
+    }
+
+    const CH1_RULE = 'Her basamak × tabanın kuvveti, sonra topla.';
+    if (s === 'c1_rule') {
+      drawRuleCard(ctx, { ruleText: CH1_RULE, mode: 'center', lt, t });
+      return;
+    }
+
+    // Transforming object for (11010,11)2 across 7 beats!
+    if (['c1_ex_boxes', 'c1_ex_w_int', 'c1_ex_w_frac', 'c1_ex_dim0', 'c1_ex_sum1', 'c1_ex_sum2', 'c1_ex_hold'].includes(s)) {
+      const ruleHighlight = (s === 'c1_ex_w_int' || s === 'c1_ex_w_frac') ? 'tabanın kuvveti' : ((s === 'c1_ex_sum1' || s === 'c1_ex_sum2') ? 'topla' : '');
+      drawRuleCard(ctx, { ruleText: CH1_RULE, highlightWord: ruleHighlight, mode: 'corner', t });
+      drawColorLegend(ctx, [
+        { color: PALETTE.sage, label: '1 = yanar' },
+        { color: PALETTE.dimBit, label: '0 = söner' }
+      ], 44, 72);
+
+      const terms = MATH.ch1_11010_11.terms; // 7 items: 1,1,0,1,0,1,1
+      const bits = terms.map(tm => String(tm.bit));
+      const wLabels = terms.map(tm => fmtTr(tm.weight));
+      const pwrLabels = terms.map(tm => `2^${tm.pwr}`.replace('^-1', '⁻¹').replace('^-2', '⁻²').replace('^0', '⁰').replace('^1', '¹').replace('^2', '²').replace('^3', '³').replace('^4', '⁴'));
+
+      const showIntW = s !== 'c1_ex_boxes';
+      const showFracW = ['c1_ex_w_frac', 'c1_ex_dim0', 'c1_ex_sum1', 'c1_ex_sum2', 'c1_ex_hold'].includes(s);
+      const dimmed0 = ['c1_ex_dim0', 'c1_ex_sum1', 'c1_ex_sum2', 'c1_ex_hold'].includes(s);
+
+      const topL = terms.map((_, i) => (i < 5 && showIntW) || (i >= 5 && showFracW) ? pwrLabels[i] : '');
+      const botL = terms.map((tm, i) => {
+        if (i < 5 && !showIntW) return '';
+        if (i >= 5 && !showFracW) return '';
+        if (dimmed0 && tm.bit === 0) return '—';
+        if (i === 5) return '0,5 (yarım)';
+        if (i === 6) return '0,25 (çeyrek)';
+        return wLabels[i];
+      });
+
+      // Vertical flip animation on bit 0s when dimming in c1_ex_dim0
+      const flips = terms.map((tm) => {
+        if (s === 'c1_ex_dim0' && tm.bit === 0) {
+          return Math.abs(Math.cos(clamp01(p * 1.4) * Math.PI));
+        }
+        return 1;
+      });
+
+      const bitAnc = drawBitBoxes(ctx, {
+        bits,
+        cx: W / 2, y: 186, boxW: 82, boxH: 86, gap: 14,
+        dotAfterIdx: 4,
+        topLabels: topL,
+        bottomLabels: botL,
+        flipScalesY: flips,
+        fills: (b) => {
+          if (b === '1') return 'rgba(156, 194, 154, 0.45)';
+          return dimmed0 ? 'rgba(124, 138, 126, 0.08)' : 'rgba(159, 195, 214, 0.22)';
+        },
+        textColors: (b) => (b === '0' && dimmed0) ? PALETTE.muted : PALETTE.ink,
+        subscript: '2',
+        stagger: s === 'c1_ex_boxes' ? lt * 2.2 : 10,
+        seed: 33, t
+      });
+
+      // Transforming accumulator card below
+      const showAcc = ['c1_ex_sum1', 'c1_ex_sum2', 'c1_ex_hold'].includes(s);
+      if (showAcc) {
+        drawCard(ctx, 130, 356, 1020, 190, { radius: 22, stroke: PALETTE.sage });
+        ctx.font = `700 12px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'left';
+        ctx.fillText('TOPLAM AKIYOR (YALNIZ 1 OLANLAR)', 162, 386);
+
+        let eqStr = '16';
+        let curTotal = '16';
+        if (s === 'c1_ex_sum1') {
+          if (p < 0.35) { eqStr = '16'; curTotal = '16'; }
+          else if (p < 0.68) { eqStr = '16 + 8'; curTotal = '24'; }
+          else { eqStr = '16 + 8 + 2'; curTotal = '26'; }
+        } else if (s === 'c1_ex_sum2') {
+          if (p < 0.45) { eqStr = '16 + 8 + 2 + 0,5'; curTotal = '26,5'; }
+          else { eqStr = '16 + 8 + 2 + 0,5 + 0,25'; curTotal = '26,75'; }
+        } else {
+          eqStr = '16 + 8 + 2 + 0,5 + 0,25';
+          curTotal = '26,75';
+        }
+
+        drawTextFit(ctx, `${eqStr} = ${curTotal}`, W / 2, 468, 950, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 42, color: PALETTE.green, align: 'center'
+        });
+
+        if (s === 'c1_ex_sum2' && p > 0.5) {
+          drawFocusZink(ctx, W / 2, 468, 430, 44, lt - dur * 0.5, t, { color: PALETTE.green });
+        }
+      } else {
+        drawCard(ctx, 260, 382, 760, 104, { radius: 20, stroke: 'rgba(36,55,45,0.1)' });
+        const msg = s === 'c1_ex_boxes'
+          ? 'Adım 1: Bitleri kutulara dizdik.'
+          : (s === 'c1_ex_w_int'
+            ? 'Adım 2: Tam kısım ağırlıkları (1, 2, 4, 8, 16)'
+            : (s === 'c1_ex_w_frac'
+              ? 'Adım 3: Kesir ağırlıkları (yarım = 0,5 · çeyrek = 0,25)'
+              : 'Adım 4: 0 olan kutular söndü!'));
+        drawTextFit(ctx, msg, W / 2, 434, 710, { weight: 700, size: 24, align: 'center' });
+        if (s === 'c1_ex_w_frac' && bitAnc.boxes[5]) {
+          drawFocusZink(ctx, (bitAnc.boxes[5].cx + bitAnc.boxes[6].cx) / 2, bitAnc.boxes[5].cy + 110, 110, 26, lt, t);
+        }
+      }
+      return;
+    }
+
+    if (s === 'c1_pratik_53') {
+      drawPrevBadge(ctx, '(11010,11)₂ = 26,75');
+      drawRuleCard(ctx, { ruleText: CH1_RULE, highlightWord: 'topla', mode: 'corner', t });
+
+      const terms = MATH.ch1_110101.terms;
+      drawBitBoxes(ctx, {
+        bits: terms.map(tm => String(tm.bit)),
+        cx: W / 2, y: 174, boxW: 82, boxH: 86, gap: 14,
+        topLabels: terms.map(tm => String(tm.weight)),
+        bottomLabels: terms.map(tm => tm.bit === 1 ? `✓ ${tm.weight}` : '—'),
+        fills: (b) => b === '1' ? 'rgba(156, 194, 154, 0.45)' : PALETTE.dimBit,
+        textColors: (b) => b === '1' ? PALETTE.ink : PALETTE.muted,
+        subscript: '2',
+        stagger: lt * 2.2, seed: 44, t
+      });
+
+      drawCard(ctx, 180, 354, 920, 156, { radius: 22, stroke: PALETTE.sage });
+      drawTextFit(ctx, 'Pratik yol: yalnız 1 olanları topla', W / 2, 396, 860, { size: 20, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, `(110101)₂ = 32 + 16 + 4 + 1 = ${MATH.ch1_110101.total}`, W / 2, 456, 860, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 34, color: PALETTE.green, align: 'center'
+      });
+      if (p > 0.55) drawFocusZink(ctx, 880, 456, 70, 34, lt - dur * 0.55, t, { color: PALETTE.green });
+      return;
+    }
+
+    if (s === 'c1_try_q' || s === 'c1_try_wait' || s === 'c1_try_a') {
+      drawRuleCard(ctx, { ruleText: CH1_RULE, mode: 'corner', t });
+      drawCard(ctx, 160, 154, 960, 396, { radius: 22, stroke: PALETTE.ice });
+      ctx.fillStyle = PALETTE.ice;
+      roundRectPath(ctx, 194, 180, 130, 30, 999);
+      ctx.fill();
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SEN DENE', 259, 195);
+
+      const terms = MATH.ch1_1101.terms;
+      const showAns = s === 'c1_try_a';
+      drawBitBoxes(ctx, {
+        bits: terms.map(tm => String(tm.bit)),
+        cx: W / 2, y: 236, boxW: 86, boxH: 88, gap: 18,
+        topLabels: showAns ? terms.map(tm => String(tm.weight)) : null,
+        bottomLabels: showAns ? terms.map(tm => tm.bit === 1 ? `✓ ${tm.weight}` : '—') : null,
+        fills: (b) => b === '1' ? 'rgba(156, 194, 154, 0.42)' : PALETTE.dimBit,
+        textColors: (b) => b === '1' ? PALETTE.ink : PALETTE.muted,
+        subscript: '2',
+        seed: 51, t
+      });
+
+      if (s === 'c1_try_wait') {
+        drawCountdownRing(ctx, W / 2, 436, p, 5);
+      } else if (showAns) {
+        drawTextFit(ctx, `8 + 4 + 1 = ${MATH.ch1_1101.total}`, W / 2, 444, 840, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 44, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, W / 2, 444, 210, 40, lt, t, { color: PALETTE.green });
+      } else {
+        drawTextFit(ctx, '(1101)₂ = ?', W / 2, 436, 840, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 42, align: 'center'
+        });
+      }
+      return;
+    }
+
+    if (['c1_exam_q', 'c1_exam_wait', 'c1_exam_a', 'c1_exam_traps'].includes(s)) {
+      const mode = s === 'c1_exam_wait' ? 'wait' : (s === 'c1_exam_a' ? 'a' : (s === 'c1_exam_traps' ? 'traps' : 'q'));
+      drawExam5Layout(ctx, {
+        question: 'Alıştırma 1.1: 1×2⁴ + 0×2³ + 1×2² + 0×2¹ + 1×2⁰ = ?',
+        correctKey: 'B',
+        mode, p, lt, t,
+        options: [
+          { key: 'A', text: '19', note: 'Hata: 2⁰ (1) eklenip 2² yerine 2¹ (2) alınmış' },
+          { key: 'B', text: '21', note: 'Doğru: 16 + 0 + 4 + 0 + 1 = 21' },
+          { key: 'C', text: '23', note: 'Hata: 0×2¹ terimi de 2 olarak toplanmış' },
+          { key: 'D', text: '25', note: 'Hata: 0×2³ teriminden 4/8 karışmış' },
+          { key: 'E', text: '27', note: 'Hata: Tüm kuvvetler yanlışlıkla toplanmış' }
+        ]
+      });
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 2 — İkili toplama ve çıkarma
+    // --------------------------------------------------------
+    if (s === 'c2_hook') {
+      drawPrevBadge(ctx, '(11010,11)₂ = 26,75');
+      drawHookQuestion(ctx, 'İkilide 1 + 1 neden 10?', 'BÖLÜM 02 • İKİLİ TOPLAMA VE ÇIKARMA', lt, t);
+      return;
+    }
+
+    if (s === 'c2_sezgi') {
+      drawCard(ctx, 110, 134, 490, 360, { radius: 22, stroke: PALETTE.ice });
+      drawTextFit(ctx, 'ONLUK TABAN', 355, 184, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, '9 + 1 = 10', 355, 286, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 52, align: 'center' });
+      drawTextFit(ctx, 'En büyük rakam 9 → taşar!', 355, 396, 440, { size: 22, color: PALETTE.ink, align: 'center' });
+
+      drawCard(ctx, 680, 134, 490, 360, { radius: 22, stroke: PALETTE.terracotta });
+      drawTextFit(ctx, 'İKİLİK TABAN', 925, 184, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: '#8E4B2D', align: 'center' });
+      drawTextFit(ctx, '1 + 1 = 10', 925, 286, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 52, color: PALETTE.terracotta, align: 'center' });
+      drawTextFit(ctx, 'Toplam 0, elde 1!', 925, 396, 440, { weight: 700, size: 24, color: PALETTE.ink, align: 'center' });
+      if (p > 0.5) drawFocusZink(ctx, 925, 286, 170, 50, lt - dur * 0.5, t);
+      return;
+    }
+
+    const CH2_RULE = '1+1 = 10 (yaz 0, elde 1) · 1+1+1 = 11 (yaz 1, elde 1)';
+    if (s === 'c2_rule') {
+      drawRuleCard(ctx, { ruleText: CH2_RULE, mode: 'center', lt, t });
+      return;
+    }
+
+    // Step-by-step binary addition: 101101 (45) + 100111 (39)
+    const addScenes = ['c2_add_setup', 'c2_add_c0', 'c2_add_c1', 'c2_add_c2', 'c2_add_c3', 'c2_add_c4', 'c2_add_c5', 'c2_add_check', 'c2_add_hold'];
+    if (addScenes.includes(s)) {
+      const colStepMap = { c2_add_setup: -1, c2_add_c0: 0, c2_add_c1: 1, c2_add_c2: 2, c2_add_c3: 3, c2_add_c4: 4, c2_add_c5: 5, c2_add_check: 6, c2_add_hold: 6 };
+      const curCol = colStepMap[s];
+      const ruleTok = curCol === 2 ? '1+1+1 = 11' : (curCol >= 0 && curCol <= 5 ? '1+1 = 10' : '');
+      drawRuleCard(ctx, { ruleText: CH2_RULE, highlightWord: ruleTok, mode: 'corner', t });
+      drawColorLegend(ctx, [{ color: PALETTE.terracotta, label: 'elde' }, { color: PALETTE.sage, label: 'sonuç biti' }], 44, 72);
+
+      drawCard(ctx, 74, 152, 1132, 418, { radius: 22 });
+      const addData = MATH.ch2_add; // 6 cols, result '1010100'
+      const cellW = 74;
+      const rightAnchor = 720;
+      const baseY = 266;
+      const r1 = '101101';
+      const r2 = '100111';
+
+      // Labels
+      ctx.save();
+      ctx.font = `700 18px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.terracotta;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('elde:', rightAnchor - 6 * cellW - 24, baseY - 58);
+      ctx.fillStyle = PALETTE.muted;
+      ctx.fillText('toplanan:', rightAnchor - 6 * cellW - 24, baseY);
+      ctx.fillText('+ toplanan:', rightAnchor - 6 * cellW - 24, baseY + 58);
+      ctx.fillStyle = PALETTE.green;
+      ctx.fillText('toplam:', rightAnchor - 6 * cellW - 24, baseY + 132);
+
+      // Draw 6 columns + 7th MSB carry drop
+      for (let i = 0; i < 6; i++) {
+        const fromRight = 5 - i;
+        const cx = rightAnchor - (fromRight + 0.5) * cellW;
+        const colInfo = addData.cols[fromRight];
+
+        // Active column highlight box
+        if (fromRight === curCol) {
+          ctx.fillStyle = 'rgba(227, 201, 160, 0.35)';
+          roundRectPath(ctx, cx - 30, baseY - 84, 60, 246, 14);
+          ctx.fill();
+        }
+
+        // Carry-in shown above column if revealed
+        if (fromRight <= curCol && colInfo.carryIn > 0) {
+          ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+          ctx.beginPath();
+          ctx.arc(cx, baseY - 58, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = `700 24px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = PALETTE.terracotta;
+          ctx.textAlign = 'center';
+          ctx.fillText(String(colInfo.carryIn), cx, baseY - 57);
+        }
+
+        // Operands
+        ctx.font = `700 40px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.ink;
+        ctx.textAlign = 'center';
+        ctx.fillText(r1[i], cx, baseY);
+        ctx.fillText(r2[i], cx, baseY + 58);
+
+        // Output digit if revealed
+        if (fromRight <= curCol) {
+          const pop = fromRight === curCol ? ease.outBack(clamp01(lt / 0.35)) : 1;
+          ctx.save();
+          ctx.translate(cx, baseY + 132);
+          ctx.scale(pop, pop);
+          ctx.fillStyle = PALETTE.green;
+          ctx.font = `700 40px 'JetBrains Mono', monospace`;
+          ctx.fillText(colInfo.outDigit, 0, 0);
+          ctx.restore();
+        }
+      }
+
+      // 7th column (leftmost carry drop when curCol >= 5)
+      if (curCol >= 5) {
+        const cx7 = rightAnchor - 6.5 * cellW;
+        const dropP = curCol === 5 ? ease.outCubic(clamp01((p - 0.35) / 0.4)) : 1;
+        const dropY = lerp(baseY - 58, baseY + 132, dropP);
+        ctx.fillStyle = PALETTE.terracotta;
+        ctx.font = `700 40px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText('1', cx7, dropY);
+      }
+
+      // Carry jump ball animation during active step when carryOut === 1
+      if (curCol >= 0 && curCol <= 4 && addData.cols[curCol].carryOut === 1 && p > 0.35) {
+        const jumpP = ease.inOutCubic(clamp01((p - 0.35) / 0.45));
+        const xFrom = rightAnchor - (curCol + 0.5) * cellW;
+        const xTo = rightAnchor - (curCol + 1.5) * cellW;
+        const bx = lerp(xFrom, xTo, jumpP);
+        const by = baseY - 58 - Math.sin(jumpP * Math.PI) * 38;
+        ctx.fillStyle = PALETTE.terracotta;
+        ctx.beginPath();
+        ctx.arc(bx, by, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `700 18px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText('1', bx, by + 1);
+      }
+
+      // Line
+      drawSketchLine(ctx, [[rightAnchor - 7 * cellW, baseY + 94], [rightAnchor + 10, baseY + 94]], {
+        seed: 620, t, width: 3, color: PALETTE.ink
+      });
+
+      // Right side live explanation box
+      drawCard(ctx, 766, 186, 408, 344, { fill: '#F7F8F3', radius: 18, shadow: false, stroke: 'rgba(36,55,45,0.1)' });
+      ctx.textAlign = 'center';
+      ctx.font = `700 20px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.fillText('(45)₁₀ + (39)₁₀', 970, 224);
+
+      if (curCol >= 0 && curCol <= 5) {
+        const ci = addData.cols[curCol];
+        ctx.fillStyle = PALETTE.ink;
+        ctx.font = `700 22px 'JetBrains Mono', monospace`;
+        ctx.fillText(`Sütun ${curCol + 1} (sağdan):`, 970, 290);
+        const sumTxt = ci.carryIn ? `${ci.aDigit} + ${ci.bDigit} + elde ${ci.carryIn} = ${ci.sumBase}` : `${ci.aDigit} + ${ci.bDigit} = ${ci.sumBase}`;
+        drawTextFit(ctx, sumTxt, 970, 354, 370, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: PALETTE.terracotta, align: 'center' });
+        drawTextFit(ctx, `Yaz ${ci.outDigit}, elde ${ci.carryOut}`, 970, 424, 370, { weight: 700, size: 24, color: PALETTE.green, align: 'center' });
+      } else if (curCol >= 6) {
+        ctx.fillStyle = PALETTE.green;
+        drawTextFit(ctx, 'Sonuç: 1010100', 970, 296, 370, { family: "'JetBrains Mono', monospace", weight: 700, size: 30, color: PALETTE.green, align: 'center' });
+        drawTextFit(ctx, 'Denetim: 64 + 16 + 4 = 84', 970, 366, 370, { family: "'JetBrains Mono', monospace", weight: 700, size: 23, align: 'center' });
+        drawTextFit(ctx, '45 + 39 = 84 ✓', 970, 424, 370, { family: "'JetBrains Mono', monospace", weight: 700, size: 26, color: PALETTE.green, align: 'center' });
+      } else {
+        drawTextFit(ctx, 'Sağdan sola sütun sütun →', 970, 350, 370, { weight: 700, size: 22, align: 'center' });
+      }
+      ctx.restore();
+      return;
+    }
+
+    if (s === 'c2_sub_sezgi1' || s === 'c2_sub_sezgi2') {
+      drawCard(ctx, 110, 140, 490, 340, { radius: 22, stroke: PALETTE.ice });
+      drawTextFit(ctx, 'ONLUKTA BORÇ', 355, 196, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.muted, align: 'center' });
+      drawTextFit(ctx, 'Komşudan +10 gelir', 355, 310, 440, { weight: 700, size: 30, align: 'center' });
+
+      drawCard(ctx, 680, 140, 490, 340, { radius: 22, stroke: PALETTE.terracotta });
+      drawTextFit(ctx, 'İKİLİDE BORÇ', 925, 196, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: '#8E4B2D', align: 'center' });
+      drawTextFit(ctx, 'Komşudan +2 gelir!', 925, 290, 440, { weight: 700, size: 32, color: PALETTE.terracotta, align: 'center' });
+      drawTextFit(ctx, '0 − 1  →  (10)₂ − 1 = 2 − 1 = 1', 925, 376, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 21, align: 'center' });
+      if (s === 'c2_sub_sezgi2') drawFocusZink(ctx, 925, 376, 200, 32, lt, t);
+      return;
+    }
+
+    if (s === 'c2_sub_ex') {
+      drawColorLegend(ctx, [{ color: PALETTE.terracotta, label: 'borç (+2)' }], 44, 72);
+      drawCard(ctx, 110, 130, 1060, 420, { radius: 22 });
+      const subData = MATH.ch2_sub;
+      const cellW = 78;
+      const rightAnchor = 720;
+      const baseY = 250;
+      const revCount = Math.ceil(clamp01(p / 0.8) * 6);
+
+      ctx.save();
+      ctx.font = `700 18px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.terracotta;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('borç:', rightAnchor - 6 * cellW - 22, baseY - 58);
+      ctx.fillStyle = PALETTE.muted;
+      ctx.fillText('eksilen:', rightAnchor - 6 * cellW - 22, baseY);
+      ctx.fillText('− çıkan:', rightAnchor - 6 * cellW - 22, baseY + 58);
+      ctx.fillStyle = PALETTE.green;
+      ctx.fillText('fark:', rightAnchor - 6 * cellW - 22, baseY + 132);
+
+      for (let i = 0; i < 6; i++) {
+        const fromRight = 5 - i;
+        const cx = rightAnchor - (fromRight + 0.5) * cellW;
+        const ci = subData.cols[fromRight];
+        const vis = fromRight < revCount;
+
+        if (vis && ci.borrowOut > 0) {
+          ctx.font = `700 22px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = PALETTE.terracotta;
+          ctx.textAlign = 'center';
+          ctx.fillText('2', cx, baseY - 58);
+          drawSketchArrow(ctx, cx - cellW + 10, baseY - 40, cx - 10, baseY - 40, -14, {
+            seed: 640 + i, t, progress: 1, width: 2.5, color: PALETTE.terracotta, dotTip: false
+          });
+        }
+        ctx.font = `700 40px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.ink;
+        ctx.textAlign = 'center';
+        ctx.fillText(ci.aDigit, cx, baseY);
+        ctx.fillText(ci.bDigit, cx, baseY + 58);
+        if (vis) {
+          ctx.fillStyle = PALETTE.green;
+          ctx.fillText(ci.diffDigit, cx, baseY + 132);
+        }
+      }
+      drawSketchLine(ctx, [[rightAnchor - 6 * cellW - 10, baseY + 94], [rightAnchor + 10, baseY + 94]], { seed: 645, t, width: 3, color: PALETTE.ink });
+
+      ctx.font = `700 26px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'left';
+      ctx.fillText('(45)', rightAnchor + 28, baseY);
+      ctx.fillText('(39)', rightAnchor + 28, baseY + 58);
+      if (revCount >= 6) {
+        ctx.fillStyle = PALETTE.green;
+        ctx.fillText('(6) ✓', rightAnchor + 28, baseY + 132);
+      }
+      ctx.restore();
+      return;
+    }
+
+    if (s === 'c2_mul_1' || s === 'c2_mul_2') {
+      drawCard(ctx, 140, 98, 1000, 476, { radius: 22 });
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'left';
+      ctx.fillText('İKİLİ ÇARPMA: KAYDIR VE TOPLA (s.21)', 174, 130);
+
+      const lines = [
+        { txt: '      1 0 1 1   (11)', col: PALETTE.ink },
+        { txt: '    ×   1 0 1   ( 5)', col: PALETTE.ink },
+        { txt: '    ─────────', col: PALETTE.muted },
+        { txt: '      1 0 1 1   ← çarpan 1: aynen yaz', col: PALETTE.green },
+        { txt: '    0 0 0 0     ← çarpan 0: sıfır satırı', col: PALETTE.muted },
+        { txt: '  1 0 1 1       ← 2 sola kaydır', col: PALETTE.green },
+        { txt: '  1 1 0 1 1 1   (55)', col: PALETTE.ink }
+      ];
+      const showN = s === 'c2_mul_1' ? 5 : 7;
+      ctx.font = `700 30px 'JetBrains Mono', monospace`;
+      lines.slice(0, showN).forEach((ln, idx) => {
+        ctx.fillStyle = ln.col;
+        ctx.fillText(ln.txt, 210, 186 + idx * 54);
+      });
+      if (s === 'c2_mul_2' && p > 0.55) {
+        drawFocusZink(ctx, 355, 510, 170, 30, lt - dur * 0.55, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (['c2_try_q', 'c2_try_wait', 'c2_try_a'].includes(s)) {
+      drawRuleCard(ctx, { ruleText: CH2_RULE, mode: 'corner', t });
+      drawCard(ctx, 200, 160, 880, 380, { radius: 22, stroke: PALETTE.sage });
+      ctx.fillStyle = PALETTE.sage;
+      roundRectPath(ctx, 234, 188, 130, 30, 999);
+      ctx.fill();
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SEN DENE', 299, 203);
+
+      drawTextFit(ctx, 'İkilide: 1 + 1 + 1 = ?', W / 2, 290, 800, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 48, align: 'center'
+      });
+
+      if (s === 'c2_try_wait') {
+        drawCountdownRing(ctx, W / 2, 424, p, 5);
+      } else if (s === 'c2_try_a') {
+        drawTextFit(ctx, `= ${MATH.ch2_try}  (yaz 1, elde 1)`, W / 2, 424, 800, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 42, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, W / 2, 424, 280, 42, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 3 — ⭐ Onludan ikiliye: tam kısım, bölme merdiveni
+    // --------------------------------------------------------
+    if (s === 'c3_hook') {
+      drawPrevBadge(ctx, '101101 + 100111 = 1010100');
+      drawHookQuestion(ctx, '41’i ikilik tabana nasıl çeviririz?', 'BÖLÜM 03 • BÖLME MERDİVENİ', lt, t);
+      return;
+    }
+
+    if (s === 'c3_sezgi1' || s === 'c3_sezgi2') {
+      drawCard(ctx, 130, 128, 1020, 404, { radius: 22, stroke: PALETTE.lavender });
+      drawTextFit(ctx, 'NEDEN AŞAĞIDAN YUKARI OKUNUR?', W / 2, 184, 940, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: '#4B3770', align: 'center'
+      });
+      drawTextFit(ctx, '41 ÷ 2 = 20, kalan 1', W / 2, 266, 940, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 42, align: 'center'
+      });
+      if (s === 'c3_sezgi1') {
+        drawTextFit(ctx, 'İlk kalan sayının tek/çiftliğini, yani EN SAĞDAKİ BİTİ verir.', W / 2, 374, 940, {
+          weight: 600, size: 26, color: PALETTE.ink, align: 'center'
+        });
+      } else {
+        drawTextFit(ctx, 'İlk kalan EN SAĞA yazıldığı için', W / 2, 356, 940, { weight: 600, size: 25, align: 'center' });
+        drawTextFit(ctx, 'kalanları AŞAĞIDAN YUKARI okuruz!', W / 2, 412, 940, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 30, color: PALETTE.terracotta, align: 'center'
+        });
+        drawFocusZink(ctx, W / 2, 412, 340, 34, lt, t);
+      }
+      return;
+    }
+
+    const CH3_RULE = 'Tam kısım: sürekli tabana böl, kalanları aşağıdan yukarı oku.';
+    if (s === 'c3_rule') {
+      drawRuleCard(ctx, { ruleText: CH3_RULE, mode: 'center', lt, t });
+      return;
+    }
+
+    // Transforming Division Ladder for 41 -> 101001 (6 individual step beats + read + check + hold)
+    const ladMap = { c3_lad1: 1, c3_lad2: 2, c3_lad3: 3, c3_lad4: 4, c3_lad5: 5, c3_lad6: 6, c3_lad_read: 6, c3_lad_check: 6, c3_lad_hold: 6 };
+    if (ladMap[s] !== undefined) {
+      const visCount = ladMap[s];
+      const ruleTok = (s === 'c3_lad_read') ? 'aşağıdan yukarı' : (s.startsWith('c3_lad') && visCount <= 6 ? 'sürekli tabana böl' : '');
+      drawRuleCard(ctx, { ruleText: CH3_RULE, highlightWord: ruleTok, mode: 'corner', t });
+
+      const ladAnc = drawDivisionLadderRows(ctx, {
+        x: 64, y: 112, w: 580, h: 468,
+        title: 'BÖLME MERDİVENİ: (41)₁₀ → İKİLİ',
+        rows: MATH.ch3_41.rows,
+        visibleCount: visCount,
+        newestProgress: s.startsWith('c3_lad') && visCount <= 6 && s !== 'c3_lad_read' && s !== 'c3_lad_check' && s !== 'c3_lad_hold' ? clamp01(p / 0.45) : 1,
+        arrowProgress: s === 'c3_lad_read' ? clamp01(p / 0.45) : (['c3_lad_check', 'c3_lad_hold'].includes(s) ? 1 : 0),
+        t
+      });
+
+      // Right side: Bit boxes fill up as arrow reads bottom-to-top
+      drawCard(ctx, 674, 152, 542, 412, { radius: 22 });
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText('SONUÇ BİTLERİ (SOL → SAĞ)', 945, 190);
+
+      const resBits = MATH.ch3_41.result.split(''); // ['1','0','1','0','0','1']
+      const showBits = ['c3_lad_read', 'c3_lad_check', 'c3_lad_hold'].includes(s);
+      const revealedBits = s === 'c3_lad_read' ? Math.ceil(clamp01((p - 0.3) / 0.6) * 6) : (showBits ? 6 : 0);
+
+      drawBitBoxes(ctx, {
+        bits: resBits.map((b, i) => i < revealedBits ? b : '?'),
+        cx: 945, y: 230, boxW: 64, boxH: 74, gap: 10,
+        topLabels: ['32', '16', '8', '4', '2', '1'],
+        fills: (b, i) => i >= revealedBits ? PALETTE.softFill : (b === '1' ? 'rgba(156, 194, 154, 0.45)' : PALETTE.dimBit),
+        textColors: (b, i) => i >= revealedBits ? PALETTE.muted : PALETTE.ink,
+        subscript: '2',
+        seed: 315, t
+      });
+
+      if (s === 'c3_lad_check' || s === 'c3_lad_hold') {
+        drawCard(ctx, 708, 378, 474, 142, { fill: '#F7F8F3', radius: 18, shadow: false, stroke: PALETTE.sage });
+        drawTextFit(ctx, 'SAĞLAMA (Bölüm 1 yöntemi)', 945, 412, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 15, color: PALETTE.muted, align: 'center' });
+        drawTextFit(ctx, '32 + 8 + 1 = 41 ✓', 945, 466, 440, { family: "'JetBrains Mono', monospace", weight: 700, size: 36, color: PALETTE.green, align: 'center' });
+        if (s === 'c3_lad_check') drawFocusZink(ctx, 945, 466, 200, 36, lt, t, { color: PALETTE.green });
+      } else if (visCount === 6 && s === 'c3_lad6') {
+        drawTextFit(ctx, 'Bölüm 0 oldu → DUR!', 945, 430, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 28, color: PALETTE.terracotta, align: 'center' });
+      } else if (s === 'c3_lad_read' && ladAnc.arrowAnchor) {
+        drawFocusZink(ctx, ladAnc.arrowAnchor.cx, ladAnc.arrowAnchor.cy, 28, ladAnc.arrowAnchor.ry, lt, t);
+      }
+      return;
+    }
+
+    if (s === 'c3_oct_153') {
+      drawRuleCard(ctx, { ruleText: CH3_RULE, mode: 'corner', t });
+      drawDivisionLadderRows(ctx, {
+        x: 64, y: 132, w: 580, h: 420,
+        title: 'SEKİZLİ TABAN: (153)₁₀ → ( ? )₈',
+        rows: MATH.ch3_153.rows,
+        visibleCount: Math.min(3, Math.ceil(clamp01(p / 0.55) * 3)),
+        newestProgress: 1,
+        arrowProgress: clamp01((p - 0.55) / 0.3),
+        t
+      });
+      drawCard(ctx, 676, 168, 540, 344, { radius: 22, stroke: PALETTE.sage });
+      drawTextFit(ctx, `(153)₁₀ = (${MATH.ch3_153.result})₈`, 946, 286, 480, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 42, color: PALETTE.green, align: 'center'
+      });
+      drawTextFit(ctx, 'Denetim: 2×64 + 3×8 + 1 = 153 ✓', 946, 396, 480, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 23, color: PALETTE.ink, align: 'center'
+      });
+      return;
+    }
+
+    if (['c3_try_q', 'c3_try_wait', 'c3_try_a'].includes(s)) {
+      drawRuleCard(ctx, { ruleText: CH3_RULE, mode: 'corner', t });
+      drawCard(ctx, 130, 152, 1020, 410, { radius: 22, stroke: PALETTE.terracotta });
+      ctx.fillStyle = PALETTE.terracotta;
+      roundRectPath(ctx, 164, 180, 130, 30, 999);
+      ctx.fill();
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SEN DENE', 229, 195);
+
+      drawTextFit(ctx, '(13)₁₀ → ikilik tabanda nedir?', W / 2, 260, 940, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 36, align: 'center'
+      });
+
+      if (s === 'c3_try_wait') {
+        drawCountdownRing(ctx, W / 2, 410, p, 5);
+      } else if (s === 'c3_try_a') {
+        const stepsStr = MATH.ch3_13.rows.map(r => `${r.dividend}→k${r.rem}`).join('  |  ');
+        drawTextFit(ctx, stepsStr, W / 2, 360, 940, {
+          family: "'JetBrains Mono', monospace", weight: 600, size: 24, color: PALETTE.muted, align: 'center'
+        });
+        drawTextFit(ctx, `(${MATH.ch3_13.result})₂`, W / 2, 456, 940, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 52, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, W / 2, 456, 140, 44, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (['c3_exam_q', 'c3_exam_wait', 'c3_exam_traps'].includes(s)) {
+      const mode = s === 'c3_exam_wait' ? 'wait' : (s === 'c3_exam_traps' ? 'traps' : 'q');
+      drawExam5Layout(ctx, {
+        question: '(41)₁₀ sayısının ikilik tabandaki karşılığı hangisidir?',
+        correctKey: 'B',
+        mode, p, lt, t,
+        options: [
+          { key: 'A', text: '100101', note: 'Tuzak: Kalanları yukarıdan aşağı okuma hatası' },
+          { key: 'B', text: '101001', note: 'Doğru: 32 + 8 + 1 = 41 (aşağıdan yukarı)' },
+          { key: 'C', text: '110001', note: 'Hata: 32 + 16 + 1 = 49 eder' },
+          { key: 'D', text: '101010', note: 'Hata: Son bit 0 yazılmış (42 eder)' },
+          { key: 'E', text: '101011', note: 'Hata: Son bit 1 yazılmış (43 eder)' }
+        ]
+      });
+      return;
+    }
+
+    // --------------------------------------------------------
+    // BÖLÜM 4 — ⭐ Kesir kısmı: çarpma + Alıştırma 1.2 + Tekrar
+    // --------------------------------------------------------
+    if (s === 'c4_hook') {
+      drawPrevBadge(ctx, '(41)₁₀ = (101001)₂');
+      drawHookQuestion(ctx, 'Peki virgülden sonrası? 0,6875 ikilide ne?', 'BÖLÜM 04 • KESİR KISMI', lt, t);
+      return;
+    }
+
+    if (s === 'c4_sezgi') {
+      drawCard(ctx, 84, 128, 520, 412, { radius: 22, stroke: PALETTE.lavender });
+      drawTextFit(ctx, 'TAM KISIM (Bölüm 3)', 344, 178, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: '#4B3770', align: 'center' });
+      drawTextFit(ctx, 'Tabana BÖL', 344, 240, 460, { weight: 700, size: 28, align: 'center' });
+      drawSketchArrow(ctx, 344, 424, 344, 316, -16, { seed: 401, t, progress: clamp01(p / 0.4), width: 4.5, color: PALETTE.terracotta });
+      drawTextFit(ctx, 'AŞAĞIDAN YUKARI ↑', 344, 474, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.terracotta, align: 'center' });
+
+      drawCard(ctx, 676, 128, 520, 412, { radius: 22, stroke: PALETTE.sage });
+      drawTextFit(ctx, 'KESİR KISMI (Bölüm 4)', 936, 178, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.green, align: 'center' });
+      drawTextFit(ctx, 'Tabanla ÇARP', 936, 240, 460, { weight: 700, size: 28, align: 'center' });
+      drawSketchArrow(ctx, 936, 316, 936, 424, 16, { seed: 402, t, progress: clamp01((p - 0.3) / 0.4), width: 4.5, color: PALETTE.green });
+      drawTextFit(ctx, 'YUKARIDAN AŞAĞI ↓', 936, 474, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: PALETTE.green, align: 'center' });
+
+      if (p > 0.6) drawFocusZink(ctx, 936, 370, 56, 74, lt - dur * 0.6, t, { color: PALETTE.green });
+      return;
+    }
+
+    const CH4_RULE = 'Kesir: sürekli tabanla çarp, tam kısımları yukarıdan aşağı oku. Kesir 0 olunca dur.';
+    if (s === 'c4_rule') {
+      drawRuleCard(ctx, { ruleText: CH4_RULE, mode: 'center', lt, t });
+      return;
+    }
+
+    // Transforming Multiplication Steps for 0,6875 -> 0,1011
+    const mulMap = { c4_mul1: 1, c4_mul2: 2, c4_mul3: 3, c4_mul4: 4, c4_read_check: 4, c4_merge: 4, c4_hold: 4 };
+    if (mulMap[s] !== undefined) {
+      const visCount = mulMap[s];
+      const ruleTok = s === 'c4_read_check' ? 'yukarıdan aşağı' : (s === 'c4_mul4' ? 'Kesir 0 olunca dur' : (s.startsWith('c4_mul') ? 'tabanla çarp' : ''));
+      drawRuleCard(ctx, { ruleText: CH4_RULE, highlightWord: ruleTok, mode: 'corner', t });
+
+      if (s === 'c4_merge' || s === 'c4_hold') {
+        // Shrunk corner badge comes back to merge!
+        drawCard(ctx, 84, 148, 500, 174, { radius: 22, stroke: PALETTE.lavender });
+        drawTextFit(ctx, 'Bölüm 3 (tam kısım):', 334, 192, 450, { size: 18, color: PALETTE.muted, align: 'center' });
+        drawTextFit(ctx, '41 → (101001)₂', 334, 254, 450, { family: "'JetBrains Mono', monospace", weight: 700, size: 36, color: '#4B3770', align: 'center' });
+
+        drawCard(ctx, 696, 148, 500, 174, { radius: 22, stroke: PALETTE.sage });
+        drawTextFit(ctx, 'Bölüm 4 (kesir kısmı):', 946, 192, 450, { size: 18, color: PALETTE.muted, align: 'center' });
+        drawTextFit(ctx, '0,6875 → (0,1011)₂', 946, 254, 450, { family: "'JetBrains Mono', monospace", weight: 700, size: 34, color: PALETTE.green, align: 'center' });
+
+        drawSketchArrow(ctx, 334, 328, 490, 396, -18, { seed: 440, t, progress: clamp01(p / 0.4), color: PALETTE.lavender });
+        drawSketchArrow(ctx, 946, 328, 790, 396, 18, { seed: 441, t, progress: clamp01(p / 0.4), color: PALETTE.sage });
+
+        drawCard(ctx, 180, 404, 920, 134, { radius: 22, stroke: PALETTE.terracotta });
+        drawTextFit(ctx, '(41,6875)₁₀ = (101001,1011)₂', W / 2, 471, 860, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 40, color: PALETTE.ink, align: 'center'
+        });
+        if (p > 0.55) drawFocusZink(ctx, 810, 471, 210, 40, lt - dur * 0.55, t);
+        return;
+      }
+
+      drawPrevBadge(ctx, '(41)₁₀ = (101001)₂');
+      drawMultStepsRows(ctx, {
+        x: 64, y: 138, w: 620, h: 432,
+        title: 'KESİR ÇARPIMI: (0,6875)₁₀ → İKİLİ',
+        rows: MATH.ch4_06875.steps,
+        visibleCount: visCount,
+        newestProgress: s.startsWith('c4_mul') ? clamp01(p / 0.45) : 1,
+        arrowProgress: s === 'c4_read_check' ? clamp01(p / 0.45) : 0,
+        t
+      });
+
+      drawCard(ctx, 712, 160, 504, 386, { radius: 22 });
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText('KESİR BİTLERİ (YUKARI → AŞAĞI)', 964, 198);
+
+      const fBits = MATH.ch4_06875.digits.split('');
+      drawBitBoxes(ctx, {
+        bits: fBits.map((b, i) => i < visCount ? b : '?'),
+        cx: 964, y: 238, boxW: 68, boxH: 74, gap: 12,
+        topLabels: ['0,5', '0,25', '0,125', '0,0625'],
+        fills: (b, i) => i >= visCount ? PALETTE.softFill : (b === '1' ? 'rgba(156, 194, 154, 0.45)' : PALETTE.dimBit),
+        textColors: (b, i) => i >= visCount ? PALETTE.muted : PALETTE.ink,
+        seed: 422, t
+      });
+
+      if (s === 'c4_read_check') {
+        drawTextFit(ctx, '(0,1011)₂', 964, 388, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 38, color: PALETTE.green, align: 'center' });
+        drawTextFit(ctx, '0,5 + 0,125 + 0,0625 = 0,6875 ✓', 964, 464, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 20, color: PALETTE.ink, align: 'center' });
+        drawFocusZink(ctx, 964, 388, 140, 36, lt, t, { color: PALETTE.green });
+      } else if (s === 'c4_mul4') {
+        drawTextFit(ctx, 'Kesir = 0,0000 → DUR!', 964, 424, 460, { family: "'JetBrains Mono', monospace", weight: 700, size: 26, color: PALETTE.terracotta, align: 'center' });
+      }
+      return;
+    }
+
+    if (s === 'c4_warn_01') {
+      drawRuleCard(ctx, { ruleText: CH4_RULE, mode: 'corner', t });
+      drawCard(ctx, 110, 148, 1060, 414, { radius: 22, stroke: PALETTE.error });
+      ctx.fillStyle = PALETTE.error;
+      roundRectPath(ctx, 144, 176, 146, 30, 999);
+      ctx.fill();
+      ctx.font = `700 13px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('UYARI ANI', 217, 191);
+
+      drawTextFit(ctx, '(0,1)₁₀ → ikilide sonlanmaz!', W / 2, 246, 980, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 34, color: PALETTE.error, align: 'center'
+      });
+      drawTextFit(ctx, '0,2 → 0,4 → 0,8 → 1,6 → 1,2 → 0,4 …', W / 2, 326, 980, {
+        family: "'JetBrains Mono', monospace", weight: 600, size: 26, color: PALETTE.muted, align: 'center'
+      });
+      drawTextFit(ctx, '(0,000110011…)₂   (0011 tekrar eder)', W / 2, 412, 980, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 32, color: PALETTE.ink, align: 'center'
+      });
+      drawTextFit(ctx, 'Sınavda “kaç basamak” derse orada kes!', W / 2, 492, 980, {
+        weight: 700, size: 24, color: '#8E4B2D', align: 'center'
+      });
+      if (p > 0.55) drawFocusZink(ctx, 355, 412, 165, 34, lt - dur * 0.55, t, { color: PALETTE.error });
+      return;
+    }
+
+    if (['c4_try_q', 'c4_try_wait', 'c4_try_a1', 'c4_try_a2'].includes(s)) {
+      drawSlidePhotoBadge(ctx, 44, 58, lt);
+      drawRuleCard(ctx, { ruleText: CH4_RULE, mode: 'corner', t });
+
+      if (s === 'c4_try_q' || s === 'c4_try_wait') {
+        drawCard(ctx, 110, 152, 1060, 414, { radius: 22, stroke: PALETTE.terracotta });
+        drawTextFit(ctx, 'Alıştırma 1.2 (Sen Dene):', W / 2, 210, 980, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 22, color: '#8E4B2D', align: 'center'
+        });
+        drawTextFit(ctx, '(117,23)₁₀ → sekizli taban (kesir 4 basamak)', W / 2, 286, 980, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 32, align: 'center'
+        });
+        if (s === 'c4_try_wait') drawCountdownRing(ctx, W / 2, 424, p, 5);
+      } else if (s === 'c4_try_a1') {
+        drawDivisionLadderRows(ctx, {
+          x: 64, y: 146, w: 530, h: 424,
+          title: 'TAM: 117 ÷ 8 → (165)₈',
+          rows: MATH.ch4_117.rows,
+          visibleCount: 3,
+          arrowProgress: 1,
+          t
+        });
+        drawMultStepsRows(ctx, {
+          x: 620, y: 146, w: 596, h: 424,
+          title: 'KESİR: 0,23 × 8 (4 basamak) → .1656',
+          rows: MATH.ch4_023.steps,
+          visibleCount: 4,
+          arrowProgress: 1,
+          t
+        });
+      } else {
+        drawCard(ctx, 100, 154, 1080, 174, { radius: 22, stroke: PALETTE.sage });
+        drawTextFit(ctx, `1) (117,23)₁₀ = (${MATH.ch4_117.result},${MATH.ch4_023.digits})₈`, W / 2, 241, 1000, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 38, color: PALETTE.green, align: 'center'
+        });
+        drawCard(ctx, 100, 356, 1080, 186, { radius: 22, stroke: PALETTE.ice });
+        drawTextFit(ctx, '3) (1101,101)₂ = 8 + 4 + 1 + 0,5 + 0,125', W / 2, 422, 1000, {
+          family: "'JetBrains Mono', monospace", weight: 600, size: 28, align: 'center'
+        });
+        drawTextFit(ctx, `= ${fmtTr(MATH.ch4_1101_101.total)}`, W / 2, 488, 1000, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 38, color: PALETTE.green, align: 'center'
+        });
+        drawFocusZink(ctx, W / 2, 488, 140, 34, lt, t, { color: PALETTE.green });
+      }
+      return;
+    }
+
+    if (s === 'c4_review1' || s === 'c4_review2') {
+      drawTextFit(ctx, 'Kısım 1/2 — Hızlı Tekrar', W / 2, 84, 900, {
+        family: "'Instrument Serif', serif", italic: true, weight: 400, size: 46, align: 'center'
+      });
+
+      const cards = [
+        { k: 'AĞIRLIK', v: 'ağırlık = taban ^ konum', col: PALETTE.ice },
+        { k: 'İKİLİ TOPLAMA', v: '1 + 1 = 10  (yaz 0, elde 1)', col: PALETTE.sage },
+        { k: 'TAM KISIM', v: 'tabana böl → kalanlar aşağıdan yukarı ↑', col: PALETTE.terracotta },
+        { k: 'KESİR KISMI', v: 'tabanla çarp → tamlar yukarıdan aşağı ↓', col: PALETTE.lavender }
+      ];
+      const showCount = s === 'c4_review1' ? (p < 0.5 ? 1 : 2) : (p < 0.45 ? 3 : 4);
+      for (let i = 0; i < showCount; i++) {
+        const c = cards[i];
+        const cy = 136 + i * 108;
+        drawCard(ctx, 120, cy, 1040, 88, { radius: 20, stroke: c.col });
+        ctx.fillStyle = c.col;
+        roundRectPath(ctx, 146, cy + 26, 178, 36, 999);
+        ctx.fill();
+        ctx.font = `700 13px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.ink;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(c.k, 235, cy + 44);
+        drawTextFit(ctx, c.v, 356, cy + 44, 770, {
+          family: "'JetBrains Mono', monospace", weight: 700, size: 26, align: 'left'
+        });
+      }
+    }
+  }
+
+  // ==========================================================
+  // Kinetic Subtitles & Top Progress Bar (4 segments)
+  // ==========================================================
+  function drawProgressBar(ctx, t, exportScope) {
+    const barX = 44, barY = 14, barW = W - 88, barH = 5;
+    ctx.save();
+    if (exportScope) {
+      const ch = exportScope.chapter;
+      const p = clamp01((t - ch.start) / Math.max(0.01, ch.duration));
+      ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+      roundRectPath(ctx, barX, barY, barW, barH, 3);
+      ctx.fill();
+      ctx.fillStyle = ch.accent;
+      roundRectPath(ctx, barX, barY, barW * p, barH, 3);
+      ctx.fill();
+    } else {
+      const n = TIMELINE.chapters.length;
+      const gap = 10;
+      const segW = (barW - gap * (n - 1)) / n;
+      TIMELINE.chapters.forEach((ch, idx) => {
+        const sx = barX + idx * (segW + gap);
+        ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+        roundRectPath(ctx, sx, barY, segW, barH, 3);
+        ctx.fill();
+        const fillP = clamp01((t - ch.start) / Math.max(0.01, ch.duration));
+        if (fillP > 0) {
+          ctx.fillStyle = ch.accent;
+          roundRectPath(ctx, sx, barY, segW * fillP, barH, 3);
+          ctx.fill();
+        }
+      });
+    }
+    ctx.restore();
+  }
+
+  function drawKineticSubtitles(ctx, beat, lt) {
+    if (!state.subtitlesOn || !beat || !beat.text) return;
+    const words = beat.text.trim().split(/\s+/);
+    if (!words.length) return;
+
+    const totalChars = words.reduce((s, w) => s + w.length + 1, 0);
+    const activeStart = 0.08;
+    const activeEnd = Math.max(activeStart + 0.4, beat.duration - 0.15);
+    const span = activeEnd - activeStart;
+    let cur = activeStart;
+    let activeIdx = 0;
+    for (let i = 0; i < words.length; i++) {
+      const wDur = ((words[i].length + 1) / totalChars) * span;
+      if (lt >= cur && lt <= cur + wDur) { activeIdx = i; break; }
+      if (lt > cur + wDur) activeIdx = i;
+      cur += wDur;
+    }
+
+    ctx.save();
+    ctx.font = `600 29px 'Inter', sans-serif`;
+    const maxLineW = 1060;
+    const spaceW = ctx.measureText(' ').width;
+    const lines = [[]];
+    let lineW = 0;
+    words.forEach((w, idx) => {
+      const ww = ctx.measureText(w).width;
+      if (lineW > 0 && lineW + spaceW + ww > maxLineW) {
+        lines.push([]);
+        lineW = 0;
+      }
+      lines[lines.length - 1].push({ word: w, idx, w: ww });
+      lineW += (lineW > 0 ? spaceW : 0) + ww;
+    });
+    const shownLines = lines.slice(0, 2);
+
+    const baseTop = shownLines.length === 1 ? 660 : 632;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    shownLines.forEach((ln, lIdx) => {
+      const totalW = ln.reduce((acc, item, i) => acc + item.w + (i > 0 ? spaceW : 0), 0);
+      let x = (W - totalW) / 2;
+      const y = baseTop + lIdx * 40;
+
+      ln.forEach((item, i) => {
+        if (i > 0) x += spaceW;
+        if (item.idx === activeIdx) {
+          ctx.fillStyle = PALETTE.sand;
+          roundRectPath(ctx, x - 5, y + 6, item.w + 10, 11, 5);
+          ctx.fill();
+        }
+        ctx.fillStyle = item.idx === activeIdx ? PALETTE.ink : 'rgba(36, 55, 45, 0.72)';
+        ctx.fillText(item.word, x, y);
+        x += item.w;
+      });
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // SFX Synthesis Engine (~14 dB below speech)
+  // ==========================================================
+  const noiseBufferCache = new WeakMap();
+  function getNoiseBuffer(ctx) {
+    if (noiseBufferCache.has(ctx)) return noiseBufferCache.get(ctx);
+    const len = Math.floor(ctx.sampleRate * 1.0);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    const rng = mulberry32(991122);
+    for (let i = 0; i < len; i++) data[i] = rng() * 2 - 1;
+    noiseBufferCache.set(ctx, buf);
+    return buf;
+  }
+
+  function scheduleSFX(ctx, dest, type, when, gainVal = 0.2, dur = 0.25) {
+    const t0 = Math.max(0, when);
+    const masterGain = gainVal * 0.16; // ~14 dB below narration
+
+    if (type === 'pop') {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, t0);
+      osc.frequency.exponentialRampToValueAtTime(190, t0 + 0.085);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 1.1, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.095);
+      osc.connect(g).connect(dest);
+      osc.start(t0);
+      osc.stop(t0 + 0.11);
+    } else if (type === 'tick') {
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(2200, t0);
+      filt.Q.setValueAtTime(3.2, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.9, t0 + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.045);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0, 0, 0.06);
+    } else if (type === 'scribble') {
+      const d = clamp(dur || 0.45, 0.18, 0.8);
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      src.loop = true;
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(1450, t0);
+      filt.frequency.linearRampToValueAtTime(1900, t0 + d * 0.6);
+      filt.Q.setValueAtTime(2.0, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.55, t0 + 0.04);
+      g.gain.setValueAtTime(masterGain * 0.5, t0 + d - 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0);
+      src.stop(t0 + d + 0.02);
+    } else if (type === 'zink') {
+      [880, 1108.73].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'triangle';
+        const st = t0 + i * 0.045;
+        osc.frequency.setValueAtTime(freq, st);
+        g.gain.setValueAtTime(0.001, st);
+        g.gain.linearRampToValueAtTime(masterGain * 1.15, st + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0005, st + 0.28);
+        osc.connect(g).connect(dest);
+        osc.start(st);
+        osc.stop(st + 0.30);
+      });
+    } else if (type === 'whoosh') {
+      const d = 0.26;
+      const src = ctx.createBufferSource();
+      src.buffer = getNoiseBuffer(ctx);
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(360, t0);
+      filt.frequency.exponentialRampToValueAtTime(1600, t0 + d * 0.6);
+      filt.frequency.exponentialRampToValueAtTime(480, t0 + d);
+      filt.Q.setValueAtTime(1.4, t0);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.7, t0 + d * 0.45);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      src.connect(filt).connect(g).connect(dest);
+      src.start(t0, 0, d + 0.02);
+    } else if (type === 'ding') {
+      [783.99, 1046.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        const st = t0 + i * 0.07;
+        osc.frequency.setValueAtTime(freq, st);
+        g.gain.setValueAtTime(0.001, st);
+        g.gain.linearRampToValueAtTime(masterGain * 1.15, st + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0005, st + 0.34);
+        osc.connect(g).connect(dest);
+        osc.start(st);
+        osc.stop(st + 0.36);
+      });
+    } else if (type === 'buzz') {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(165, t0);
+      osc.frequency.linearRampToValueAtTime(130, t0 + 0.16);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.9, t0 + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + 0.18);
+      osc.connect(g).connect(dest);
+      osc.start(t0);
+      osc.stop(t0 + 0.2);
+    } else if (type === 'riser') {
+      const d = 0.55;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, t0);
+      osc.frequency.exponentialRampToValueAtTime(560, t0 + d);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(masterGain * 0.65, t0 + d * 0.85);
+      g.gain.exponentialRampToValueAtTime(0.0005, t0 + d);
+      osc.connect(g).connect(dest);
+      osc.start(t0);
+      osc.stop(t0 + d + 0.02);
+    }
+  }
+
+  // ==========================================================
+  // Safe Pure renderFrame(t)
+  // ==========================================================
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  let renderErrorLogged = false;
+
+  function renderFrame(t, exportScope = null) {
+    try {
+      const clampedT = clamp(t, 0, Math.max(0, TIMELINE.duration - 0.001));
+      ctx.drawImage(paperCanvas, 0, 0);
+
+      let beat = TIMELINE.beats[0];
+      for (let i = 0; i < TIMELINE.beats.length; i++) {
+        if (clampedT >= TIMELINE.beats[i].start && clampedT < TIMELINE.beats[i].end) {
+          beat = TIMELINE.beats[i];
+          break;
+        }
+      }
+      if (!beat && TIMELINE.beats.length) beat = TIMELINE.beats[TIMELINE.beats.length - 1];
+
+      const chMeta = TIMELINE.chapters.find(c => c.num === beat.chapter) || TIMELINE.chapters[0];
+      const lt = clampedT - beat.start;
+
+      drawProgressBar(ctx, clampedT, exportScope);
+
+      if (beat.scene !== 'intro' && beat.scene !== 'outro') {
+        ctx.save();
+        ctx.font = `600 11px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`BÖLÜM 0${chMeta.num} • ${chMeta.title.toUpperCase()}`, 44, 36);
+        ctx.restore();
+      }
+
+      renderChapterScene(ctx, beat, lt, beat.duration, clampedT, chMeta);
+      drawKineticSubtitles(ctx, beat, lt);
+    } catch (err) {
+      if (!renderErrorLogged) {
+        console.error('safeRender error:', err);
+        renderErrorLogged = true;
+      }
+    }
+  }
+
+  // ==========================================================
+  // Playback State, Live Audio, Speed (0.75x/1x/1.25x), Narration Toggle
+  // ==========================================================
+  const state = {
+    time: 0,
+    playing: false,
+    speed: 1,
+    narrationOn: false,
+    sfxOn: true,
+    subtitlesOn: true,
+    lastFrameTs: 0,
+    activeBeatIdx: -1,
+    audioCtx: null,
+    compNode: null,
+    narrationBuffer: null,
+    narrationSource: null,
+    lastSfxIdx: -1
+  };
+
+  function ensureLiveAudioCtx() {
+    if (!state.audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      state.audioCtx = new AC();
+      const comp = state.audioCtx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 12;
+      comp.ratio.value = 4;
+      comp.connect(state.audioCtx.destination);
+      state.compNode = comp;
+    }
+    if (state.audioCtx.state === 'suspended') state.audioCtx.resume().catch(() => {});
+    return state.audioCtx;
+  }
+
+  async function decodeEmbeddedNarration() {
+    if (!TIMELINE.narrationAudio || !TIMELINE.narrationAudio.src) return null;
+    if (state.narrationBuffer) return state.narrationBuffer;
+    try {
+      const res = await fetch(TIMELINE.narrationAudio.src);
+      const buf = await res.arrayBuffer();
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      state.narrationBuffer = await ac.decodeAudioData(buf);
+      await ac.close();
+      return state.narrationBuffer;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function stopLiveNarration() {
+    if (state.narrationSource) {
+      try { state.narrationSource.stop(); } catch (e) {}
+      state.narrationSource = null;
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+  }
+
+  function speakBeatWebSpeech(beat) {
+    if (!state.narrationOn || !beat || !beat.text || TIMELINE.narrationAudio) return;
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(beat.text);
+      u.lang = 'tr-TR';
+      u.rate = state.speed === 0.75 ? 0.8 : (state.speed === 1.25 ? 1.22 : 1.0);
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  function syncSfxIndexToTime(t) {
+    let idx = -1;
+    for (let i = 0; i < TIMELINE.sfxEvents.length; i++) {
+      if (TIMELINE.sfxEvents[i].t < t) idx = i;
+      else break;
+    }
+    state.lastSfxIdx = idx;
+  }
+
+  function triggerLiveSfxInRange(prevT, curT) {
+    if (!state.sfxOn || curT <= prevT) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    for (let i = state.lastSfxIdx + 1; i < TIMELINE.sfxEvents.length; i++) {
+      const ev = TIMELINE.sfxEvents[i];
+      if (ev.t <= curT + 0.015) {
+        if (ev.t >= prevT - 0.05) {
+          scheduleSFX(ctx, state.compNode, ev.type, ctx.currentTime + 0.005, ev.gain, ev.dur);
+        }
+        state.lastSfxIdx = i;
+      } else break;
+    }
+  }
+
+  function playCurrentNarrationSliceIfEmbedded(t) {
+    if (!state.narrationOn || !state.narrationBuffer || !TIMELINE.narrationAudio) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    stopLiveNarration();
+    const beat = TIMELINE.beats.find(b => t >= b.start && t < b.end);
+    if (!beat || !beat.audioSlice) return;
+    const [s, e] = beat.audioSlice;
+    const offsetInBeat = t - beat.start;
+    const rem = (e - s) - offsetInBeat;
+    if (rem > 0.05) {
+      const src = ctx.createBufferSource();
+      src.buffer = state.narrationBuffer;
+      src.playbackRate.value = state.speed;
+      src.connect(state.compNode);
+      src.start(ctx.currentTime, s + offsetInBeat, rem);
+      state.narrationSource = src;
+    }
+  }
+
+  function seekTo(newT) {
+    state.time = clamp(newT, 0, Math.max(0, TIMELINE.duration - 0.02));
+    syncSfxIndexToTime(state.time);
+    stopLiveNarration();
+    state.activeBeatIdx = -1;
+    if (state.playing) {
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        state.activeBeatIdx = beat.index;
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    }
+    renderFrame(state.time);
+    updateUI();
+  }
+
+  function togglePlay(forceState) {
+    const next = typeof forceState === 'boolean' ? forceState : !state.playing;
+    if (next && state.time >= TIMELINE.duration - 0.05) {
+      state.time = 0;
+      syncSfxIndexToTime(0);
+    }
+    state.playing = next;
+    if (state.playing) {
+      ensureLiveAudioCtx();
+      state.lastFrameTs = performance.now();
+      syncSfxIndexToTime(state.time);
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        state.activeBeatIdx = beat.index;
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    } else {
+      stopLiveNarration();
+    }
+    updateUI();
+  }
+
+  function animLoop(now) {
+    if (state.playing) {
+      const dt = Math.min(0.1, (now - state.lastFrameTs) / 1000) * state.speed;
+      state.lastFrameTs = now;
+      const prevT = state.time;
+      state.time += dt;
+      if (state.time >= TIMELINE.duration) {
+        state.time = TIMELINE.duration;
+        state.playing = false;
+        stopLiveNarration();
+      } else {
+        triggerLiveSfxInRange(prevT, state.time);
+        const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+        if (beat && beat.index !== state.activeBeatIdx) {
+          state.activeBeatIdx = beat.index;
+          if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+          else speakBeatWebSpeech(beat);
+        }
+      }
+      renderFrame(state.time);
+      updateUI();
+    }
+    requestAnimationFrame(animLoop);
+  }
+
+  // ==========================================================
+  // UI Binding & Chapter Strip
+  // ==========================================================
+  const btnPlay = document.getElementById('btnPlay');
+  const btnBack = document.getElementById('btnBack');
+  const btnFwd = document.getElementById('btnFwd');
+  const btnSpeed = document.getElementById('btnSpeed');
+  const btnNar = document.getElementById('btnNar');
+  const btnSfx = document.getElementById('btnSfx');
+  const btnSub = document.getElementById('btnSub');
+  const timeReadout = document.getElementById('timeReadout');
+  const chapterStrip = document.getElementById('chapterStrip');
+  const toastEl = document.getElementById('toast');
+
+  function formatMMSS(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toastEl.classList.remove('show'), 3600);
+  }
+
+  function buildChapterCards() {
+    chapterStrip.innerHTML = '';
+    TIMELINE.chapters.forEach((ch) => {
+      const card = document.createElement('div');
+      card.className = 'ch-card';
+      card.dataset.chapter = String(ch.num);
+      card.innerHTML = `
+        <div>
+          <div class="ch-head">
+            <span class="ch-num">BÖLÜM 0${ch.num}</span>
+            <span>${formatMMSS(ch.duration)}</span>
+          </div>
+          <div class="ch-title" style="margin-top:8px;">${ch.title}</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn" data-watch="${ch.num}">▶ İzle</button>
+          <button class="btn export-btn" data-mp4="${ch.num}">⬇ MP4</button>
+        </div>
+      `;
+      chapterStrip.appendChild(card);
+    });
+
+    chapterStrip.querySelectorAll('[data-watch]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const n = Number(btn.dataset.watch);
+        const ch = TIMELINE.chapters.find(c => c.num === n);
+        if (ch) { seekTo(ch.start); togglePlay(true); }
+      });
+    });
+
+    chapterStrip.querySelectorAll('[data-mp4]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const n = Number(btn.dataset.mp4);
+        const ch = TIMELINE.chapters.find(c => c.num === n);
+        if (ch) exportRangeMP4({ start: ch.start, end: ch.end, chapter: ch, filename: ch.filename });
+      });
+    });
+  }
+
+  function updateUI() {
+    btnPlay.textContent = state.playing ? '❚❚ Duraklat' : '▶ Oynat';
+    timeReadout.textContent = `${formatMMSS(state.time)} / ${formatMMSS(TIMELINE.duration)}`;
+    btnSpeed.textContent = `${state.speed}×`;
+    btnNar.textContent = state.narrationOn ? '🗣️ Anlatım: Açık' : '🗣️ Anlatım: Kapalı';
+    btnNar.classList.toggle('active-pill', state.narrationOn);
+    btnSfx.textContent = state.sfxOn ? '🔊 SFX: Açık' : '🔇 SFX: Kapalı';
+    btnSfx.classList.toggle('active-pill', state.sfxOn);
+    btnSub.textContent = state.subtitlesOn ? '💬 Altyazı: Açık' : '💬 Altyazı: Kapalı';
+    btnSub.classList.toggle('active-pill', state.subtitlesOn);
+
+    const activeCh = TIMELINE.chapters.find(c => state.time >= c.start && state.time < c.end) || TIMELINE.chapters[0];
+    document.querySelectorAll('.ch-card').forEach(el => {
+      el.classList.toggle('active', activeCh && Number(el.dataset.chapter) === activeCh.num);
+    });
+  }
+
+  function toggleNarration() {
+    state.narrationOn = !state.narrationOn;
+    if (!state.narrationOn) stopLiveNarration();
+    else if (state.playing) {
+      const beat = TIMELINE.beats.find(b => state.time >= b.start && state.time < b.end);
+      if (beat) {
+        if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(state.time);
+        else speakBeatWebSpeech(beat);
+      }
+    }
+    updateUI();
+  }
+
+  canvas.addEventListener('click', () => togglePlay());
+  btnPlay.addEventListener('click', () => togglePlay());
+  btnBack.addEventListener('click', () => seekTo(state.time - 5));
+  btnFwd.addEventListener('click', () => seekTo(state.time + 5));
+  btnSpeed.addEventListener('click', () => {
+    const speeds = [0.75, 1, 1.25];
+    const idx = speeds.indexOf(state.speed);
+    state.speed = speeds[(idx + 1) % speeds.length];
+    if (state.narrationSource) state.narrationSource.playbackRate.value = state.speed;
+    updateUI();
+  });
+  btnNar.addEventListener('click', toggleNarration);
+  btnSfx.addEventListener('click', () => { state.sfxOn = !state.sfxOn; updateUI(); });
+  btnSub.addEventListener('click', () => { state.subtitlesOn = !state.subtitlesOn; renderFrame(state.time); updateUI(); });
+
+  document.getElementById('btnExportFull').addEventListener('click', () => {
+    exportRangeMP4({ start: 0, end: TIMELINE.duration, chapter: null, filename: 'mt1a-tam-video.mp4' });
+  });
+
+  document.getElementById('btnExportAll').addEventListener('click', async () => {
+    for (let i = 0; i < TIMELINE.chapters.length; i++) {
+      const ch = TIMELINE.chapters[i];
+      const res = await exportRangeMP4({ start: ch.start, end: ch.end, chapter: ch, filename: ch.filename }, true);
+      if (res && res.cancelled) break;
+      await new Promise(r => setTimeout(r, 350));
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); seekTo(state.time - 5); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); seekTo(state.time + 5); }
+    else if (e.key === 'n' || e.key === 'N') { toggleNarration(); }
+    else if (e.key === 'm' || e.key === 'M') { state.sfxOn = !state.sfxOn; updateUI(); }
+    else if (e.key === 'c' || e.key === 'C') { state.subtitlesOn = !state.subtitlesOn; renderFrame(state.time); updateUI(); }
+    else if (e.key >= '1' && e.key <= '9') {
+      const ch = TIMELINE.chapters[Number(e.key) - 1];
+      if (ch) { seekTo(ch.start); togglePlay(true); }
+    }
+  });
+
+  // ==========================================================
+  // Deterministic Chapter & Full MP4 Export (WebCodecs + OfflineAudioContext + MediaRecorder fallback)
+  // ==========================================================
+  const exportModal = document.getElementById('exportModal');
+  const exportTitle = document.getElementById('exportTitle');
+  const exportSubtext = document.getElementById('exportSubtext');
+  const exportBar = document.getElementById('exportBar');
+  const exportPct = document.getElementById('exportPct');
+  const exportFrames = document.getElementById('exportFrames');
+  const exportMethodNote = document.getElementById('exportMethodNote');
+  const btnCancelExport = document.getElementById('btnCancelExport');
+
+  let cancelRequested = false;
+  btnCancelExport.addEventListener('click', () => { cancelRequested = true; });
+
+  async function renderOfflineAudioBuffer(start, end) {
+    const dur = Math.max(0.1, end - start);
+    const narBuf = await decodeEmbeddedNarration();
+    const sr = narBuf ? narBuf.sampleRate : 44100;
+    const frameCount = Math.ceil(dur * sr);
+    const offCtx = new OfflineAudioContext(2, frameCount, sr);
+
+    const comp = offCtx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 12;
+    comp.ratio.value = 4;
+    comp.connect(offCtx.destination);
+
+    if (narBuf) {
+      TIMELINE.beats.forEach(beat => {
+        if (beat.end > start && beat.start < end && beat.audioSlice) {
+          const [as, ae] = beat.audioSlice;
+          const relStart = Math.max(0, beat.start - start);
+          const trimHead = Math.max(0, start - beat.start);
+          const playDur = Math.min(ae - as - trimHead, end - Math.max(start, beat.start));
+          if (playDur > 0.02) {
+            const src = offCtx.createBufferSource();
+            src.buffer = narBuf;
+            src.connect(comp);
+            src.start(relStart, as + trimHead, playDur);
+          }
+        }
+      });
+    }
+
+    TIMELINE.sfxEvents.forEach(ev => {
+      if (ev.t >= start && ev.t < end) {
+        scheduleSFX(offCtx, comp, ev.type, ev.t - start, ev.gain, ev.dur);
+      }
+    });
+
+    return await offCtx.startRendering();
+  }
+
+  async function pickAudioEncoderConfig(sampleRate) {
+    if (typeof AudioEncoder === 'undefined') return null;
+    const candidates = [
+      { codec: 'mp4a.40.2', muxCodec: 'aac', sampleRate, numberOfChannels: 2, bitrate: 128_000 },
+      { codec: 'opus', muxCodec: 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: 128_000 }
+    ];
+    for (const c of candidates) {
+      try {
+        const res = await AudioEncoder.isConfigSupported({
+          codec: c.codec, sampleRate: c.sampleRate, numberOfChannels: c.numberOfChannels, bitrate: c.bitrate
+        });
+        if (res && res.supported) return c;
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  async function muxOfflineAudio(muxer, audioBuffer, audioCfg) {
+    const encoder = new AudioEncoder({
+      output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+      error: (err) => { throw err; }
+    });
+    encoder.configure({
+      codec: audioCfg.codec,
+      sampleRate: audioCfg.sampleRate,
+      numberOfChannels: audioCfg.numberOfChannels,
+      bitrate: audioCfg.bitrate
+    });
+
+    const sr = audioCfg.sampleRate;
+    const chCount = audioCfg.numberOfChannels;
+    const totalSamples = audioBuffer.length;
+    for (let offset = 0; offset < totalSamples; offset += 1024) {
+      if (cancelRequested) break;
+      const count = Math.min(1024, totalSamples - offset);
+      const planar = new Float32Array(count * chCount);
+      for (let ch = 0; ch < chCount; ch++) {
+        const srcCh = Math.min(ch, audioBuffer.numberOfChannels - 1);
+        planar.set(audioBuffer.getChannelData(srcCh).subarray(offset, offset + count), ch * count);
+      }
+      const ad = new AudioData({
+        format: 'f32-planar',
+        sampleRate: sr,
+        numberOfFrames: count,
+        numberOfChannels: chCount,
+        timestamp: Math.round((offset / sr) * 1_000_000),
+        data: planar
+      });
+      encoder.encode(ad);
+      ad.close();
+    }
+    await encoder.flush();
+    encoder.close();
+  }
+
+  async function exportMediaRecorderFallback(scope, filename) {
+    const start = scope.start;
+    const end = scope.end;
+    const dur = end - start;
+    exportSubtext.textContent = 'WebCodecs bulunamadı; gerçek zamanlı MediaRecorder yedeği çalışıyor…';
+
+    const stream = canvas.captureStream(FPS);
+    const ac = ensureLiveAudioCtx();
+    const dest = ac ? ac.createMediaStreamDestination() : null;
+    if (dest) dest.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+
+    const mime = MediaRecorder.isTypeSupported('video/mp4')
+      ? 'video/mp4'
+      : (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm');
+    const outName = mime.includes('mp4') ? filename : filename.replace(/\.mp4$/, '.webm');
+    exportMethodNote.textContent = `Yöntem: MediaRecorder (${mime}).`;
+
+    const chunks = [];
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 });
+    rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    const recDone = new Promise(resolve => { rec.onstop = resolve; });
+    rec.start(250);
+
+    if (ac && dest) {
+      const baseTime = ac.currentTime + 0.05;
+      TIMELINE.sfxEvents.forEach(ev => {
+        if (ev.t >= start && ev.t < end) scheduleSFX(ac, dest, ev.type, baseTime + (ev.t - start), ev.gain, ev.dur);
+      });
+    }
+
+    const tStart = performance.now();
+    const totalFrames = Math.ceil(dur * FPS);
+    while (!cancelRequested) {
+      const elapsed = (performance.now() - tStart) / 1000;
+      if (elapsed >= dur) break;
+      renderFrame(start + elapsed, scope.chapter ? scope : null);
+      const pct = Math.min(100, Math.round((elapsed / dur) * 100));
+      exportBar.style.width = `${pct}%`;
+      exportPct.textContent = `%${pct}`;
+      exportFrames.textContent = `${Math.min(totalFrames, Math.floor(elapsed * FPS))} / ${totalFrames} kare`;
+      await new Promise(r => setTimeout(r, 16));
+    }
+    rec.stop();
+    await recDone;
+    if (cancelRequested) return { cancelled: true };
+
+    const blob = new Blob(chunks, { type: mime });
+    triggerDownload(blob, outName);
+    showToast(`${outName} indirildi (MediaRecorder yedeği).`);
+    return { ok: true };
+  }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+  }
+
+  async function exportRangeMP4(scope) {
+    togglePlay(false);
+    cancelRequested = false;
+    exportModal.classList.add('open');
+    exportBar.style.width = '0%';
+    exportPct.textContent = '%0';
+    exportTitle.textContent = scope.chapter ? `Bölüm ${scope.chapter.num}: ${scope.chapter.title}` : 'Tam Video MP4';
+    exportSubtext.textContent = `Hazırlanıyor: ${scope.filename}`;
+
+    const speechNote = TIMELINE.narrationAudio
+      ? 'Gömülü anlatım WAV ve tüm SFX olayları dahil ediliyor.'
+      : 'Gömülü anlatım sesi henüz eklenmediği için Web Speech MP4 dosyasına girmez; tüm SFX sesleri dahil edilir.';
+
+    try {
+      let supportedCfg = null;
+      if (typeof VideoEncoder !== 'undefined' && typeof Mp4Muxer !== 'undefined') {
+        for (const codec of ['avc1.4d002a', 'avc1.640028', 'avc1.42001f']) {
+          const cfg = { codec, width: W, height: H, bitrate: 6_000_000, framerate: FPS };
+          try {
+            const res = await VideoEncoder.isConfigSupported(cfg);
+            if (res && res.supported) { supportedCfg = cfg; break; }
+          } catch (e) {}
+        }
+      }
+
+      if (!supportedCfg) {
+        const res = await exportMediaRecorderFallback(scope, scope.filename);
+        exportModal.classList.remove('open');
+        renderFrame(state.time);
+        return res;
+      }
+
+      exportSubtext.textContent = 'Ses izi (OfflineAudioContext) hazırlanıyor…';
+      let offlineBuf = await renderOfflineAudioBuffer(scope.start, scope.end);
+      const audioCfg = await pickAudioEncoderConfig(offlineBuf.sampleRate);
+
+      if (audioCfg && audioCfg.sampleRate !== offlineBuf.sampleRate) {
+        const dur = Math.max(0.1, scope.end - scope.start);
+        const off48 = new OfflineAudioContext(2, Math.ceil(dur * audioCfg.sampleRate), audioCfg.sampleRate);
+        const src = off48.createBufferSource();
+        src.buffer = offlineBuf;
+        src.connect(off48.destination);
+        src.start(0);
+        offlineBuf = await off48.startRendering();
+      }
+
+      const audioLabel = audioCfg ? `${audioCfg.muxCodec.toUpperCase()} ses kodlama` : 'Sessiz MP4';
+      exportMethodNote.textContent = `Yöntem: WebCodecs H.264 + ${audioLabel}. ${speechNote}`;
+
+      const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: { codec: 'avc', width: W, height: H },
+        ...(audioCfg ? { audio: { codec: audioCfg.muxCodec, numberOfChannels: audioCfg.numberOfChannels, sampleRate: audioCfg.sampleRate } } : {}),
+        fastStart: 'in-memory'
+      });
+
+      let encodeErr = null;
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => { encodeErr = e; }
+      });
+      encoder.configure(supportedCfg);
+
+      const dur = scope.end - scope.start;
+      const totalFrames = Math.max(1, Math.round(dur * FPS));
+      const frameDurUs = Math.round(1_000_000 / FPS);
+      exportSubtext.textContent = `Kareler kodlanıyor: ${scope.filename}`;
+
+      for (let f = 0; f < totalFrames; f++) {
+        if (cancelRequested || encodeErr) break;
+        const t = scope.start + f / FPS;
+        renderFrame(t, scope.chapter ? scope : null);
+
+        const frame = new VideoFrame(canvas, { timestamp: f * frameDurUs, duration: frameDurUs });
+        encoder.encode(frame, { keyFrame: f % (FPS * 2) === 0 });
+        frame.close();
+
+        if (f % 15 === 0 || f === totalFrames - 1) {
+          const pct = Math.min(100, Math.round(((f + 1) / totalFrames) * 100));
+          exportBar.style.width = `${pct}%`;
+          exportPct.textContent = `%${pct}`;
+          exportFrames.textContent = `${f + 1} / ${totalFrames} kare (${formatMMSS(f / FPS)} / ${formatMMSS(dur)})`;
+          await new Promise(r => setTimeout(r, 0));
+        }
+        while (encoder.encodeQueueSize > 12 && !cancelRequested) {
+          await new Promise(r => setTimeout(r, 4));
+        }
+      }
+
+      if (cancelRequested) {
+        try { encoder.close(); } catch (e) {}
+        exportModal.classList.remove('open');
+        renderFrame(state.time);
+        return { cancelled: true };
+      }
+      if (encodeErr) throw encodeErr;
+
+      await encoder.flush();
+      encoder.close();
+
+      if (audioCfg) {
+        exportSubtext.textContent = `Ses izi (${audioCfg.muxCodec.toUpperCase()}) birleştiriliyor…`;
+        await muxOfflineAudio(muxer, offlineBuf, audioCfg);
+      }
+
+      muxer.finalize();
+      const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+      triggerDownload(blob, scope.filename);
+      exportModal.classList.remove('open');
+      renderFrame(state.time);
+      showToast(`${scope.filename} indirildi.`);
+      return { ok: true };
+    } catch (err) {
+      console.error('Export error:', err);
+      exportModal.classList.remove('open');
+      renderFrame(state.time);
+      showToast(`Dışa aktarma hatası: ${err.message || err}`);
+      return { error: err };
+    }
+  }
+
+  // ==========================================================
+  // Boot
+  // ==========================================================
+  async function init() {
+    selfTest();
+    buildTimeline();
+    buildChapterCards();
+    updateUI();
+
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+    document.getElementById('fontStatus').textContent = `${TIMELINE.chapters.length} Bölüm • ${formatMMSS(TIMELINE.duration)} • 1280×720 30 FPS`;
+    decodeEmbeddedNarration();
+    renderFrame(0);
+    requestAnimationFrame(animLoop);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
