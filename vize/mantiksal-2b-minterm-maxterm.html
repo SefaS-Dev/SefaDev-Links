@@ -3395,6 +3395,13 @@
       state.lastFrameTs = now;
       const prevT = state.time;
       state.time += dt;
+      if (window.__adim) {
+        const cb = TIMELINE.beats.find(b => prevT >= b.start && prevT < b.end);
+        if (cb && state.time >= cb.end && window.__adimGec !== cb.index && cb.text) {
+          state.time = cb.end - 0.0005; window.__adimGec = cb.index; state.playing = false; stopLiveNarration();
+          renderFrame(state.time); updateUI();
+        }
+      }
       if (state.time >= TIMELINE.duration) {
         state.time = TIMELINE.duration;
         state.playing = false;
@@ -3840,6 +3847,20 @@
   }
 
   init();
+})();
+</script>
+<script>
+(function(){
+  window.__adim = false;
+  function paint(){ var b=document.getElementById('btnAdim'); if(!b) return;
+    b.textContent = window.__adim ? '⏯️ Adım adım: Açık' : '⏯️ Adım adım: Kapalı'; b.classList.toggle('active-pill', window.__adim); }
+  function toggle(){ window.__adim = !window.__adim; window.__adimGec = -1; paint(); }
+  document.addEventListener('DOMContentLoaded', function(){
+    var n=document.getElementById('btnNar'); if(n && !document.getElementById('btnAdim')){
+      var b=document.createElement('button'); b.className='btn'; b.id='btnAdim'; b.title='Her adımın sonunda durur. Kısayol: A';
+      n.parentNode.insertBefore(b, n.nextSibling); b.addEventListener('click', toggle); paint(); }
+  });
+  document.addEventListener('keydown', function(e){ if((e.key==='a'||e.key==='A') && !/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||'')) toggle(); });
 })();
 </script>
 </body>
