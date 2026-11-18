@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mikroişlemci Mimarisi · Vize Provası</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #f1f3e9;
+    --panel: #fffdf7;
+    --ink: #24372d;
+    --muted: #52635a;
+    --line: #adbcad;
+    --sage: #dce8d8;
+    --gold: #f9ecc0;
+    --good: #dcebd9;
+    --bad: #f7e2d8;
+    --mono: Consolas, "Liberation Mono", monospace;
+    font: 17px/1.5 system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--paper); color: var(--ink); }
+  main { width: min(100% - 2rem, 58rem); margin: auto; padding: 1rem 0 2.5rem; }
+  h1, h2, h3, p { margin: 0; }
+  h1, .result-title { font-family: Georgia, serif; font-weight: 600; }
+  h1 { font-size: clamp(2.15rem, 5vw, 3.6rem); line-height: 1.05; letter-spacing: -.035em; }
+  h2 { font-size: clamp(1.12rem, 2.7vw, 1.42rem); line-height: 1.4; }
+  h3 { font-size: 1.06rem; }
+  strong { font-weight: 680; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: .48; }
+  :focus-visible { outline: 3px solid #526e55; outline-offset: 3px; }
+  button, input, .panel, pre { border: 1px solid var(--line); }
+  button {
+    background: var(--panel);
+    padding: .48rem .82rem;
+    min-height: 2.58rem;
+    border-radius: .7rem;
+    font-weight: 610;
+  }
+  button:hover:not(:disabled) { border-color: var(--ink); }
+  .primary { color: #fffdf7; background: var(--ink); border-color: var(--ink); }
+  .accent, .chip[aria-pressed="true"] { background: var(--sage); border-color: #78947a; }
+  .star[aria-pressed="true"], .evidence summary { background: var(--gold); border-color: #ccaa5a; }
+  .panel { background: var(--panel); border-radius: 1.15rem; box-shadow: 0 3px 0 #dbe2d5; }
+  .bar, .row, .controls, .progress-meta, .quiz-meta {
+    display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
+  }
+  .bar, .controls, .progress-meta, .quiz-meta { justify-content: space-between; }
+  .bar { margin-bottom: 1.15rem; }
+  .brand { display: inline-flex; align-items: center; gap: .55rem; font-weight: 670; }
+  .brand::before { content: ""; width: .65rem; height: .65rem; border-radius: 50%; background: #6a8a70; }
+  .setup, .question, .feedback, .results, .misses { padding: clamp(.9rem, 3.4vw, 1.8rem); }
+  .subtitle, .small, .meta, .count, .progress-meta { color: var(--muted); }
+  .subtitle { margin: .6rem 0 1.5rem; }
+  .setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
+  fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+  legend { margin-bottom: .52rem; padding: 0; font-weight: 680; }
+  .full { grid-column: 1 / -1; }
+  .names { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin-top: .65rem; }
+  input { display: block; width: 100%; border-radius: .45rem; background: #fff; padding: .32rem .55rem; }
+  .setup-footer { border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1.4rem; }
+  .progress-meta { font-size: .95rem; margin-bottom: .2rem; }
+  progress { display: block; width: 100%; height: .65rem; accent-color: #65876a; }
+  .quiz-meta { margin: .65rem 0 .8rem; }
+  .timer { font: 700 1rem var(--mono); border: 1px solid var(--line); padding: .35rem .6rem; border-radius: 99px; }
+  .timer.urgent { background: var(--bad); }
+  .scores { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .score { border-radius: 99px; border: 1px solid var(--line); padding: .2rem .58rem; overflow-wrap: anywhere; }
+  .score.current { background: var(--sage); }
+  .prompt { display: grid; gap: .55rem; }
+  .evidence summary {
+    width: fit-content; cursor: pointer; padding: .15rem .5rem;
+    border: 1px solid; border-radius: .5rem; font-size: .93rem;
+  }
+  .evidence p { margin-top: .35rem; color: var(--muted); }
+  .initial { margin-top: .65rem; font-weight: 600; }
+  pre {
+    margin: .65rem 0 0; padding: .7rem .72rem; border-radius: .63rem;
+    overflow-x: auto; background: #edf2e8; font: 16px/1.56 var(--mono); tab-size: 4;
+  }
+  pre code { font: inherit; }
+  .line-number {
+    display: inline-block; width: 2.3ch; margin-right: 1ch; text-align: right;
+    color: #4e6558; user-select: none;
+  }
+  .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin: .78rem 0; }
+  .option {
+    display: grid; align-items: center; grid-template-columns: auto minmax(0, 1fr) auto; gap: .58rem;
+    text-align: left; font-weight: 530; min-height: 3.05rem;
+  }
+  .option[aria-pressed="true"] { border-color: #507258; box-shadow: inset 0 0 0 1px #507258; background: #e8f0e1; }
+  .option[aria-disabled="true"] { cursor: default; }
+  .option.correct { background: var(--good); border-color: #65876a; }
+  .option.wrong { background: var(--bad); border-color: #9b5640; box-shadow: none; }
+  .letter {
+    display: grid; place-items: center; width: 1.64rem; height: 1.64rem;
+    border-radius: .35rem; background: #e4eae0; font-weight: 700;
+  }
+  .option-text { overflow-wrap: anywhere; }
+  .mono { font: 16px/1.5 var(--mono); font-variant-numeric: tabular-nums; white-space: pre-wrap; }
+  .feedback { margin-top: .75rem; border-left: 4px solid #65876a; }
+  .feedback p { margin-top: .4rem; }
+  .distractors { margin: .55rem 0 0; padding: 0; list-style: none; }
+  .distractors li + li { margin-top: .28rem; }
+  .result-title { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+  .results p, .results .row { margin-top: .65rem; }
+  .misses { margin-top: .85rem; }
+  .miss-list { display: grid; gap: .44rem; margin-top: .6rem; }
+  .miss-list button { text-align: left; }
+  .key-help { margin-top: .55rem; font-size: .94rem; }
+  @media (max-width: 625px) {
+    main { width: calc(100% - 1rem); padding-top: .65rem; }
+    .setup-grid, .options { grid-template-columns: 1fr; }
+    .bar .row { gap: .35rem; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="bar">
+    <span class="brand">Mikroişlemci Mimarisi</span>
+    <div class="row">
+      <button id="sound" type="button" aria-pressed="false">Ses kapalı</button>
+      <button id="home" type="button" hidden>Ana ekran</button>
+    </div>
+  </header>
+
+  <section id="setup" class="panel setup" aria-labelledby="title">
+    <h1 id="title">Mikroişlemci<br>Vize Provası</h1>
+    <p id="bank-summary" class="subtitle"></p>
+    <div class="setup-grid">
+      <fieldset id="topics">
+        <legend>Konu filtresi</legend>
+        <div class="row">
+          <button type="button" class="chip" data-topic="code" aria-pressed="true">Komutlar ve bayraklar</button>
+          <button type="button" class="chip" data-topic="memory" aria-pressed="true">Bellek ve gösterim</button>
+          <button type="button" class="chip" data-topic="concept" aria-pressed="true">Sözel</button>
+          <button type="button" class="chip" data-topic="extra" aria-pressed="false">RISC/RV32I · Ek tekrar</button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Çözüm seçenekleri</legend>
+        <div class="row">
+          <button id="star-only" type="button" class="chip star" aria-pressed="false">⭐ Sadece yıldızlılar</button>
+          <button id="shuffle" type="button" class="chip" aria-pressed="false">Soruları karıştır</button>
+        </div>
+        <div class="row" id="timers" aria-label="Soru başına süre" style="margin-top:.5rem">
+          <button type="button" class="chip" data-time="0" aria-pressed="true">Süre kapalı</button>
+          <button type="button" class="chip" data-time="30" aria-pressed="false">30 sn</button>
+          <button type="button" class="chip" data-time="45" aria-pressed="false">45 sn</button>
+        </div>
+      </fieldset>
+      <fieldset class="full">
+        <legend>Oyuncu modu</legend>
+        <div class="row" id="modes">
+          <button type="button" class="chip" data-mode="1" aria-pressed="true">Tek kişi</button>
+          <button type="button" class="chip" data-mode="2" aria-pressed="false">2 kişi</button>
+          <button type="button" class="chip" data-mode="3" aria-pressed="false">3 kişi</button>
+          <button type="button" class="chip" data-mode="4" aria-pressed="false">4 kişi</button>
+        </div>
+        <div id="names" class="names" hidden></div>
+      </fieldset>
+    </div>
+    <div class="controls setup-footer">
+      <p id="selected-count" class="count" aria-live="polite"></p>
+      <div class="row">
+        <button id="resume" type="button" class="accent" hidden>Devam et</button>
+        <button id="start" type="button" class="primary">Başla</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="quiz" aria-labelledby="question" hidden>
+    <div class="progress-meta"><span id="counter"></span><span id="topic"></span></div>
+    <progress id="progress" aria-label="Prova ilerlemesi"></progress>
+    <div class="quiz-meta" id="quiz-meta" hidden>
+      <div id="scores" class="scores"></div>
+      <span id="timer" class="timer" hidden></span>
+    </div>
+    <div class="panel question">
+      <div class="prompt">
+        <h2 id="question" tabindex="-1"></h2>
+        <details id="evidence" class="evidence" hidden>
+          <summary id="evidence-label"></summary>
+          <p id="evidence-note"></p>
+        </details>
+      </div>
+      <p id="initial" class="initial" hidden></p>
+      <pre id="program" hidden tabindex="0" aria-label="8086 kodu"><code id="code-lines"></code></pre>
+    </div>
+    <div id="options" class="options" role="group" aria-label="Yanıt seçenekleri"></div>
+    <div class="controls">
+      <div class="row">
+        <button id="previous" type="button">← Önceki</button>
+        <button id="back-results" type="button" hidden>Sonuçlara dön</button>
+      </div>
+      <div class="row">
+        <button id="reveal" type="button" class="primary">Cevabı göster</button>
+        <button id="next" type="button" class="primary" hidden>Sonraki →</button>
+      </div>
+    </div>
+    <div id="feedback" class="panel feedback" hidden aria-labelledby="feedback-title" tabindex="-1">
+      <div class="progress-meta">
+        <h3 id="feedback-title"></h3>
+        <span id="slide" class="meta"></span>
+      </div>
+      <p id="explanation"></p>
+      <ul id="distractors" class="distractors"></ul>
+    </div>
+    <p id="key-help" class="small key-help">A–E veya 1–5 ile şık seç · Boşluk ile cevabı aç · ← → ile ilerle</p>
+  </section>
+
+  <section id="results" aria-labelledby="result-title" hidden>
+    <div class="panel results">
+      <h2 id="result-title" class="result-title" tabindex="-1">Vize provası tamamlandı</h2>
+      <p id="summary"></p>
+      <div id="result-scores" class="row"></div>
+      <div class="row">
+        <button id="retry" type="button" class="accent" hidden>Yanlışları ve boşları tekrar çöz</button>
+        <button id="restart" type="button" class="primary">Baştan başla</button>
+      </div>
+    </div>
+    <div id="misses" class="panel misses" hidden>
+      <h3>Yanlış ve boş sorular</h3>
+      <div id="miss-list" class="miss-list"></div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+
+const topics = {
+  code: "Komutlar ve bayraklar",
+  memory: "Bellek ve gösterim",
+  concept: "Sözel",
+  extra: "Ek tekrar · RISC/RV32I"
+};
+
+function q(id, topic, slide, prompt, code, options, correct, why, mistakes, extra = {}) {
+  return { id, topic, slide, prompt, code, options, correct: "ABCDE".indexOf(correct),
+    why, mistakes, ...extra };
+}
+
+const bank = [
+  q(1, "code", "32, 36", "ADD çalıştıktan sonra AX kaç olur?",
+    "MOV AX, 09h\nMOV BX, 01h\nADD AX, BX",
+    ["0010h", "0011h", "000Ah", "000Bh", "0009h"], "C",
+    "09h + 01h = onluk 10, yani 000Ah. 16 bitlik AX sonucu dört hex basamakla gösterilir.",
+    ["Onluk 10'u olduğu gibi hex basamağı saymak.", "Toplama bir fazla ekleyip onluk 11'i doğrudan 11h diye yazmak.", "ADD'ye olmayan bir elde daha eklemek. Onluk 11'in doğru hex karşılığı 0Bh'dir.", "AX'in başlangıç değerinde kalacağını düşünmek."],
+    { record: "10.11 · TCDD 27, 00:26. Hoca 10h, 11h ve 0Ah şıklarını örnek verdi." }),
+
+  q(2, "code", "36, 44, 80–81", "AL ve durum bayrakları nasıl değişir?",
+    "ADD AL, 01h",
+    ["80h · 0 1 1 0 1 0", "80h · 1 0 1 0 1 0", "80h · 0 1 1 0 0 0", "80h · 0 1 1 0 1 1", "00h · 1 1 0 1 1 1"], "A",
+    "80h oluşur. 8 bit dışına elde yok (CF=0), +128 işaretli aralığı aşar (OF=1). Üst bit 1, değer sıfır değil. Fh + 1 alt dört bitten elde verir (AF=1). 80h'de tek bir 1 var (PF=0).",
+    ["CF ile OF'nin görevlerini yer değiştirmek.", "Fh + 1'in alt dört bitten çıkardığı eldeyi atlamak.", "PF'yi tek sayıda 1 biti için set etmek.", "7Fh + 1'i FFh + 1 gibi sıfıra sarmak."],
+    { initial: "AL = 7Fh", order: "AL · CF OF SF ZF AF PF", photo: "IMG_1823–1824 · 03.11 TCDD 22, 18:47. “Bak bu sınavda gelebilecek bir soru.”" }),
+
+  q(3, "code", "34, 36, 81", "SUB sonrasında AX ve verilen bayraklar nedir?",
+    "MOV AX, 02h\nMOV BX, 05h\nSUB AX, BX",
+    ["FFFDh · 0 0 1 0", "FFFDh · 1 1 1 0", "0003h · 0 0 0 0", "00FDh · 1 0 0 0", "FFFDh · 1 0 1 0"], "E",
+    "2 − 5 = −3, 16 bitte FFFDh. İşaretsiz çıkarma ödünç alır (CF=1). −3 işaretli aralığa sığar (OF=0). Sonucun üst biti 1 ve sonuç sıfırdan farklıdır.",
+    ["Çıkarmada ödünç olmasına rağmen CF'yi sıfır saymak.", "Ödünç alınmasını işaretli taşmayla eşitlemek.", "Operandları ters sırada çıkarmak.", "8 bitlik FDh sonucunu AX'e sıfırla genişletmek."],
+    { order: "AX · CF OF SF ZF", record: "10.11 · TCDD 27, 03:12. “Kritik bir nokta, sınavda karşınıza gelebilir.”" }),
+
+  q(4, "memory", "31–32, 41", "MOV satırı çalışınca AL kaç olur?",
+    "sayi DB 12\nMOV AL, sayi",
+    ["12h", "0Ch", "0Bh", "00h", "21h"], "B",
+    "DB bir bayt tanımlar. Soneksiz 12 burada onluktur, yani 0Ch. MOV, sayi etiketindeki baytı AL'ye alır.",
+    ["12'yi doğrudan hex okumak.", "Onluktan hex'e çevirirken bir eksik saymak (0Bh = 11).", "Tanımlı baytı sıfır varsaymak.", "Hex gösterime çevirmek yerine onluk rakamların yerini değiştirmek."],
+    { photo: "IMG_1778–1787 · 27.10 TCDD 15, 15:08. Hoca AL’nin içeriği için sınav sorusu örneği verdi." }),
+
+  q(5, "memory", "23, 39, 41", "MOV çalıştıktan sonra AH ve AL nasıl görünür?",
+    "kelime DW 1234h\nMOV AX, kelime",
+    ["34h   12h", "00h   34h", "12h   00h", "12h   34h", "34h   34h"], "D",
+    "DW 1234h bellekte 34h, 12h diye saklanır. Word okununca AX=1234h oluşur. AH üst bayt 12h, AL alt bayt 34h'tir.",
+    ["Bellek sırasını doğrudan AH, AL sırası sanmak.", "Yalnızca ilk baytı okuyup üst baytı sıfırlamak.", "Alt baytın MOV sırasında atıldığını düşünmek.", "İlk baytı saklayıcının iki yarısına da yazmak."],
+    { order: "AH    AL", photo: "IMG_1778–1787 · 27.10 TCDD 15, 14:28. DW ve AX'in iki yarısı üzerinden sınav örneği." }),
+
+  q(6, "memory", "39, 83–86", "İlk fiziksel adres ve oradan başlayan iki bayt nedir?",
+    "MOV WORD PTR [0100h], 1234h",
+    ["00300h   34h 12h", "02100h   12h 34h", "02100h   34h 12h", "21000h   34h 12h", "01200h   34h 12h"], "C",
+    "DS × 10h + ofset = 02000h + 0100h = 02100h. Alt bayt 34h oraya, üst bayt 12h bir sonraki adrese (02101h) yazılır.",
+    ["Segment değerini 10h ile çarpmadan toplamak.", "Word'ü big-endian sırada yazmak.", "Fiziksel adresi bir kez daha 10h ile çarpmak.", "DS ile ofsetin yerini değiştirmek."],
+    { initial: "DS = 0200h", order: "Adres    İlk bayt · İkinci bayt", photo: "IMG_1827 · 03.11 TCDD 25. 0200h:0100h örneği." }),
+
+  q(7, "code", "45, 62, 81", "HLT'ye varana kadar DEC kaç kez çalışır ve son CX nedir?",
+    "      MOV AX, 03h\n      MOV CX, 05h\ntur:  DEC AX\n      JNZ tur\n      HLT",
+    ["3 kez   0005h", "2 kez   0005h", "5 kez   0000h", "3 kez   0002h", "4 kez   0005h"], "A",
+    "DEC ile AX sırasıyla 0002h, 0001h, 0000h olur. JNZ ilk iki turda geri döner. Üçüncü DEC ZF=1 yapar ve HLT'ye geçilir. CX 0005h kalır.",
+    ["İki geri dallanmayı iki DEC çalışması sanmak.", "JNZ'nin LOOP gibi CX'i azaltacağını düşünmek.", "Her DEC'in CX'i de azalttığını varsaymak.", "AX sıfıra indikten sonra fazladan bir DEC çalıştırmak."],
+    { order: "DEC sayısı · CX", photo: "IMG_1778–1787 · 27.10. AX=3, CX=5 ve DEC/JNZ örneği." }),
+
+  q(8, "code", "14, 62", "HLT'de AL ve CX ne olur?",
+    "      MOV AL, 00h\n      MOV CX, 05h\ntur:  INC AL\n      LOOP tur\n      HLT",
+    ["04h   0000h", "06h   0000h", "01h   0004h", "05h   0005h", "05h   0000h"], "E",
+    "Her tur INC AL çalışır. LOOP CX'i bir azaltır ve CX sıfırdan farklıysa döner. Beşinci INC'ten sonra CX=0 olur ve akış HLT'ye geçer.",
+    ["Dört geri dallanma ile beş gövde çalışmasını karıştırmak.", "CX sıfıra ulaştıktan sonra bir tur daha eklemek.", "LOOP'u ZF'ye bakan JNZ gibi okuyup ilk turda çıkmak.", "LOOP'un CX'i azaltmasını gözden kaçırmak."],
+    { order: "AL    CX", record: "10.11 · TCDD 30. CX=5 ile LOOP örneği." }),
+
+  q(9, "code", "45, 62, 81", "HLT anında AL ile BL nedir?",
+    "        MOV AL, 05h\n        MOV BL, 02h\n        CMP AL, 05h\n        JZ bitir\n        MOV BL, 09h\nbitir:  HLT",
+    ["00h   02h", "05h   09h", "00h   09h", "05h   02h", "05h   05h"], "D",
+    "CMP, 05h − 05h ile ZF=1 yapar ve AL'yi korur. JZ alındığı için MOV BL, 09h atlanır. BL 02h kalır.",
+    ["CMP'nin geçici çıkarma sonucunu AL'ye yazmak.", "JZ'nin ZF=0 için çalışacağını sanmak.", "CMP'yi SUB gibi yazmak ve JZ'yi ters yorumlamak.", "CMP'nin ikinci operandı BL'ye taşıdığını varsaymak."],
+    { order: "AL    BL", photo: "IMG_1911 · 10.11 TCDD 30. CMP AL,5 ve JZ örneği." }),
+
+  q(10, "code", "45, 81", "JNZ'den önceki MOV, CMP'nin kararını etkiliyor mu? HLT'de AL ve BL nedir?",
+    "        MOV AL, 05h\n        CMP AL, 07h\n        MOV BL, 00h\n        JNZ bitir\n        MOV BL, 09h\nbitir:  HLT",
+    ["05h   09h", "05h   00h", "FEh   00h", "07h   00h", "05h   07h"], "B",
+    "CMP, 5 − 7 ile ZF=0 üretir ve AL'yi korur. MOV bayrakları korur. JNZ dallanır ve BL 00h kalır.",
+    ["MOV BL,00h'nin sırf sıfır yazdığı için ZF'yi 1 yaptığını düşünmek.", "CMP'nin geçici FEh sonucunu AL'ye yazmak.", "CMP'yi MOV AL,07h gibi okumak.", "Karşılaştırma sabitinin BL'ye de yazıldığını düşünmek."],
+    { order: "AL    BL" }),
+
+  q(11, "code", "37", "XOR sonrasında AL nedir?",
+    "MOV AL, 62h\nXOR AL, 9Fh",
+    ["FFh", "02h", "9Fh", "FDh", "62h"], "D",
+    "XOR farklı bitlere 1, eşit bitlere 0 yazar. 0110 0010 ile 1001 1111'in XOR'u 1111 1101, yani FDh'tir.",
+    ["XOR yerine OR uygulamak.", "XOR yerine AND uygulamak.", "Maskeyi doğrudan hedefe kopyalamak.", "XOR'un hedef saklayıcıyı koruduğunu varsaymak."],
+    { record: "10.11 · TCDD 30, 16:09. Hoca bu örneği anlatırken “sınavdan soru gelebilir” dedi." }),
+
+  q(12, "code", "14, 34, 37, 62", "CALL ve RET takibinden sonra HLT'de AL nedir?",
+    "        MOV AL, 62h\n        XOR AL, 9Fh\n        CALL tersle\n        NEG AL\n        NOP\n        JMP bitir\ntersle: NOT AL\n        RET\nbitir:  HLT",
+    ["FDh", "02h", "FEh", "03h", "FCh"], "C",
+    "XOR ile FDh oluşur. CALL 7. satıra gider, NOT AL=02h yapar. RET 4. satırdaki NEG'e döner, AL=FEh olur. NOP değeri korur, JMP akışı HLT'ye taşır.",
+    ["Alt programı ve dönüşten sonraki aritmetiği atlamak.", "RET'ten sonra 4. satırdaki NEG'i atlamak.", "Alt programı atlayıp NEG'i doğrudan FDh'ye uygulamak.", "NOT yerine NEG, dönüşteki NEG yerine NOT uygulamak."],
+    { record: "10.11 · TCDD 30. Dersteki XOR, CALL, NOT, RET, NEG ve NOP takibi." }),
+
+  q(13, "code", "14, 62", "Program durduğunda BL nedir?",
+    "        MOV BL, 02h\n        JMP atla\n        MOV BL, 09h\natla:   INC BL\n        HLT",
+    ["0Ah", "03h", "02h", "09h", "01h"], "B",
+    "JMP koşulsuz olarak 4. satıra gider. 3. satırdaki MOV devreye girmez. INC ile 02h → 03h olur ve HLT akışı durdurur.",
+    ["JMP'yi yok sayıp hem MOV BL,09h hem INC'i çalıştırmak.", "Etiketin bulunduğu satırdaki INC'i atlamak.", "Atlanan MOV'u sayıp INC'i atlamak.", "İlk MOV ile yüklenen 02h'yi yok sayıp sıfırdan başlamak."],
+    { record: "10.11 · TCDD 30, 00:00–02:22. Hoca JMP’yi kesin gelecek komutlar arasında saydı." }),
+
+  q(14, "code", "20, 23", "XCHG sonrasında AX kaç olur?",
+    "MOV AL, 05h\nMOV AH, 02h\nXCHG AL, AH",
+    ["0502h", "0205h", "0202h", "0505h", "0007h"], "A",
+    "XCHG iki baytı karşılıklı değiştirir. AH 05h, AL 02h olur ve AX=0502h görünür.",
+    ["AX'i ilk haliyle bırakmak.", "Yalnız AH'yi AL'ye kopyalamak.", "Yalnız AL'yi AH'ye kopyalamak.", "Yer değiştirmeyi toplama sanmak."],
+    { record: "10.11 · TCDD 30, 44:25. XCHG AL,AH örneği ve “sorulabilir, gayet basit” ifadesi." }),
+
+  q(15, "code", "20, 23, 31", "8 bit operandlı MUL BL çalışınca AX nedir?",
+    "MOV AL, 200\nMOV BL, 4\nMUL BL",
+    ["0020h", "0800h", "2003h", "00C8h", "0320h"], "E",
+    "Byte çarpımında AL örtük çarpandır ve 16 bitlik sonuç AX'e yazılır. 200 × 4 = 800 onluk = 0320h. AH=03h, AL=20h olur.",
+    ["Yalnız düşük baytı tutmak.", "800 onluk ürünü 0800h diye yazmak.", "AH ile AL'yi ters birleştirmek.", "AL'nin başlangıç değeri C8h'yi sonuç saymak."],
+    { photo: "IMG_1889–1912 · 10.11 TCDD 28. Hoca 200 × 4 örneğinde “burayı bilseniz yeterli” dedi." }),
+
+  q(16, "code", "20, 23, 31", "DIV BL çalışınca AL ve AH nedir?",
+    "MOV AX, 00CBh\nMOV BL, 04h\nDIV BL",
+    ["03h   32h", "50h   03h", "33h   00h", "32h   03h", "32h   00h"], "D",
+    "Byte bölmede bölünen AX'tir. 203 = 50 × 4 + 3. Bölüm AL'ye 32h, kalan AH'ye 03h olarak yazılır.",
+    ["Bölümle kalanın saklayıcılarını ters çevirmek.", "Onluk 50'yi hex 50h diye yazmak.", "Bölümü yukarı yuvarlayarak 51 almak.", "Tam sayı bölümü doğru bulup kalanı silmek."],
+    { order: "AL    AH", record: "10.11 · TCDD 29. AX=00CBh ve BL=4 bölme örneği." }),
+
+  q(17, "code", "34, 81", "NEG AL sonrasında AL nedir?",
+    "MOV AL, 0CBh\nNEG AL",
+    ["34h", "CBh", "35h", "CCh", "53h"], "C",
+    "NEG, 0 − CBh işlemini 8 bitte yapar. CBh'nin bit tersi 34h, bir fazlası 35h'tir. İşaretli yorumda −53 → +53.",
+    ["Bir eklemeden bitleri ters çevirip durmak.", "AL'yi olduğu gibi bırakmak.", "Giriş değerine doğrudan 1 eklemek.", "Onluk 53'ü hex 53h diye okumak."],
+    { record: "10.11 · TCDD 29. CBh üzerinden NEG ve NOT farkı." }),
+
+  q(18, "code", "34, 37", "NOT AL sonrasında AL nedir?",
+    "MOV AL, 0CBh\nNOT AL",
+    ["35h", "34h", "CBh", "4Bh", "CCh"], "B",
+    "NOT her biti tersler. 1100 1011 → 0011 0100 = 34h.",
+    ["NOT'tan sonra 1 ekleyerek NEG uygulamak.", "NOT'un AL'yi değiştirmediğini varsaymak.", "Yalnızca en üst biti terslemek.", "Bitleri terslemek yerine girişe bir eklemek."],
+    { record: "10.11 · TCDD 29. Hoca CBh üzerinden NOT örneği gösterdi." }),
+
+  q(19, "code", "37, 81", "AND sonrası AL ve ZF nedir?",
+    "MOV AL, 62h\nAND AL, 9Dh",
+    ["00h   0", "62h   1", "FFh   0", "9Dh   0", "00h   1"], "E",
+    "62h ve 9Dh'nin aynı konumda 1 olan biti yoktur. AND sonucu 00h olarak AL'ye yazılır ve ZF=1 olur.",
+    ["Sonucun sıfır olduğunu görüp ZF'yi ters okumak.", "AND'yi sonucu yazmayan TEST gibi yorumlamak.", "AND yerine OR uygulamak.", "Maskeyi AL'ye kopyalamak."],
+    { order: "AL    ZF", photo: "IMG_1889–1912 · 10.11. Derste gösterilen 62h AND 9Dh örneği." }),
+
+  q(20, "code", "37", "OR ve MOV çalıştıktan sonra BL kaç olur?",
+    "MOV AL, 02h\nOR  AL, 04h\nMOV BL, AL",
+    ["06h", "00h", "02h", "04h", "08h"], "A",
+    "0000 0010 OR 0000 0100 = 0000 0110 (06h). Son MOV bu sonucu BL'ye taşır.",
+    ["OR yerine AND uygulamak.", "Yalnız ilk operandı taşımak.", "Yalnız maskeyi taşımak.", "Bitleri birleştirmek yerine maskeyi bir bit sola kaydırmak."],
+    { record: "27.10 ders kaydı. 02h OR 04h örneği. 10.11 TCDD 30 komut listesinde OR da anıldı." }),
+
+  q(21, "code", "37, 45, 81", "TEST ve JZ sonrasında HLT'de AL ve BL nedir?",
+    "        MOV AL, 62h\n        MOV BL, 01h\n        TEST AL, 9Dh\n        JZ bitir\n        MOV BL, 08h\nbitir:  HLT",
+    ["00h   01h", "62h   01h", "62h   08h", "00h   08h", "9Dh   01h"], "B",
+    "TEST geçici olarak 62h AND 9Dh = 00h hesaplar. AL 62h kalırken ZF=1 olur. JZ, BL'yi değiştiren satırı atlar.",
+    ["TEST'in AND gibi sonucu AL'ye yazdığını varsaymak.", "ZF'yi geçici sonuç yerine AL'nin içeriğinden hesaplamak.", "Hem geçici sonucu saklamak hem JZ'nin koşulunu ters okumak.", "TEST maskesini AL'ye kopyalamak."],
+    { order: "AL    BL", record: "10.11 · TCDD 30, 45:01. TEST'in bayraklara etkisinden uyarlama." }),
+
+  q(22, "code", "38, 81", "SHL sonrasında AL ve CF nedir?",
+    "SHL AL, 1",
+    ["E8h   0", "7Ah   0", "E9h   1", "FAh   0", "E8h   1"], "E",
+    "1111 0100 sola kayar. Soldan çıkan 1 CF'ye gider, en sağa 0 girer. 1110 1000 = E8h.",
+    ["CF'ye soldan çıkan bit yerine yeni en sağ biti almak.", "Sola kaydırma yerine SHR uygulamak.", "Boşalan sağ bite çıkan 1'i geri sokmak.", "Sola kaydırma yerine SAR uygulamak."],
+    { initial: "AL = F4h", order: "AL    CF", photo: "10.11 · Kaydırma işlemleri, Hafta 2. F4h örneği." }),
+
+  q(23, "code", "38, 81", "SHR sonrasında AL ve CF nedir?",
+    "SHR AL, 1",
+    ["7Ah   0", "FAh   0", "7Ah   1", "E8h   1", "F4h   0"], "A",
+    "SHR üst bite 0 getirir. 1111 0100 → 0111 1010 (7Ah). En sağdan çıkan bit 0 olduğundan CF=0.",
+    ["SHR yerine işareti koruyan SAR uygulamak.", "CF'yi sağdan çıkan bit yerine başlangıcın işaret bitinden almak.", "SHR yerine SHL uygulamak.", "Kaydırmadan önceki AL değerinde kalmak."],
+    { initial: "AL = F4h", order: "AL    CF", photo: "10.11 · Kaydırma işlemleri, Hafta 2. F4h örneği." }),
+
+  q(24, "code", "33, 38, 81", "SAR sonrasında AL ve CF nedir?",
+    "SAR AL, 1",
+    ["7Ah   0", "FAh   1", "F4h   0", "FAh   0", "E8h   1"], "D",
+    "SAR en soldaki 1'i korur. 1111 0100 → 1111 1010 (FAh, işaretli −6). En sağdan çıkan 0, CF'ye gider.",
+    ["SAR yerine boşalan üst bite 0 veren SHR uygulamak.", "Korunan işaret bitini CF sanmak.", "İşareti korumayı bütün değeri sabit tutmak sanmak.", "Sağa kaydırma yerine SHL uygulamak."],
+    { initial: "AL = F4h", order: "AL    CF", photo: "10.11 · Kaydırma işlemleri, Hafta 2. F4h örneği." }),
+
+  q(25, "code", "36, 47, 80–81", "ADD sonrasında AL, CF ve OF nedir?",
+    "MOV AL, 80h\nADD AL, 80h",
+    ["00h   1 0", "00h   0 1", "00h   1 1", "00h   0 0", "80h   1 1"], "C",
+    "80h + 80h = 100h, AL'ye 00h kalır ve dışarı elde çıkar. İşaretli −128 + (−128) = −256, 8 bite sığmaz. CF=1 ve OF=1.",
+    ["Yalnızca işaretsiz eldeyi kontrol etmek.", "Yalnızca işaretli taşmayı kontrol etmek.", "Sıfır sonucu görünce iki bayrağın da sıfır olacağını sanmak.", "Bayrakları bulup giriş değerini sonuç olarak bırakmak."],
+    { order: "AL    CF OF", record: "03.11 · TCDD 23, 09:14–09:43. Hoca CF ve OF hesabını örnekledi." }),
+
+  q(26, "code", "33, 36, 81", "DEC sonrasında AL, CF ve ZF nedir?",
+    "MOV AL, 00h\nSUB AL, 01h\nINC AL\nDEC AL",
+    ["FFh   0 0", "00h   1 1", "FFh   1 1", "01h   1 0", "FFh   1 0"], "E",
+    "SUB, AL=FFh ve CF=1 yapar. INC ile AL=00h ve ZF=1, DEC ile AL=FFh ve ZF=0 olur. INC ve DEC, SUB'dan kalan CF'yi korur.",
+    ["DEC'in eldeyi sıfırlayacağını düşünmek.", "INC'ten sonra durup DEC'i atlamak.", "DEC'ten sonra INC'in ürettiği ZF'yi bırakmak.", "DEC'i ikinci bir INC gibi uygulamak."],
+    { order: "AL    CF ZF" }),
+
+  q(27, "code", "32, 36, 81", "ADC tamamlandığında BL kaç olur?",
+    "MOV AL, 0FFh\nADD AL, 01h\nMOV BL, 0Ah\nADC BL, 05h",
+    ["0Fh", "10h", "11h", "15h", "06h"], "B",
+    "FFh + 01h, CF=1 üretir. MOV eldeyi korur. ADC, BL'ye 0Ah + 05h + 1 = 10h yazar.",
+    ["ADC'yi ADD gibi yapıp CF'yi hesaba katmamak.", "Eldeyi iki kez eklemek.", "5 sayısını eklemeden önce 0Ah'yi 10h sanıp eldeyi de unutmak.", "BL yerine sıfıra dönen AL üzerinden 0 + 5 + 1 hesaplamak."],
+    { photo: "IMG_1889–1912 · 10.11. ADD/ADC ve CF örneğinden uyarlama." }),
+
+  q(28, "code", "37, 80–81", "AND sonrasında AX ve PF nedir?",
+    "MOV AX, 01FDh\nMOV BX, 01FBh\nAND AX, BX",
+    ["01F9h   0", "00F9h   1", "01F9h   1", "01FFh   1", "0006h   1"], "C",
+    "AND sonucu 01F9h. PF yalnız alt bayta bakar: F9h içinde altı tane 1 bulunduğu için PF=1.",
+    ["AX'in 16 bitinin tamamındaki yedi tane 1'i saymak.", "Üst baytta iki tarafta da 1 olan biti silmek.", "AND yerine OR uygulamak.", "AND yerine XOR uygulamak."],
+    { order: "AX      PF", photo: "IMG_1778–1787 · 27.10. AND AX,BX ve F9h'nin parity (eşlik) örneğinden uyarlama." }),
+
+  q(29, "memory", "40, 43", "MUL çalıştığında AX nedir?",
+    "MOV AL, '7'\nAND AL, 0Fh\nMOV BL, 5\nMUL BL",
+    ["0035h", "0113h", "0007h", "0023h", "000Fh"], "D",
+    "ASCII '7' = 37h. AND 0Fh üst dört biti siler ve 07h kalır. 7 × 5 = onluk 35, yani AX=0023h.",
+    ["Onluk 35'i doğrudan hex 35h diye yazmak.", "ASCII 37h'yi maskelemeden 5 ile çarpmak.", "Çarpmayı atlayıp maskelenmiş 07h'de kalmak.", "Maskeyi çarpım sonucu sanmak."],
+    { photo: "IMG_1820 · 03.11. ASCII rakamını maskeleme ve ardından çarpma." }),
+
+  q(30, "code", "20, 23, 31–33", "Hangi MOV, sabit hedef genişliğine sığmadığı için geçersizdir?",
+    "MOV AX, 23h\nMOV AL, 34h\nMOV AL, 1234h\nMOV BX, AX\nMOV AH, AL",
+    ["3. satır", "1. satır", "2. satır", "4. satır", "5. satır"], "A",
+    "AL 8 bittir. 1234h, FFh sınırını aşar. 3. satırdaki sabit ancak uygun genişlikteki bir hedefe sığar.",
+    ["23h'nin 16 bitlik AX'e sığmadığını düşünmek. AX=0023h olur.", "34h'yi 8 bitin dışına taşan bir değer sanmak.", "İki eş genişlikli 16 bit saklayıcı arasında MOV yapılamayacağını düşünmek.", "AH ve AL aynı AX'in parçaları diye 8 bitlik kopyalamayı geçersiz saymak."],
+    { record: "10.11 · TCDD 30, 33:45 ve son bölüm. MOV AX,23h ve operand genişliği örnekleri." }),
+
+  q(31, "memory", "39, 49", "0A0B0C0Dh değeri 2000h adresinden başlayarak little-endian saklanıyor. 2002h'de hangi bayt bulunur?",
+    "", ["0Dh", "0Ch", "0Ah", "00h", "0Bh"], "E",
+    "Düşük adresten yükseğe doğru baytlar 0Dh, 0Ch, 0Bh, 0Ah olur. 2002h başlangıçtan iki bayt sonradır.",
+    ["2000h'deki ilk baytı okumak.", "Big-endian sıra kullanmak veya 2001h'yi okumak.", "2003h'deki en üst baytı okumak.", "32 bitlik değerin dört baytından birini sıfır dolgu sanmak."],
+    { mono: true, photo: "IMG_1826 · 03.11. Hafta 2 çıkış sorusu." }),
+
+  q(32, "memory", "34, 49", "−5'in 8 bitlik ikinin tümleyeni hangisidir?",
+    "", ["05h", "FAh", "85h", "FBh", "F6h"], "D",
+    "05h = 0000 0101. Bit tersi 1111 1010 (FAh), bir ekleyince 1111 1011 (FBh).",
+    ["Pozitif 5'i olduğu gibi bırakmak.", "Bitleri ters çevirip bir eklememek.", "Yalnız işaret bitini 1 yapmak (işaret ve büyüklük gösterimi).", "−5 yerine −10'un 8 bitlik karşılığını bulmak."],
+    { mono: true, photo: "IMG_1826 · 03.11. Hafta 2 çıkış sorusu." }),
+
+  q(33, "memory", "32, 42, 49", "45h, paketli BCD ve sıradan hex sayı olarak hangi onluk değerleri gösterir?",
+    "", ["45    69", "69    45", "45    45", "09    69", "69    69"], "A",
+    "Paketli BCD'de 4 ve 5 ayrı onluk basamaktır: 4×10+5=45. Hex yorumda basamak ağırlığı 16'dır: 4×16+5=69.",
+    ["İki gösterimin basamak ağırlıklarını yer değiştirmek.", "Hex değerine de onluk basamak ağırlığı uygulamak.", "BCD basamaklarını 4+5 diye toplamak.", "BCD değerine de hex basamak ağırlığı uygulamak."],
+    { mono: true, order: "BCD   Hex", photo: "IMG_1826 · 03.11. Hafta 2 çıkış sorusu, temel BCD yorumu." }),
+
+  q(34, "code", "20, 31, 33", "Bu kez operand 16 bit. MUL BX sonrasında DX:AX nedir?",
+    "MOV AX, 8000h\nMOV BX, 0003h\nMUL BX",
+    ["0000h:8000h", "8000h:0001h", "0001h:8000h", "FFFEh:8000h", "0000h:0000h"], "C",
+    "MUL işaretsizdir. 8000h × 3 = 00018000h. Word çarpımında üst word DX=0001h, alt word AX=8000h olur.",
+    ["32 bitlik sonucun üst word'ünü atmak.", "DX ile AX'in sonuçtaki sırasını ters çevirmek.", "8000h'yi −32768 diye yorumlayarak işaretli çarpmak.", "Word çarpımı yerine AL (00h) ile BL (03h) çarpımını kullanmak."],
+    { photo: "IMG_1889–1912 · 10.11. MUL'un byte ve word ayrımından uyarlama." }),
+
+  q(35, "code", "20, 23, 31", "DIV BL sonrasında AX nedir?",
+    "MOV AX, 0105h\nMOV BL, 05h\nDIV BL",
+    ["0001h", "0134h", "3401h", "0034h", "0152h"], "B",
+    "Bölünen AX=0105h, yani 261. 261 = 52 × 5 + 1. AL=34h (bölüm), AH=01h (kalan). Birlikte AX=0134h.",
+    ["Bölünen olarak AX yerine yalnız AL'yi (05h) kullanmak.", "Bölümü AH'ye ve kalanı AL'ye yazmak.", "Kalanı sıfır saymak.", "Onluk 52'yi hex 52h diye yazmak."]),
+
+  q(36, "concept", "20–22, 25, 62", "EU bir komutu yürütürken BIU ne yapabilir?",
+    "", ["Sonraki komut baytlarını getirip kuyruğa koyar.", "ALU işlemini EU ile paylaşır.", "Sonucun durum bayraklarını günceller.", "EU bitene kadar her durumda bekler.", "Kuyruktaki komutu çözüp yürütür."], "A",
+    "BIU (yol arabirim birimi) bellek ve dış yol erişimini yönetir. 8086'da sonraki komut baytlarını 6 baytlık kuyruğa alabilir. EU, komutu çözüp yürütür.",
+    ["ALU'yu BIU ile EU'nun ortak yürütme birimi sanmak. ALU, EU'dadır.", "Bayrakların güncellenmesini komut getirmeyle karıştırmak.", "Önden getirme ile yürütmenin örtüşmesini gözden kaçırmak.", "BIU'ya EU'nun çözme ve yürütme görevini vermek."],
+    { record: "20.10 · TCDD 6–7 ve 03.11 · TCDD 24. BIU/EU ayrımı vurgulandı." }),
+
+  q(37, "concept", "14, 21–22, 62", "8086'da yeni hedefe atlayan bir JMP sonrasında sıradaki komut nasıl alınır?",
+    "", ["EU, eski kuyruktaki ilk komutu yürütür.", "EU hedeften komut getirir, BIU onu çözer.", "BIU yalnız hedef ofsetini fiziksel adres olarak kullanır.", "Kuyruk boşalır. BIU yeni CS:IP'den getirir, EU çözüp yürütür.", "Kuyruk boşalır. BIU önceki IP'den getirmeyi sürdürür."], "D",
+    "Eski kuyruk sıralı akışa aittir. JMP komut akışını değiştirir. BIU yeni CS:IP'den komut baytlarını getirir, EU bunları çözerek yürütür.",
+    ["Dallanma sonrası eski sırayla işlemeye devam etmek.", "BIU ve EU'nun görevlerini ters çevirmek.", "Segment bileşeni CS'yi adres hesabından çıkarmak.", "Kuyruğu temizleyip hedef yerine eski komut akışını sürdürmek."],
+    { record: "03.11 · TCDD 24. Komut çevrimi ve BIU kuyruğu." }),
+
+  q(38, "concept", "20, 83", "8086'nın 20 bitlik adres yolu kaç ayrı baytı adresler, son fiziksel adres nedir?",
+    "", ["65 536       0FFFFh", "1 048 575    FFFFFh", "1 048 576    100000h", "1 048 576    0FFFFh", "1 048 576    FFFFFh"], "E",
+    "20 bitin 2²⁰ farklı birleşimi var. Adresler sıfırdan başladığı için sonuncusu 2²⁰ − 1 = FFFFFh.",
+    ["16 bitlik ofset aralığını fiziksel adres alanıyla karıştırmak.", "En yüksek adresi toplam adres sayısı sanmak.", "Sıfırdan başlayan aralığın sonuna fazladan bir adres eklemek.", "Kapasiteyi 20 bit, son adresi 16 bit üzerinden bulmak."],
+    { mono: true, order: "Bayt sayısı  Son adres", record: "20.10 · TCDD 6–7. 8086'nın 20 bit adres yolu." }),
+
+  q(39, "extra", "10–11, 15", "RV32I ve 8086'nın komut uzunlukları hangi seçenekte doğru eşleştirilmiştir?",
+    "", ["RV32I: 1–6 bayt · 8086: 32 bit sabit", "RV32I: 32 bit sabit · 8086: 1–6 bayt", "RV32I: 32 bit sabit · 8086: 16 bit sabit", "RV32I: 16 bit sabit · 8086: 1–6 bayt", "RV32I: 1–6 bayt · 8086: 1–6 bayt"], "B",
+    "RV32I temel RISC komutları 32 bitlik sabit biçimler kullanır. Sunumda CISC örneği 8086'nın komut uzunluğu, komuta ve operandlara bağlı olarak 1–6 bayt aralığında verilir.",
+    ["İki mimarinin uzunluklarını ters eşleştirmek.", "8086'nın veri genişliğini komut uzunluğu sanmak.", "Başka RISC-V uzantılarındaki kısa kodlamayı RV32I temel komutlarına yüklemek.", "8086'nın değişken uzunluğunu temel RV32I'ye de uygulamak."]),
+
+  q(40, "extra", "52, 55, 57", "RV32I'nin sunumdaki beş çevrim aşaması hangi sırayla ilerler?",
+    "", ["ID → IF → EX → MEM → WB", "IF → EX → ID → MEM → WB", "IF → ID → EX → MEM → WB", "IF → ID → MEM → EX → WB", "IF → ID → EX → WB → MEM"], "C",
+    "IF getirir, ID komutu çözer ve saklayıcıları okur, EX işlemi veya adresi hesaplar, MEM gerektiğinde belleğe erişir, WB sonucu hedef saklayıcıya yazar.",
+    ["Komut belleğinden gelmeden onu çözmek.", "Opcode ve operandları çözmeden yürütmeye başlamak.", "Etkin adres hesaplanmadan belleğe erişmek.", "Yüklemede bellek verisi okunmadan hedef saklayıcıya yazmak."],
+    { mono: true }),
+];
+
+const $ = id => document.getElementById(id);
+const letters = "ABCDE";
+const byId = new Map(bank.map(item => [item.id, item]));
+const storageKey = "mikro-vize-provasi-v1";
+const setup = { topics: new Set(["code", "memory", "concept"]), stars: false, shuffle: false,
+  seconds: 0, players: 1, names: [] };
+let session = readStorage(storageKey);
+let sound = readStorage(storageKey + "-sound") === true;
+let screen = "setup";
+let reviewing = null;
+let timerHandle = null;
+let audioContext;
+
+function readStorage(key) {
+  try { return JSON.parse(localStorage.getItem(key)); }
+  catch { return null; }
+}
+
+function writeStorage(key, value) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Prova, dosya URL'sinde depolama kapalıyken de çalışır.
+  }
+}
+
+function isSavedSession(value) {
+  return Array.isArray(value?.ids) && value.ids.length > 0 && value.ids.every(id => byId.has(id))
+    && new Set(value.ids).size === value.ids.length
+    && Number.isInteger(value.index) && value.index >= 0 && value.index < value.ids.length
+    && Array.isArray(value.players) && value.players.length >= 1 && value.players.length <= 4
+    && value.players.every(name => typeof name === "string" && name.length <= 24)
+    && [0, 30, 45].includes(value.seconds)
+    && typeof value.finished === "boolean"
+    && value.answers && Object.entries(value.answers).every(([id, answer]) =>
+      value.ids.includes(Number(id)) && answer && typeof answer.revealed === "boolean"
+      && (answer.selected === null || Number.isInteger(answer.selected) && answer.selected >= 0 && answer.selected < 5)
+      && (answer.deadline === null || Number.isFinite(answer.deadline)));
+}
+
+if (!isSavedSession(session)) session = null;
+
+function persist() {
+  writeStorage(storageKey, session);
+}
+
+function element(tag, value, className) {
+  const node = document.createElement(tag);
+  if (value !== undefined) node.textContent = value;
+  if (className) node.className = className;
+  return node;
+}
+
+function setPressed(button, pressed) {
+  button.setAttribute("aria-pressed", String(pressed));
+}
+
+function soundLabel() {
+  $("sound").textContent = sound ? "Ses açık" : "Ses kapalı";
+  setPressed($("sound"), sound);
+}
+
+function playTone(kind) {
+  if (!sound) return;
+  try {
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) return;
+    audioContext ??= new Audio();
+    if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+    const tone = audioContext.createOscillator();
+    const volume = audioContext.createGain();
+    const now = audioContext.currentTime;
+    tone.type = "sine";
+    tone.frequency.value = { select: 420, correct: 640, wrong: 225 }[kind];
+    volume.gain.setValueAtTime(.055, now);
+    volume.gain.exponentialRampToValueAtTime(.001, now + .14);
+    tone.connect(volume);
+    volume.connect(audioContext.destination);
+    tone.start(now);
+    tone.stop(now + .15);
+  } catch {
+    // Ses desteği prova akışından bağımsızdır.
+  }
+}
+
+function matching() {
+  return bank.filter(item => setup.topics.has(item.topic) && (!setup.stars || item.record || item.photo));
+}
+
+function showSetup() {
+  show("setup");
+  updateSetup();
+}
+
+function updateSetup() {
+  const count = matching().length;
+  $("selected-count").textContent = count + " soru seçili";
+  $("start").disabled = count === 0;
+  $("start").textContent = session ? "Yeni prova" : "Başla";
+  $("resume").hidden = !session;
+  $("resume").textContent = session?.finished ? "Sonuçları aç" : "Devam et";
+}
+
+function renderNames() {
+  const container = $("names");
+  container.replaceChildren();
+  container.hidden = setup.players === 1;
+  if (container.hidden) return;
+  for (let i = 0; i < setup.players; i++) {
+    const label = element("label", "Oyuncu " + (i + 1));
+    const input = element("input");
+    input.type = "text";
+    input.maxLength = 24;
+    input.value = setup.names[i] || "";
+    input.placeholder = "İsteğe bağlı ad";
+    input.addEventListener("input", () => { setup.names[i] = input.value; });
+    label.append(input);
+    container.append(label);
+  }
+}
+
+function shuffled(ids) {
+  const copy = ids.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function start(ids, players, seconds) {
+  if (!ids.length) return;
+  session = { ids, players, seconds, index: 0, answers: {}, finished: false };
+  reviewing = null;
+  show("quiz");
+  renderQuestion();
+}
+
+function show(name) {
+  stopTimer();
+  screen = name;
+  for (const section of ["setup", "quiz", "results"]) $(section).hidden = section !== name;
+  $("home").hidden = name === "setup";
+}
+
+function currentQuestion() {
+  return byId.get(session.ids[reviewing ?? session.index]);
+}
+
+function currentAnswer() {
+  const id = currentQuestion().id;
+  session.answers[id] ??= { selected: null, revealed: false, deadline: null };
+  return session.answers[id];
+}
+
+function mark(item) {
+  const answer = session.answers[item.id];
+  if (!answer?.revealed || answer.selected === null) return "blank";
+  return answer.selected === item.correct ? "correct" : "wrong";
+}
+
+function scoresAt(index) {
+  return session.ids.reduce((scores, id, i) => {
+    if (mark(byId.get(id)) === "correct") scores[i % scores.length]++;
+    return scores;
+  }, Array(session.players.length).fill(0)).map((score, i) =>
+    element("span", session.players[i] + " · " + score, "score" + (i === index ? " current" : "")));
+}
+
+function renderQuestion(focus = true) {
+  stopTimer();
+  const item = currentQuestion();
+  const answer = currentAnswer();
+  const index = reviewing ?? session.index;
+
+  $("counter").textContent = "Soru " + (index + 1) + " / " + session.ids.length;
+  $("topic").textContent = topics[item.topic];
+  $("progress").max = session.ids.length;
+  $("progress").value = Object.values(session.answers).filter(answer => answer.revealed).length;
+  $("scores").replaceChildren(...(session.players.length > 1 ? scoresAt(index % session.players.length) : []));
+  $("quiz-meta").hidden = session.players.length === 1 && !session.seconds;
+
+  $("question").textContent = item.prompt;
+  $("evidence").hidden = !(item.photo || item.record);
+  $("evidence").open = false;
+  $("evidence-label").textContent = item.photo ? "⭐ Ders fotoğrafı" : "⭐ Ders kaydı";
+  $("evidence-note").textContent = item.photo || item.record || "";
+  $("initial").hidden = !item.initial;
+  $("initial").textContent = item.initial ? "Başlangıç: " + item.initial : "";
+  $("program").hidden = !item.code;
+  $("code-lines").replaceChildren();
+  if (item.code) {
+    item.code.split("\n").forEach((line, i) => {
+      if (i) $("code-lines").append("\n");
+      const number = element("span", String(i + 1), "line-number");
+      number.setAttribute("aria-hidden", "true");
+      $("code-lines").append(number, line);
+    });
+  }
+
+  renderOptions(item, answer);
+  $("previous").disabled = index === 0;
+  $("previous").hidden = reviewing !== null;
+  $("back-results").hidden = reviewing === null;
+  $("reveal").hidden = answer.revealed;
+  $("next").hidden = !answer.revealed || reviewing !== null;
+  $("next").textContent = index + 1 === session.ids.length ? "Sonuçları gör →" : "Sonraki →";
+  $("feedback").hidden = !answer.revealed;
+  $("key-help").hidden = reviewing !== null;
+  if (answer.revealed) renderFeedback(item, answer);
+
+  $("timer").hidden = answer.revealed || !session.seconds;
+  if (!$("timer").hidden) {
+    answer.deadline ??= Date.now() + session.seconds * 1000;
+    timerHandle = setInterval(updateTimer, 250);
+    updateTimer();
+  }
+  persist();
+  if (focus) $("question").focus();
+}
+
+function renderOptions(item, answer) {
+  const options = $("options");
+  options.replaceChildren();
+  if (item.order) {
+    const order = element("p", "Şık sırası: " + item.order, "small mono full");
+    options.append(order);
+  }
+  item.options.forEach((value, i) => {
+    const button = element("button", undefined, "option");
+    button.type = "button";
+    setPressed(button, answer.selected === i);
+    button.setAttribute("aria-disabled", String(answer.revealed));
+    const result = answer.revealed
+      ? i === item.correct ? "✓" : answer.selected === i ? "×" : "" : "";
+    if (result) button.classList.add(result === "✓" ? "correct" : "wrong");
+    button.append(element("span", letters[i], "letter"),
+      element("span", value, "option-text" + (item.code || item.mono ? " mono" : "")),
+      element("strong", result));
+    button.addEventListener("click", () => select(i, true));
+    options.append(button);
+  });
+}
+
+function renderFeedback(item, answer) {
+  const result = answer.selected === null ? "Boş" : answer.selected === item.correct ? "Doğru" : "Yanlış";
+  $("feedback-title").textContent = result + " · Doğru şık " + letters[item.correct];
+  $("slide").textContent = "Slayt " + item.slide;
+  $("explanation").textContent = item.why;
+  $("distractors").replaceChildren();
+  let mistake = 0;
+  item.options.forEach((_, i) => {
+    if (i === item.correct) return;
+    const row = element("li");
+    row.append(element("strong", letters[i] + " · "), item.mistakes[mistake++]);
+    $("distractors").append(row);
+  });
+}
+
+function select(index, focus) {
+  const item = currentQuestion();
+  const answer = currentAnswer();
+  if (answer.revealed) return;
+  answer.selected = index;
+  playTone("select");
+  renderOptions(item, answer);
+  persist();
+  if (focus) $("options").querySelectorAll(".option")[index].focus();
+}
+
+function reveal(focus = true) {
+  const item = currentQuestion();
+  const answer = currentAnswer();
+  if (answer.revealed) return;
+  answer.revealed = true;
+  answer.deadline = null;
+  playTone(answer.selected === item.correct ? "correct" : "wrong");
+  renderQuestion(false);
+  if (focus) $("feedback").focus();
+}
+
+function stopTimer() {
+  if (timerHandle !== null) clearInterval(timerHandle);
+  timerHandle = null;
+}
+
+function updateTimer() {
+  const seconds = Math.max(0, Math.ceil((currentAnswer().deadline - Date.now()) / 1000));
+  const label = seconds + " sn";
+  if ($("timer").textContent !== label) $("timer").textContent = label;
+  $("timer").classList.toggle("urgent", seconds <= 5);
+  if (seconds === 0) reveal(false);
+}
+
+function next() {
+  if (reviewing !== null || !currentAnswer().revealed) return;
+  if (session.index + 1 < session.ids.length) {
+    session.index++;
+    renderQuestion();
+  } else {
+    session.finished = true;
+    persist();
+    showResults();
+  }
+}
+
+function previous() {
+  if (reviewing !== null || session.index === 0) return;
+  session.index--;
+  renderQuestion();
+}
+
+function missed() {
+  return session.ids.filter(id => mark(byId.get(id)) !== "correct");
+}
+
+function showResults() {
+  reviewing = null;
+  show("results");
+  const misses = missed();
+  const empty = misses.filter(id => mark(byId.get(id)) === "blank").length;
+  $("summary").textContent = (session.ids.length - misses.length) + " doğru · "
+    + (misses.length - empty) + " yanlış · " + empty + " boş";
+  $("result-scores").replaceChildren(...(session.players.length > 1 ? scoresAt(-1) : []));
+  $("miss-list").replaceChildren();
+  $("misses").hidden = $("retry").hidden = !misses.length;
+
+  for (const id of misses) {
+    const item = byId.get(id);
+    const index = session.ids.indexOf(id);
+    const label = "Soru " + (index + 1) + " · " + item.prompt;
+    const button = element("button", label);
+    button.type = "button";
+    button.addEventListener("click", () => {
+      reviewing = index;
+      show("quiz");
+      renderQuestion();
+    });
+    $("miss-list").append(button);
+  }
+  $("result-title").focus();
+}
+
+$("topics").querySelectorAll("[data-topic]").forEach(button => button.addEventListener("click", () => {
+  const topic = button.dataset.topic;
+  if (setup.topics.has(topic)) setup.topics.delete(topic);
+  else setup.topics.add(topic);
+  setPressed(button, setup.topics.has(topic));
+  updateSetup();
+}));
+
+function bindExclusive(id, name, apply) {
+  const buttons = $(id).querySelectorAll("[data-" + name + "]");
+  buttons.forEach(button => button.addEventListener("click", () => {
+    buttons.forEach(other => setPressed(other, button === other));
+    apply(Number(button.dataset[name]));
+  }));
+}
+bindExclusive("timers", "time", seconds => { setup.seconds = seconds; });
+bindExclusive("modes", "mode", count => { setup.players = count; renderNames(); });
+
+$("sound").addEventListener("click", () => {
+  sound = !sound;
+  writeStorage(storageKey + "-sound", sound);
+  soundLabel();
+  playTone("select");
+});
+$("star-only").addEventListener("click", () => {
+  setup.stars = !setup.stars;
+  setPressed($("star-only"), setup.stars);
+  updateSetup();
+});
+$("shuffle").addEventListener("click", () => {
+  setup.shuffle = !setup.shuffle;
+  setPressed($("shuffle"), setup.shuffle);
+});
+$("start").addEventListener("click", () => {
+  const ids = matching().map(item => item.id);
+  const players = Array.from({ length: setup.players }, (_, i) =>
+    setup.players === 1 ? "Sen" : setup.names[i]?.trim() || "Oyuncu " + (i + 1));
+  start(setup.shuffle ? shuffled(ids) : ids, players, setup.seconds);
+});
+$("resume").addEventListener("click", () => {
+  if (!session) return;
+  if (session.finished) showResults();
+  else {
+    reviewing = null;
+    show("quiz");
+    renderQuestion();
+  }
+});
+$("home").addEventListener("click", showSetup);
+$("previous").addEventListener("click", previous);
+$("next").addEventListener("click", next);
+$("reveal").addEventListener("click", () => reveal());
+$("back-results").addEventListener("click", showResults);
+$("retry").addEventListener("click", () => start(missed(), session.players, session.seconds));
+$("restart").addEventListener("click", () => {
+  session = null;
+  persist();
+  showSetup();
+});
+
+document.addEventListener("keydown", event => {
+  if (screen !== "quiz" || event.altKey || event.ctrlKey || event.metaKey) return;
+  const key = event.key.toUpperCase();
+  if (event.key.length === 1 && /[A-E1-5]/.test(key) && !currentAnswer().revealed) {
+    event.preventDefault();
+    select(/[1-5]/.test(key) ? Number(key) - 1 : letters.indexOf(key), false);
+  } else if (event.key === " " && !currentAnswer().revealed && !event.target.closest("button, summary, details, pre")) {
+    event.preventDefault();
+    reveal();
+  } else if (!event.target.closest("pre, details") && key === "ARROWRIGHT" && currentAnswer().revealed) {
+    event.preventDefault();
+    next();
+  } else if (!event.target.closest("pre, details") && key === "ARROWLEFT") {
+    event.preventDefault();
+    previous();
+  }
+});
+
+const extras = bank.filter(item => item.topic === "extra").length;
+$("bank-summary").textContent = (bank.length - extras) + " prova sorusu + " + extras
+  + " ek tekrar · " + bank.filter(item => item.code).length + " kod sorusu";
+soundLabel();
+renderNames();
+updateSetup();
+</script>
+</body>
+</html>

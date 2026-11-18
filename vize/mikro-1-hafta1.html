@@ -1,0 +1,4357 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mikroişlemci Mimarisi · Hafta 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+<style>
+  :root {
+    --bg: #F2F3ED;
+    --card: #FFFFFF;
+    --ink: #24372D;
+    --muted: #7C8A7E;
+    --sage: #9CC29A;
+    --lavender: #B6A2DB;
+    --terracotta: #CF8A68;
+    --sand: #E3C9A0;
+    --ice: #9FC3D6;
+    --border: rgba(36, 55, 45, 0.09);
+    --shadow: 0 10px 30px rgba(36, 55, 45, 0.06), 0 2px 8px rgba(36, 55, 45, 0.04);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px 20px 42px;
+  }
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .brand-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 30px;
+    line-height: 1;
+    color: var(--ink);
+    margin: 0;
+  }
+  .topbar-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .stage-shell {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #F2F3ED;
+  }
+  canvas#stage {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+  }
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: #F7F8F3;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 13px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, transform 0.12s ease, border-color 0.15s ease;
+  }
+  .btn:hover { background: #ECEFE4; border-color: rgba(36, 55, 45, 0.18); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary {
+    background: var(--ink);
+    color: #F2F3ED;
+    border-color: var(--ink);
+  }
+  .btn.primary:hover { background: #2F473B; }
+  .btn.active-pill {
+    background: rgba(156, 194, 154, 0.35);
+    border-color: rgba(36, 55, 45, 0.25);
+  }
+  .btn.export-btn {
+    background: rgba(227, 201, 160, 0.35);
+  }
+  .btn.export-btn:hover {
+    background: rgba(227, 201, 160, 0.58);
+  }
+  .time-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 0 6px;
+    min-width: 112px;
+    text-align: center;
+  }
+  .chapter-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  @media (max-width: 960px) {
+    .chapter-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px) {
+    .chapter-strip { grid-template-columns: 1fr; }
+  }
+  .ch-card {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 13px 14px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+  }
+  .ch-card.active {
+    border-color: var(--terracotta);
+    background: #FFFFFF;
+  }
+  .ch-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ch-num {
+    background: #F2F3ED;
+    color: var(--ink);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .ch-card.active .ch-num {
+    background: rgba(207, 138, 104, 0.22);
+    color: #8E4B2D;
+  }
+  .ch-title {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .ch-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .ch-actions .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 6px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+  .kbd-hint {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(36, 55, 45, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 22px;
+    padding: 22px 24px;
+    box-shadow: 0 24px 60px rgba(36, 55, 45, 0.22);
+    border: 1px solid var(--border);
+  }
+  .modal h3 {
+    margin: 0 0 6px;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--ink);
+  }
+  .modal p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .prog-track {
+    height: 10px;
+    background: #ECEFE4;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 14px 0 10px;
+  }
+  .prog-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--terracotta);
+    border-radius: 999px;
+    transition: width 0.08s linear;
+  }
+  .modal-stats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .modal-note {
+    background: #F6F7F1;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--ink);
+    margin: 10px 0 14px;
+    border: 1px solid var(--border);
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink);
+    color: #F2F3ED;
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 120;
+    box-shadow: 0 8px 24px rgba(36,55,45,0.2);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .selftest-err {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: #C55A4B;
+    color: #FFFFFF;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    z-index: 200;
+    box-shadow: 0 6px 18px rgba(197, 90, 75, 0.3);
+  }
+  .step-hint { text-align: center; margin: 10px 0 0; }
+  .step-hint span {
+    display: inline-block; padding: 7px 14px; border-radius: 999px;
+    background: #F7F8F3; color: var(--muted); font-size: 12px;
+    border: 1px solid var(--border);
+  }
+  .beat-progress {
+    position: relative; height: 16px; margin: 12px 6px 0;
+    background: #ECEFE4; border-radius: 8px; cursor: pointer;
+    overflow: hidden; touch-action: none;
+  }
+  .beat-progress-fill { height: 100%; width: 0; background: var(--sage); pointer-events: none; }
+  .beat-tick { position: absolute; top: 3px; bottom: 3px; width: 1px; background: #7C8A7E88; pointer-events: none; }
+  .audit-badge { position: fixed; top: 12px; right: 12px; z-index: 210;
+    padding: 7px 12px; border-radius: 10px; color: white; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-kicker">MİKROİŞLEMCİ MİMARİSİ • VİZE HAZIRLIĞI • HAFTA 1</span>
+      <h1 class="brand-title">Komuttan işlemciye</h1>
+    </div>
+    <div class="topbar-meta" id="fontStatus">Yazı tipleri hazırlanıyor…</div>
+  </div>
+
+  <div class="stage-shell">
+    <div class="canvas-wrap">
+      <canvas id="stage" width="1280" height="720"></canvas>
+    </div>
+    <div id="beatProgress" class="beat-progress" role="slider" tabindex="0" aria-label="Adıma atla" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+      <div id="beatProgressFill" class="beat-progress-fill"></div>
+    </div>
+    <div id="stepHint" class="step-hint" aria-live="polite"><span></span></div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <button class="btn primary" id="btnPlay">▶ Oynat</button>
+      <button class="btn" id="btnBack">↺ -5 sn</button>
+      <button class="btn" id="btnFwd">+5 sn ↻</button>
+      <span class="time-readout" id="timeReadout">00:00 / 00:00</span>
+      <button class="btn" id="btnSpeed">1×</button>
+      <button class="btn active-pill" id="btnMode">⏯️ Mod: Adım</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="btn" id="btnNar">🗣️ Anlatım: Kapalı</button>
+      <button class="btn active-pill" id="btnSfx">🔊 SFX: Açık</button>
+      <button class="btn active-pill" id="btnMusic">🎵 Müzik: Açık</button>
+      <button class="btn" id="btnSub">💬 Altyazı: Kapalı</button>
+      <button class="btn export-btn" id="btnExportFull">⬇ Tam Video MP4</button>
+      <button class="btn export-btn" id="btnExportAll">⬇ Tümünü İndir (4 MP4)</button>
+    </div>
+  </div>
+
+  <div class="chapter-strip" id="chapterStrip"></div>
+
+  <div class="kbd-hint">
+    [Boşluk / →] Devam • [←] Geri • [R / Shift+R] Tekrar / 0,5× • [A] Mod • [1–9] Bölüm • [N] Anlatım • [M] SFX • [B] Müzik • [C] Altyazı
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportModal">
+  <div class="modal">
+    <h3 id="exportTitle">MP4 Dışa Aktarılıyor</h3>
+    <p id="exportSubtext">Kare kare deterministik kodlama hazırlanıyor…</p>
+    <div class="prog-track"><div class="prog-fill" id="exportBar"></div></div>
+    <div class="modal-stats">
+      <span id="exportPct">%0</span>
+      <span id="exportFrames">0 / 0 kare</span>
+    </div>
+    <div class="modal-note" id="exportMethodNote"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btnCancelExport">İptal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="narration-data">
+[
+  {"id":"c1b00","chapter":1,"text":"","seconds":1.7},
+  {"id":"c1b01","chapter":1,"text":"ISA, yazılımla işlemci arasındaki komut kümesi mimarisidir.","seconds":1.6},
+  {"id":"c1b02","chapter":1,"text":"Farklı işlemci tasarımları aynı komut kurallarını uygulayabilir.","seconds":1.6},
+  {"id":"c1b03","chapter":1,"text":"Assembly, komutu okunabilir adlarla yazar. MOV bir değeri hedefe kopyalar.","seconds":1.5},
+  {"id":"c1b04","chapter":1,"text":"Assembler komutu işlemcinin tanıdığı makine kodu baytlarına çevirir.","seconds":1.8},
+  {"id":"c1b05","chapter":1,"text":"Derleyici yüksek düzeyli kaynak kodu hedef mimarinin assembly diline çevirebilir.","seconds":1.5},
+  {"id":"c1b06a","chapter":1,"text":"Assembler, çevirdiği komutları nesne dosyasına yazar.","seconds":1.5},
+  {"id":"c1b06","chapter":1,"text":"Bağlayıcı nesne dosyalarını birleştirip adresleri çözer.","seconds":1.6},
+  {"id":"c1b07","chapter":1,"text":"Yükleyici programı belleğe alıp yürütmenin başlayacağı adresi kurar.","seconds":1.6},
+  {"id":"c1b08","chapter":1,"text":"Sınav anı. ISA hangi bilgileri tanımlar?","seconds":4.0},
+  {"id":"c1b09","chapter":1,"text":"B doğru. ISA, komutları ve yazılımın erişebildiği yazmaçları tanımlar.","seconds":1.5},
+  {"id":"c1b10","chapter":1,"text":"Saat hızı, devre, üretici ve çeviri aracı farklı kavramlardır.","seconds":1.6},
+  {"id":"c1b11","chapter":1,"text":"","seconds":1.7},
+
+  {"id":"c2b00","chapter":2,"text":"","seconds":1.7},
+  {"id":"c2b01","chapter":2,"text":"RISC düzenli komutlar, CISC ise daha zengin komut ve adresleme biçimleri sunar.","seconds":1.6},
+  {"id":"c2b02","chapter":2,"text":"Temel RV32I komutları eşit uzunluktadır. Gösterilen iki 8086 komutu farklı uzunluktadır.","seconds":1.8},
+  {"id":"c2b03","chapter":2,"text":"RV32I bellekteki değeri önce bir yazmaca okur, sonra iki yazmacı toplar.","seconds":1.8},
+  {"id":"c2b04","chapter":2,"text":"8086'nın ADD komutu bir işleneni doğrudan bellekten okuyabilir.","seconds":1.8},
+  {"id":"c2b05","chapter":2,"text":"RV32I Ripes'ta, 8086 emu8086'da adım adım izlenebilir. Vize ağırlığı 8086'dır.","seconds":1.6},
+  {"id":"c2b06","chapter":2,"text":"Sınav anı. RV32I, bellekteki değeri yazmaca nasıl ekler?","seconds":4.0},
+  {"id":"c2b07","chapter":2,"text":"D doğru. Önce bellekten okur, ardından yazmaçları toplar.","seconds":1.5},
+  {"id":"c2b08","chapter":2,"text":"Bellekten okuma, belleğe yazma ve toplama ayrı işlemlerdir.","seconds":1.6},
+  {"id":"c2b09","chapter":2,"text":"","seconds":1.7},
+
+  {"id":"c3b00","chapter":3,"text":"","seconds":1.7},
+  {"id":"c3b01","chapter":3,"text":"BIU dış yola bağlanır, komut getirir ve bellek ile giriş çıkışa erişir.","seconds":1.6},
+  {"id":"c3b02","chapter":3,"text":"BIU, önceden getirdiği komut baytlarını altı baytlık kuyruğa koyar.","seconds":1.9},
+  {"id":"c3b03","chapter":3,"text":"EU kuyruktan komutu alır, çözer ve yürütür.","seconds":1.8},
+  {"id":"c3b04","chapter":3,"text":"8086'nın veri yolu ve aritmetik mantık birimi on altı bittir.","seconds":1.6},
+  {"id":"c3b05","chapter":3,"text":"Yirmi adres bitinin her biri iki değer alabilir.","seconds":1.6},
+  {"id":"c3b06","chapter":3,"text":"Bu yüzden yirmi bitlik adres yolu bir megabaytlık alanı adresler.","seconds":1.8},
+  {"id":"c3b07","chapter":3,"text":"Önden getirme, getirmenin ve yürütmenin aynı zaman diliminde ilerlemesini sağlar.","seconds":1.9},
+  {"id":"c3b08","chapter":3,"text":"Atlama gerçekleşince BIU eski kuyruğu boşaltıp yeni adresten komut getirir.","seconds":1.8},
+  {"id":"c3b09","chapter":3,"text":"Sınav anı. EU yürütürken BIU ne yapabilir?","seconds":4.0},
+  {"id":"c3b10","chapter":3,"text":"A doğru. Dış yol uygunsa BIU sonraki komut baytlarını getirir.","seconds":1.5},
+  {"id":"c3b11","chapter":3,"text":"Komut çözme, aritmetik ve bayrak güncelleme EU'nun görevleridir.","seconds":1.6},
+  {"id":"c3b12","chapter":3,"text":"","seconds":1.7},
+
+  {"id":"c4b00","chapter":4,"text":"","seconds":1.7},
+  {"id":"c4b01","chapter":4,"text":"Yazmaç, işlemcinin içindeki küçük ve hızlı veri tutucudur.","seconds":1.6},
+  {"id":"c4b02","chapter":4,"text":"İlk MOV komutu AX yazmacına 1234h değerini kopyalar.","seconds":1.6},
+  {"id":"c4b03","chapter":4,"text":"AH üst baytı, AL alt baytı okur. AX ikisinin tamamıdır.","seconds":1.6},
+  {"id":"c4b04","chapter":4,"text":"AL'ye 07h yazıldığında AH aynı kalır ve AX 1207h olur.","seconds":1.6},
+  {"id":"c4b05","chapter":4,"text":"MOV BX, AX komutu tüm değeri BX'e kopyalar. AX aynı kalır.","seconds":1.6},
+  {"id":"c4b06","chapter":4,"text":"8086 kod, veri, yığın ve ek segment için ayrı yazmaçlar kullanır.","seconds":1.7},
+  {"id":"c4b07","chapter":4,"text":"CS kod segmentini, IP sıradaki komutun segment içindeki konumunu verir.","seconds":1.7},
+  {"id":"c4b08","chapter":4,"text":"Segment değeri on altıyla çarpılır ve ofset eklenir.","seconds":1.8},
+  {"id":"c4b09","chapter":4,"text":"Sınav anı. Yalnız AL'ye yazınca AH ve AL ne olur?","seconds":4.0},
+  {"id":"c4b10","chapter":4,"text":"E doğru. AH 12h kalır ve AL 07h olur.","seconds":1.5},
+  {"id":"c4b11","chapter":4,"text":"AL'ye yazmak üst baytı silmez, değiştirmez veya yerini değiştirmez.","seconds":1.6},
+  {"id":"c4b12","chapter":4,"text":"","seconds":1.7}
+]
+</script>
+
+<script type="application/json" id="narration-audio">{}</script>
+
+<script>
+(() => {
+  'use strict';
+
+  const W = 1280;
+  const H = 720;
+  const FPS = 30;
+
+  // ==========================================================
+  // 1. El yazısı teması: ölçüm ve çizim aynı font eşlemesini kullanır
+  // ==========================================================
+  const THEME = {
+    spotlight: false,
+    tempo: 1.6, // İçerik beat'lerini uzatır; intro/outro kendi süresini korur.
+    el: true, boilShare: 0.8, boilFps: 6, // Sefa: çizgilerin çoğu hareketli ama yavaş (hızlısı göz yorar)
+    // Sefa (17.11): "hep bunu kullansın, çok güzelmiş" → bütün yazılar Patrick Hand (Kalam'da Z≈2, 1≈/ okunuyordu).
+    fonts: { body: 'Patrick Hand', code: 'Patrick Hand', note: 'Patrick Hand' },
+    scales: { body: 1.08, code: 0.98, heading: 0.98, note: 1.0 },
+    // Yazı titremesi: her harf ayrı, çizgilerle aynı yavaş hızda (boilFps), çok küçük genlik; okumayı bozmaz.
+    textBoil: true, textBoilAmp: 0.45, textBoilRot: 0.012
+  };
+  const nativeFont = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'font');
+  function mapThemeFont(value) {
+    if (!THEME.el || typeof value !== 'string') return value;
+    const m = value.match(/^(.*?)\b(\d*\.?\d+)(px|pt|em|rem)(?:\/[\d.]+)?\s+(.+)$/i);
+    if (!m) return value;
+    const families = m[4].split(',').map(s => s.trim().replace(/['"]/g, '').toLowerCase());
+    // Yalnız ilk aileyi seç: eşlenmiş bir font tekrar atanırsa boyutu tekrar büyütme.
+    const family = families[0];
+    if (family === 'patrick hand') return value;
+    let kind;
+    if (['inter', 'sans-serif'].includes(family)) kind = 'body';
+    else if (['caveat', 'cursive'].includes(family)) kind = 'note';
+    else if (family === 'kalam') kind = 'code';
+    else if (['jetbrains mono', 'monospace'].includes(family)) kind = 'code';
+    else if (['instrument serif', 'serif'].includes(family)) kind = 'heading';
+    else return value;
+    const weightMatch = m[1].match(/\b([1-9]00)\b/);
+    const weight = /\bbold\b/.test(m[1]) ? 700 : Number(weightMatch?.[1] || 400);
+    const mappedWeight = kind === 'body' ? 400 : weight >= 600 ? 700 : 400;
+    const size = (Number(m[2]) * THEME.scales[kind]).toFixed(3);
+    return `${mappedWeight} ${size}${m[3]} '${THEME.fonts[kind === 'heading' ? 'code' : kind]}'`;
+  }
+
+  // ---- Yazı titremesi (text boil) ----
+  // fillText'i sarar: metni harf harf, her harfe tohumlu küçük kayma/dönme vererek çizer.
+  // Poz yalnız renderFrame'in zamanından gelir (jitterT), bu yüzden kare kare deterministik (MP4 dahil).
+  let jitterT = 0;
+  const nativeFillText = CanvasRenderingContext2D.prototype.fillText;
+  function strHash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  CanvasRenderingContext2D.prototype.fillText = function (text, x, y, maxW) {
+    const str = String(text);
+    if (!THEME.el || !THEME.textBoil || reducedMotion || maxW !== undefined || str.length === 0 || str.length > 90) {
+      return maxW === undefined ? nativeFillText.call(this, text, x, y) : nativeFillText.call(this, text, x, y, maxW);
+    }
+    const chars = Array.from(str);
+    const widths = chars.map(ch => this.measureText(ch).width);
+    const sum = widths.reduce((a, b) => a + b, 0) || 1;
+    const total = this.measureText(str).width;
+    const k = total / sum; // kerning farkını dağıt: toplam genişlik aynı kalsın
+    const align = this.textAlign;
+    let cx = x;
+    if (align === 'center') cx = x - total / 2;
+    else if (align === 'right' || align === 'end') cx = x - total;
+    const frame = Math.floor(jitterT * THEME.boilFps);
+    const base = strHash(str) ^ Math.round(x * 7) ^ Math.round(y * 13);
+    const amp = THEME.textBoilAmp, rotMax = THEME.textBoilRot;
+    this.save();
+    this.textAlign = 'left';
+    for (let i = 0; i < chars.length; i++) {
+      const w = widths[i] * k;
+      if (chars[i] !== ' ') {
+        const r = mulberry32(((base + Math.imul(i + 1, 2654435761)) ^ Math.imul(frame + 1, 19349663)) >>> 0);
+        const dx = (r() - 0.5) * 2 * amp, dy = (r() - 0.5) * 2 * amp, rot = (r() - 0.5) * 2 * rotMax;
+        this.save();
+        this.translate(cx + w / 2 + dx, y + dy);
+        this.rotate(rot);
+        nativeFillText.call(this, chars[i], -w / 2, 0);
+        this.restore();
+      }
+      cx += w;
+    }
+    this.restore();
+  };
+  Object.defineProperty(CanvasRenderingContext2D.prototype, 'font', {
+    configurable: nativeFont.configurable, enumerable: nativeFont.enumerable,
+    get: nativeFont.get,
+    set(value) { nativeFont.set.call(this, mapThemeFont(value)); }
+  });
+
+  async function loadThemeFonts() {
+    const sample = 'x 0123456789 ğüşıöçİĞŞÜÖÇ';
+    const loaded = await Promise.all([
+      "400 40px 'Patrick Hand'", "400 40px 'Kalam'", "700 40px 'Kalam'",
+      "700 40px 'Caveat'", "400 40px 'Inter'", "600 40px 'Inter'",
+      "400 40px 'Instrument Serif'", "400 40px 'JetBrains Mono'", "700 40px 'JetBrains Mono'"
+    ].map(font => document.fonts.load(font, sample)));
+    if (loaded.slice(0, 4).some(faces => faces.length === 0)) {
+      throw new Error('El yazısı fontları yüklenemedi. Google Fonts bağlantısını kontrol edin.');
+    }
+    await document.fonts.ready;
+    const measureCtx = document.createElement('canvas').getContext('2d');
+    const xHeight = font => {
+      nativeFont.set.call(measureCtx, `400 100px '${font}'`);
+      return measureCtx.measureText('x').actualBoundingBoxAscent;
+    };
+    // Yedekler Patrick Hand ×1,08 / Kalam ×0,98. Yüklenen fontların gerçek
+    // x yüksekliğini eski aileyle kıyasla; aşırı ölçeklemeyi %10–15 ile sınırla.
+    for (const [kind, original, target] of [
+      ['body', 'Inter', THEME.fonts.body], ['code', 'JetBrains Mono', THEME.fonts.code],
+      ['heading', 'Instrument Serif', THEME.fonts.code], ['note', 'Caveat', THEME.fonts.note]
+    ]) {
+      const oldHeight = xHeight(original), newHeight = xHeight(target);
+      if (oldHeight > 0 && newHeight > 0) THEME.scales[kind] = clamp(oldHeight / newHeight, 0.90, 1.15);
+    }
+  }
+
+  const PALETTE = {
+    bg: '#F2F3ED',
+    card: '#FFFFFF',
+    ink: '#24372D',
+    muted: '#7C8A7E',
+    sage: '#9CC29A',
+    lavender: '#B6A2DB',
+    terracotta: '#CF8A68',
+    sand: '#E3C9A0',
+    ice: '#9FC3D6',
+    green: '#2E7D4F',
+    error: '#C55A4B',
+    softFill: '#F7F8F3'
+  };
+
+
+  // ==========================================================
+  // 2. Chapters, Easing, PRNG & Paper Texture
+  // ==========================================================
+
+  const ease = {
+    outCubic: (p) => 1 - Math.pow(1 - clamp01(p), 3),
+    inOutCubic: (p) => {
+      const t = clamp01(p);
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    },
+    outBack: (p, s = 1.4) => {
+      const t = clamp01(p);
+      const c1 = s;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    },
+    inOutPower2: (p) => {
+      const t = clamp01(p);
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    },
+    outExpo: (p) => {
+      const t = clamp01(p);
+      return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    }
+  };
+  const MOTION = { arrive: 0.5, exit: 0.28, stagger: 0.08, settle: 0.5 };
+
+  // Çizim bağlamı yalnız o karenin t'sinden kurulur; oynatma geçmişi tutulmaz.
+  let frameMotion = null;
+  function trackHelper(ctx, type, identity, progress = 1, data = {}) {
+    if (!frameMotion) return null;
+    const base = `${type}:${identity}`;
+    const index = frameMotion.counts.get(base) || 0;
+    frameMotion.counts.set(base, index + 1);
+    const key = `${base}:${index}`;
+    if (frameMotion.probe) {
+      const m = ctx.getTransform();
+      const x = data.x ?? 0, y = data.y ?? 0;
+      frameMotion.uses.set(key, { key, type, progress: clamp01(progress), ...data,
+        x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f,
+        visible: ctx.globalAlpha > 0.025 });
+      return null;
+    }
+    const spans = frameMotion.beat.motionUses?.get(key);
+    return spans?.find(span => frameMotion.t >= span.start - 0.051 && frameMotion.t <= span.end + 0.051) || null;
+  }
+
+  // Bildirimsel hareketler: yalnız ilerlemeye bağlı, yan etkisiz çizim sarmalayıcıları.
+  function withMotionBlur(ctx, vx, vy, draw) {
+    if (!reducedMotion && Math.hypot(vx, vy) > 0.1 && !frameMotion?.probe && !frameMotion?.measurement) {
+      for (let i = 3; i >= 1; i--) {
+        const counts = frameMotion?.counts;
+        if (counts) frameMotion.counts = new Map(counts);
+        ctx.save(); ctx.globalAlpha *= 0.065 * (4 - i);
+        try { ctx.translate(-vx * i / 3, -vy * i / 3); draw(); }
+        finally { ctx.restore(); if (counts) frameMotion.counts = counts; }
+      }
+    }
+    draw();
+  }
+
+  function stampIn(ctx, p, cx, cy, draw) {
+    p = clamp01(p);
+    ctx.save();
+    ctx.globalAlpha *= clamp01(p / 0.16);
+    if (!reducedMotion) {
+      const settle = ease.outCubic(p), scale = lerp(1.06, 1, settle);
+      ctx.translate(cx, cy); ctx.rotate((1 - settle) * -0.065); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
+      ctx.shadowColor = 'rgba(36,55,45,0.12)';
+      ctx.shadowBlur = lerp(3, 16, clamp01(settle)); ctx.shadowOffsetY = lerp(1, 5, clamp01(settle));
+    }
+    draw(); ctx.restore();
+  }
+
+  function slideIn(ctx, p, dx, dy, draw) {
+    p = clamp01(p);
+    ctx.save(); ctx.globalAlpha *= clamp01(p / 0.2);
+    const remaining = reducedMotion ? 0 : 1 - ease.outExpo(p);
+    ctx.translate(dx * remaining, dy * remaining);
+    withMotionBlur(ctx, -dx * remaining * 0.18, -dy * remaining * 0.18, draw);
+    ctx.restore();
+  }
+
+  function popIn(ctx, p, cx, cy, draw) {
+    p = clamp01(p);
+    ctx.save(); ctx.globalAlpha *= clamp01(p / 0.15);
+    const s = reducedMotion ? 1 : ease.outBack(p, 1.6);
+    ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy);
+    draw(); ctx.restore();
+  }
+
+  function drawPenTip(ctx, x, y, p, opts = {}) {
+    if (p <= 0 || p >= 1) return;
+    ctx.save(); ctx.fillStyle = opts.color || PALETTE.ink;
+    ctx.globalAlpha *= Math.sin(Math.PI * clamp01(p)) * 0.65 + 0.25;
+    ctx.beginPath(); ctx.arc(x, y, opts.radius ?? 2.2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+
+  function drawLeaderLabel(ctx, fromX, fromY, toX, toY, text, p, opts = {}) {
+    p = clamp01(p);
+    drawSketchLine(ctx, [[fromX, fromY], [lerp(fromX, toX, 0.65), toY], [toX, toY]], {
+      seed: opts.seed ?? 719, color: opts.color || PALETTE.terracotta, width: 1.6,
+      t: opts.t ?? p, progress: clamp01(p / 0.55), dotTip: false, ...opts.line
+    });
+    return drawHandwrittenNote(ctx, text, toX + (opts.align === 'right' ? -8 : 8), toY,
+      clamp01((p - 0.55) / 0.45), opts);
+  }
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const paperCanvas = document.createElement('canvas');
+  paperCanvas.width = W;
+  paperCanvas.height = H;
+  (function buildPaperTexture() {
+    const pctx = paperCanvas.getContext('2d');
+    pctx.fillStyle = PALETTE.bg;
+    pctx.fillRect(0, 0, W, H);
+    const rng = mulberry32(20260416);
+    for (let i = 0; i < 3600; i++) {
+      const x = rng() * W;
+      const y = rng() * H;
+      const r = 0.4 + rng() * 1.1;
+      const a = 0.014 + rng() * 0.022;
+      pctx.fillStyle = rng() > 0.5 ? `rgba(36, 55, 45, ${a})` : `rgba(255, 255, 255, ${a * 1.5})`;
+      pctx.beginPath();
+      pctx.arc(x, y, r, 0, Math.PI * 2);
+      pctx.fill();
+    }
+  })();
+
+  // ==========================================================
+  // 3. Hand-drawn Sketch Helpers (Line Boil ONLY on lines, never numbers)
+  // ==========================================================
+  function getBoilOffset(seed, t, amp = 1.0, boil) {
+    const moving = !reducedMotion && (boil ?? (mulberry32(seed)() < THEME.boilShare));
+    const boilFrame = moving ? Math.floor(t * THEME.boilFps) : 0;
+    const amplitude = Math.min(Math.abs(amp), moving ? 1.5 : 0.7);
+    const rng = mulberry32((seed * 73856093) ^ (boilFrame * 19349663));
+    // Radyal sınır: iki eksen birleşince de izin verilen genlik aşılmasın.
+    const angle = rng() * Math.PI * 2, radius = rng() * amplitude;
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius];
+  }
+
+  function subdividePolyline(points, segLen = 14) {
+    if (points.length < 2) return points.slice();
+    const out = [points[0]];
+    for (let i = 0; i < points.length - 1; i++) {
+      const [x1, y1] = points[i];
+      const [x2, y2] = points[i + 1];
+      const dist = Math.hypot(x2 - x1, y2 - y1);
+      const steps = Math.max(1, Math.round(dist / segLen));
+      for (let s = 1; s <= steps; s++) {
+        out.push([lerp(x1, x2, s / steps), lerp(y1, y2, s / steps)]);
+      }
+    }
+    return out;
+  }
+
+  function slicePolylineByProgress(pts, progress) {
+    const p = clamp01(progress);
+    if (p <= 0 || pts.length === 0) return [];
+    if (p >= 1) return pts;
+    const lengths = [0];
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) {
+      total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      lengths.push(total);
+    }
+    if (total === 0) return [pts[0]];
+    const target = total * p;
+    const res = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      if (lengths[i] <= target) res.push(pts[i]);
+      else {
+        const prev = lengths[i - 1];
+        const seg = lengths[i] - prev;
+        const local = seg > 0 ? (target - prev) / seg : 0;
+        res.push([lerp(pts[i - 1][0], pts[i][0], local), lerp(pts[i - 1][1], pts[i][1], local)]);
+        break;
+      }
+    }
+    return res;
+  }
+
+  function drawSketchLine(ctx, points, opts = {}) {
+    const {
+      seed = 1, t = 0, progress = 1, width = 3,
+      color = PALETTE.ink, amp = 0.9, dash = null, dotTip = false, segLen = 14
+    } = opts;
+    if (points.length < 2 || progress <= 0.001) return null;
+    const boil = !reducedMotion && (opts.boil ?? (mulberry32(seed)() < THEME.boilShare));
+    const sub = subdividePolyline(points, segLen);
+    const sliced = slicePolylineByProgress(sub, progress);
+    if (sliced.length < 2) return sliced[0] || null;
+
+    const jittered = sliced.map((pt, idx) => {
+      const fade = (idx === 0 || idx === sliced.length - 1) ? 0.4 : 1;
+      const [ox, oy] = getBoilOffset(seed + idx * 17, t, Math.min(amp, boil ? 1.5 : 0.7) * fade, boil);
+      return [pt[0] + ox, pt[1] + oy];
+    });
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (dash) ctx.setLineDash(dash);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(jittered[0][0], jittered[0][1]);
+    for (let i = 1; i < jittered.length; i++) ctx.lineTo(jittered[i][0], jittered[i][1]);
+    ctx.stroke();
+
+    if (!dash) {
+      ctx.globalAlpha *= 0.35;
+      ctx.lineWidth = Math.max(1, width * 0.55);
+      ctx.beginPath();
+      for (let i = 0; i < jittered.length; i++) {
+        const [ox2, oy2] = getBoilOffset(seed + 900 + i * 13, t, Math.min(amp * 0.5, boil ? 1.5 : 0.7), boil);
+        const px = sliced[i][0] + ox2;
+        const py = sliced[i][1] + oy2;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    const tip = jittered[jittered.length - 1];
+    if (dotTip && progress > 0.02 && progress < 0.995) {
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(tip[0], tip[1], Math.max(3, width * 0.9), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return tip;
+  }
+
+  function drawSketchRect(ctx, x, y, w, h, opts = {}) {
+    return drawSketchLine(ctx, [[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]], opts);
+  }
+
+  function drawSketchEllipse(ctx, cx, cy, rx, ry, opts = {}) {
+    const { seed = 42, t = 0, progress = 1, width = 4, color = PALETTE.terracotta, turns = 1.12, amp = 1.1, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const steps = 44;
+    const pts = [];
+    const startAngle = -Math.PI * 0.65;
+    for (let i = 0; i <= steps; i++) {
+      const a = startAngle + (i / steps) * Math.PI * 2 * turns;
+      const spiral = 1 + (i / steps - 0.5) * 0.04;
+      pts.push([cx + Math.cos(a) * rx * spiral, cy + Math.sin(a) * ry * spiral]);
+    }
+    drawSketchLine(ctx, pts, { ...opts, seed, t, progress, width, color, amp, dotTip, segLen: 20 });
+  }
+
+  function drawSketchArrow(ctx, x1, y1, x2, y2, curve = -26, opts = {}) {
+    const { seed = 77, t = 0, progress = 1, width = 3.2, color = PALETTE.terracotta, amp = 0.85, dotTip = true } = opts;
+    if (progress <= 0.001) return;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+    const cpx = mx + nx * curve;
+    const cpy = my + ny * curve;
+
+    const pts = [];
+    for (let i = 0; i <= 18; i++) {
+      const u = i / 18;
+      pts.push([
+        (1 - u) * (1 - u) * x1 + 2 * (1 - u) * u * cpx + u * u * x2,
+        (1 - u) * (1 - u) * y1 + 2 * (1 - u) * u * cpy + u * u * y2
+      ]);
+    }
+    const lineProg = clamp01(progress / 0.85);
+    const boil = opts.boil ?? (mulberry32(seed)() < THEME.boilShare);
+    drawSketchLine(ctx, pts, { seed, t, progress: lineProg, width, color, amp, boil, dotTip: dotTip && progress < 0.85, segLen: 16 });
+
+    if (progress > 0.78) {
+      const headProg = clamp01((progress - 0.78) / 0.22);
+      const angle = Math.atan2(y2 - cpy, x2 - cpx);
+      const headLen = (opts.headSize ?? 13) * ease.outCubic(headProg);
+      const wing1 = [x2 - Math.cos(angle - 0.48) * headLen, y2 - Math.sin(angle - 0.48) * headLen];
+      const wing2 = [x2 - Math.cos(angle + 0.48) * headLen, y2 - Math.sin(angle + 0.48) * headLen];
+      drawSketchLine(ctx, [wing1, [x2, y2], wing2], { seed: seed + 300, t, progress: 1, width, color, amp: amp * 0.65, boil, dotTip: false });
+    }
+  }
+
+  function drawSketchWaveUnderline(ctx, x, y, w, opts = {}) {
+    const { seed = 31, t = 0, progress = 1, width = 3, color = PALETTE.terracotta } = opts;
+    if (progress <= 0.001 || w <= 2) return;
+    const pts = [];
+    const steps = Math.max(8, Math.round(w / 10));
+    for (let i = 0; i <= steps; i++) {
+      pts.push([x + (i / steps) * w, y + Math.sin(i * 1.45) * 2.5]);
+    }
+    drawSketchLine(ctx, pts, { ...opts, seed, t, progress, width, color, amp: 0.65, dotTip: false, segLen: 12 });
+  }
+
+  function drawHighlighterStrip(ctx, x, y, w, h, progress, color = 'rgba(227, 201, 160, 0.72)') {
+    trackHelper(ctx, 'marker', `${x},${y},${w},${h}`, progress, { x: x + w / 2, y: y + h / 2 });
+    const p = ease.outCubic(clamp01(progress));
+    if (p <= 0.01) return;
+    ctx.save();
+    ctx.fillStyle = color;
+    roundRectPath(ctx, x - 4, y, (w + 8) * p, h, 7);
+    ctx.fill();
+    if (p < 1) {
+      ctx.globalAlpha *= 0.25;
+      roundRectPath(ctx, x - 4 + Math.max(0, (w + 8) * p - 7), y, Math.min(7, (w + 8) * p), h, 3);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawHandwrittenNote(ctx, text, x, y, progress, opts = {}) {
+    return drawWriteOn(ctx, text, x, y, progress, {
+      color: PALETTE.terracotta, size: 28, ...opts
+    });
+  }
+
+  // Tam metni ölçüp maskele: harf sayısı değişirken hizalama ve ölçü sabit kalır.
+  function drawWriteOn(ctx, text, x, y, progress, opts = {}) {
+    ctx.save();
+    ctx.font = opts.font || `700 ${opts.size ?? 28}px 'Caveat', cursive`;
+    ctx.fillStyle = opts.color || PALETTE.ink;
+    ctx.textAlign = opts.align || 'left';
+    ctx.textBaseline = opts.baseline || 'middle';
+    const box = measureTextBox(ctx, String(text), x, y);
+    const p = clamp01(progress);
+    trackHelper(ctx, 'pen', `${x},${y},${strHash(String(text))}`, p, { x, y });
+    if (p > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(box.x0 - 1, box.y0 - 2, (box.x1 - box.x0 + 2) * p, box.y1 - box.y0 + 4);
+      ctx.clip();
+      ctx.fillText(String(text), x, y);
+      ctx.restore();
+      drawPenTip(ctx, lerp(box.x0, box.x1, p), y, p, { color: opts.color });
+    }
+    ctx.restore();
+    return { x: box.x0, y: box.y0, w: box.x1 - box.x0, h: box.y1 - box.y0 };
+  }
+
+  function drawHighlightBehindText(ctx, text, x, y, font, progress, opts = {}) {
+    ctx.save();
+    ctx.font = font;
+    ctx.textAlign = opts.align || 'left';
+    ctx.textBaseline = opts.baseline || 'alphabetic';
+    const box = measureTextBox(ctx, String(text), x, y);
+    const xm = ctx.measureText('x');
+    const xh = xm.actualBoundingBoxAscent + xm.actualBoundingBoxDescent;
+    const stripY = y - xm.actualBoundingBoxAscent + xh / 3;
+    const p = ease.outCubic(progress);
+    trackHelper(ctx, 'marker', `${x},${y},${strHash(String(text))}`, progress, { x, y });
+    if (p > 0) {
+      ctx.fillStyle = opts.highlight || 'rgba(227, 201, 160, 0.72)';
+      roundRectPath(ctx, box.x0 - 2, stripY, (box.x1 - box.x0 + 4) * p, xh * 2 / 3, 3);
+      ctx.fill();
+      if (p < 1) {
+        ctx.globalAlpha *= 0.25;
+        const tipW = Math.min(6, (box.x1 - box.x0 + 4) * p);
+        roundRectPath(ctx, box.x0 - 2 + (box.x1 - box.x0 + 4) * p - tipW, stripY, tipW, xh * 2 / 3, 3);
+        ctx.fill();
+        ctx.globalAlpha /= 0.25;
+      }
+    }
+    ctx.fillStyle = opts.color || PALETTE.ink;
+    ctx.fillText(String(text), x, y);
+    ctx.restore();
+    return { x: box.x0, y: box.y0, w: box.x1 - box.x0, h: box.y1 - box.y0 };
+  }
+
+  function wrapLabelLines(ctx, text, maxW) {
+    const lines = [];
+    for (const paragraph of String(text).split('\n')) {
+      let line = '';
+      for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+        const candidate = line ? `${line} ${word}` : word;
+        if (ctx.measureText(candidate).width <= maxW) { line = candidate; continue; }
+        if (line) { lines.push(line); line = ''; }
+        // Uzun, boşluksuz kod/kelimeler de güvenli kutuya sığar.
+        for (const char of word) {
+          if (line && ctx.measureText(line + char).width > maxW) { lines.push(line); line = ''; }
+          line += char;
+        }
+      }
+      if (line.trim()) lines.push(line.trim());
+    }
+    return lines.length ? lines.map(s => s.trim()) : [''];
+  }
+
+  function drawTornLabel(ctx, x, y, w, h, text, opts = {}) {
+    const arrival = trackHelper(ctx, 'label', `${x},${y},${w},${h},${strHash(String(text))}`, 1,
+      { x: x + w / 2, y: y + h / 2 });
+    const p = arrival ? clamp01((frameMotion.t - arrival.born) / 0.45) : 1;
+    stampIn(ctx, p, x + w / 2, y + h / 2, () => {
+    ctx.save();
+    ctx.translate(x + w / 2, y + h / 2);
+    ctx.rotate((opts.angle ?? -2) * Math.PI / 180);
+    const rng = mulberry32(opts.seed ?? 1401);
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, -h / 2);
+    for (let i = 1; i <= 24; i++) ctx.lineTo(-w / 2 + w * i / 24, -h / 2 + rng() * 4);
+    for (let i = 1; i <= 6; i++) ctx.lineTo(w / 2 - rng() * 4, -h / 2 + h * i / 6);
+    for (let i = 23; i >= 0; i--) ctx.lineTo(-w / 2 + w * i / 24, h / 2 - rng() * 4);
+    for (let i = 5; i >= 0; i--) ctx.lineTo(-w / 2 + rng() * 4, -h / 2 + h * i / 6);
+    ctx.closePath();
+    ctx.fillStyle = PALETTE.error;
+    ctx.fill();
+    const innerW = Math.max(1, w - 32), innerH = Math.max(1, h - 24);
+    const byH = opts.byline ? Math.min(26, innerH * 0.28) : 0;
+    let size = opts.size ?? 32, lines;
+    do {
+      ctx.font = `700 ${size}px '${THEME.fonts.code}', cursive`;
+      lines = wrapLabelLines(ctx, text, innerW);
+      if (lines.length * size * 1.3 <= innerH - byH || size <= 1) break;
+      size--;
+    } while (size > 0);
+    const blockH = lines.length * size * 1.3 + byH;
+    lines.forEach((line, i) => drawTextFit(ctx, line, 0, -blockH / 2 + (i + 0.5) * size * 1.3, innerW, {
+      family: `'${THEME.fonts.code}', cursive`, weight: 700, size, minSize: 1, color: '#FFFFFF', align: 'center'
+    }));
+    if (opts.byline) drawTextFit(ctx, opts.byline, 0, blockH / 2 - byH / 2, innerW, {
+      family: "'Patrick Hand', cursive", size: Math.min(18, byH * 0.8), minSize: 1,
+      color: '#FFFFFF', align: 'center'
+    });
+    ctx.restore();
+    });
+    return { x, y, w, h };
+  }
+
+  function drawCounterDigits(ctx, text, x, y, progress, opts = {}) {
+    ctx.save();
+    ctx.font = opts.font || `700 ${opts.size ?? 40}px '${THEME.fonts.code}', cursive`;
+    ctx.fillStyle = opts.color || PALETTE.ink;
+    ctx.textBaseline = opts.baseline || 'middle';
+    ctx.textAlign = 'left';
+    const chars = Array.from(String(text));
+    const widths = chars.map(ch => ctx.measureText(ch).width);
+    const width = widths.reduce((a, b) => a + b, 0);
+    const duration = opts.duration ?? Math.max(0.22, (chars.length - 1) * 0.06 + 0.22);
+    trackHelper(ctx, 'counter', `${x},${y},${String(text)}`, progress, { x, y, text: String(text), duration });
+    const elapsed = clamp01(progress) * duration;
+    let cursor = x - (opts.align === 'center' ? width / 2 : opts.align === 'right' ? width : 0);
+    chars.forEach((ch, i) => {
+      const p = clamp01((elapsed - i * 0.06) / 0.22);
+      if (p > 0) {
+        ctx.save();
+        ctx.globalAlpha *= p;
+        ctx.fillText(ch, cursor, y + (reducedMotion ? 0 : (1 - ease.outCubic(p)) * 9));
+        ctx.restore();
+      }
+      cursor += widths[i];
+    });
+    ctx.restore();
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawCard(ctx, x, y, w, h, opts = {}) {
+    const { fill = PALETTE.card, radius = 22, shadow = true, stroke = 'rgba(36, 55, 45, 0.09)' } = opts;
+    const arrival = trackHelper(ctx, 'card', `${x},${y},${w},${h}`, 1, { x: x + w / 2, y: y + h / 2 });
+    const settle = arrival ? ease.outCubic(clamp01((frameMotion.t - arrival.born) / 0.35)) : 1;
+    ctx.save();
+    // Kart zemini 8 px yukarıdan oturur; metin koordinatları ve yerleşim sözleşmesi korunur.
+    if (!reducedMotion) ctx.translate(0, -8 * (1 - settle));
+    if (shadow) {
+      ctx.shadowColor = 'rgba(36, 55, 45, 0.06)';
+      ctx.shadowBlur = lerp(8, 26, settle);
+      ctx.shadowOffsetY = lerp(2, 9, settle);
+    }
+    ctx.fillStyle = fill;
+    roundRectPath(ctx, x, y, w, h, radius);
+    ctx.fill();
+    if (shadow && !frameMotion?.probe && !frameMotion?.measurement) {
+      ctx.shadowColor = 'rgba(36, 55, 45, 0.09)';
+      ctx.shadowBlur = 3; ctx.shadowOffsetY = 2; ctx.fill();
+    }
+    if (stroke) {
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawTextFit(ctx, text, x, y, maxW, opts = {}) {
+    const {
+      family = "'Inter', sans-serif", weight = 600, size = 24, minSize = 13,
+      color = PALETTE.ink, align = 'left', baseline = 'middle', italic = false
+    } = opts;
+    ctx.save();
+    let s = size;
+    while (s > minSize) {
+      ctx.font = `${italic ? 'italic ' : ''}${weight} ${s}px ${family}`;
+      if (ctx.measureText(text).width <= maxW) break;
+      s -= 1;
+    }
+    ctx.font = `${italic ? 'italic ' : ''}${weight} ${s}px ${family}`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.fillText(text, x, y, Math.max(0.01, maxW));
+    ctx.restore();
+    return s;
+  }
+
+  function drawFocusZink(ctx, cx, cy, rx, ry, localSinceStart, t, opts = {}) {
+    if (localSinceStart < 0) return;
+    const drawDur = 0.35;
+    const drawP = ease.outCubic(clamp01(localSinceStart / drawDur));
+    let scale = 1;
+    if (localSinceStart > drawDur) {
+      const popT = clamp01((localSinceStart - drawDur) / 0.22);
+      const bump = Math.sin(popT * Math.PI) * (1 - popT * 0.25);
+      scale = 1 + 0.07 * bump;
+    }
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    drawSketchEllipse(ctx, 0, 0, rx, ry, {
+      seed: opts.seed || 111, t, progress: drawP, width: opts.width || 4,
+      color: opts.color || PALETTE.terracotta, turns: 1.12, dotTip: drawP < 0.99,
+      boil: opts.boil
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 4. Continuity & Pedagogical UI Widgets
+  // ==========================================================
+  function drawPrevTopicBadge(ctx, text) {
+    if (!text) return;
+    ctx.save();
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    const full = `az önce: ${text}`;
+    const bw = Math.min(480, ctx.measureText(full).width + 26);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    roundRectPath(ctx, 44, 52, bw, 30, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(36, 55, 45, 0.14)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(full, 57, 67);
+    ctx.restore();
+  }
+
+  function drawStickyRuleCard(ctx, cfg) {
+    // docked: false => center large card; true => compact top-right sand card
+    const {
+      title = 'KURAL KARTI',
+      lines = [],
+      docked = true,
+      highlightTokens = [],
+      t = 0
+    } = cfg;
+    const x = docked ? 886 : 190;
+    const y = docked ? 46 : 165;
+    const w = docked ? 350 : 900;
+    const h = docked ? (lines.length > 2 ? 124 : 104) : 290;
+    const padX = docked ? 16 : 34;
+
+    drawCard(ctx, x, y, w, h, {
+      fill: 'rgba(227, 201, 160, 0.34)',
+      radius: docked ? 16 : 24,
+      stroke: PALETTE.sand,
+      shadow: !docked
+    });
+
+    ctx.save();
+    ctx.font = `700 ${docked ? 10 : 13}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#7E5A28';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`📌 ${title}`, x + padX, y + (docked ? 18 : 30));
+
+    const bodyStartY = y + (docked ? 42 : 90);
+    const lineGap = docked ? 26 : 54;
+    const fSize = docked ? 15 : 30;
+
+    lines.forEach((ln, idx) => {
+      const ly = bodyStartY + idx * lineGap;
+      let s = fSize;
+      while (s > (docked ? 11 : 18)) {
+        ctx.font = `600 ${s}px 'Inter', sans-serif`;
+        if (ctx.measureText(ln).width <= w - padX * 2) break;
+        s -= 1;
+      }
+      ctx.font = `600 ${s}px 'Inter', sans-serif`;
+      for (const tok of highlightTokens) {
+        const pos = ln.indexOf(tok);
+        if (pos >= 0) {
+          const preW = ctx.measureText(ln.slice(0, pos)).width;
+          const tokW = ctx.measureText(tok).width;
+          drawHighlighterStrip(ctx, x + padX + preW, ly - s * 0.65, tokW, s * 1.3, 1, 'rgba(207, 138, 104, 0.45)');
+        }
+      }
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ln, x + padX, ly);
+    });
+    ctx.restore();
+  }
+
+  function drawColorLegend(ctx, items, y = 566) {
+    // items: [{ color, label }]
+    ctx.save();
+    ctx.font = `600 13px 'JetBrains Mono', monospace`;
+    const pillH = 28;
+    const gap = 12;
+    const widths = items.map(it => ctx.measureText(it.label).width + 36);
+    const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1);
+    let curX = (W - totalW) / 2;
+
+    items.forEach((it, idx) => {
+      const pw = widths[idx];
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      roundRectPath(ctx, curX, y, pw, pillH, 999);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(36, 55, 45, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = it.color;
+      roundRectPath(ctx, curX + 10, y + 7, 14, 14, 4);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(36, 55, 45, 0.25)';
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(it.label, curX + 30, y + pillH / 2 + 0.5);
+      curX += pw + gap;
+    });
+    ctx.restore();
+  }
+
+  function drawBitBoxes(ctx, cfg) {
+    // Supports >=52px bit boxes, vertical paper flip animation, pale padding zeros, group gaps
+    const {
+      bits = [],
+      fromBits = null,       // if provided with flipProgress, animates vertical flip!
+      flipProgress = null,   // array of 0..1 per bit or single number
+      cx = W / 2,
+      y = 220,
+      boxW = 56,
+      boxH = 64,
+      gap = 7,
+      groupEvery = 0,        // extra gap every k bits from RIGHT
+      extraGap = 14,
+      paleMask = null,       // array of booleans for pale padded zeros
+      topLabels = null,
+      bottomLabels = null,
+      fills = null,
+      fromFills = null,
+      textColors = null,
+      subscript = '',
+      seed = 40,
+      t = 0
+    } = cfg;
+
+    const n = bits.length;
+    let totalW = n * boxW + Math.max(0, n - 1) * gap;
+    const extraGaps = new Array(n).fill(0);
+    if (groupEvery > 0) {
+      for (let i = 0; i < n - 1; i++) {
+        const fromRight = n - 1 - i;
+        if (fromRight > 0 && fromRight % groupEvery === 0) {
+          extraGaps[i] = extraGap;
+          totalW += extraGap;
+        }
+      }
+    }
+
+    let curX = cx - totalW / 2;
+    const boxes = [];
+
+    for (let i = 0; i < n; i++) {
+      const bx = curX;
+      const by = y;
+      const fp = Array.isArray(flipProgress) ? clamp01(flipProgress[i]) : (flipProgress !== null ? clamp01(flipProgress) : 1);
+      const showNew = fp >= 0.5;
+      const scaleY = flipProgress !== null ? Math.max(0.06, Math.abs(Math.cos(fp * Math.PI))) : 1;
+
+      const curChar = (showNew || !fromBits) ? bits[i] : fromBits[i];
+      const isPale = paleMask && paleMask[i];
+
+      const defaultFill = curChar === '1' ? 'rgba(156, 194, 154, 0.44)' : PALETTE.softFill;
+      const targetFill = Array.isArray(fills) ? fills[i] : (typeof fills === 'function' ? fills(curChar, i) : defaultFill);
+      const oldFill = fromFills ? (Array.isArray(fromFills) ? fromFills[i] : fromFills(curChar, i)) : defaultFill;
+      const fill = isPale ? 'rgba(124, 138, 126, 0.08)' : (showNew ? targetFill : oldFill);
+
+      const tc = isPale
+        ? PALETTE.muted
+        : (Array.isArray(textColors) ? textColors[i] : (typeof textColors === 'function' ? textColors(curChar, i) : (curChar === '0' ? PALETTE.muted : PALETTE.ink)));
+
+      ctx.save();
+      ctx.translate(bx + boxW / 2, by + boxH / 2);
+      ctx.scale(1, scaleY);
+      ctx.fillStyle = fill;
+      roundRectPath(ctx, -boxW / 2, -boxH / 2, boxW, boxH, 13);
+      ctx.fill();
+
+      ctx.font = `700 ${Math.round(boxH * 0.50)}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = tc;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(curChar), 0, 1);
+      ctx.restore();
+
+      drawSketchRect(ctx, bx, by, boxW, boxH, {
+        seed: seed + i * 17, t, progress: 1, width: isPale ? 1.6 : 2.2,
+        dash: isPale ? [5, 4] : null,
+        color: isPale ? 'rgba(124, 138, 126, 0.55)' : 'rgba(36, 55, 45, 0.52)',
+        amp: 0.55, segLen: 20
+      });
+
+      if (topLabels && topLabels[i]) {
+        ctx.save();
+        ctx.font = `600 15px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(topLabels[i]), bx + boxW / 2, by - 18);
+        ctx.restore();
+      }
+      if (bottomLabels && bottomLabels[i]) {
+        ctx.save();
+        ctx.font = `700 16px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.ink;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(bottomLabels[i]), bx + boxW / 2, by + boxH + 20);
+        ctx.restore();
+      }
+
+      boxes.push({ x: bx, y: by, w: boxW, h: boxH, cx: bx + boxW / 2, cy: by + boxH / 2 });
+      curX += boxW + gap + extraGaps[i];
+    }
+
+    if (subscript) {
+      ctx.save();
+      ctx.font = `700 22px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.terracotta;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(subscript, curX - gap + 8, y + boxH - 8);
+      ctx.restore();
+    }
+
+    return { boxes, leftX: cx - totalW / 2, rightX: curX - gap };
+  }
+
+  function drawGroupingBrackets(ctx, boxes, groups, opts = {}) {
+    const { side = 'bottom', offsetY = 12, t = 0 } = opts;
+    const anchors = [];
+    groups.forEach((g, gi) => {
+      if (g.visible === false) return;
+      const b1 = boxes[g.start];
+      const b2 = boxes[g.end];
+      if (!b1 || !b2) return;
+      const gp = g.progress !== undefined ? clamp01(g.progress) : 1;
+      const x1 = b1.x + 2;
+      const x2 = b2.x + b2.w - 2;
+      const midX = (x1 + x2) / 2;
+      const col = g.color || PALETTE.lavender;
+
+      if (side === 'bottom') {
+        const y0 = b1.y + b1.h + offsetY;
+        const y1 = y0 + 14;
+        drawSketchLine(ctx, [[x1, y0], [x1, y1], [x2, y1], [x2, y0]], {
+          seed: 700 + gi * 23, t, progress: ease.outCubic(gp), width: 3, color: col, amp: 0.6
+        });
+        if (gp > 0.3 && g.label !== undefined) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(182, 162, 219, 0.25)';
+          roundRectPath(ctx, midX - 24, y1 + 8, 48, 42, 12);
+          ctx.fill();
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.font = `700 28px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = PALETTE.ink;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(g.label), midX, y1 + 30);
+          ctx.restore();
+        }
+        anchors.push({ cx: midX, cy: y1 + 29, rx: 32, ry: 28 });
+      } else {
+        const y0 = b1.y - offsetY;
+        const y1 = y0 - 14;
+        drawSketchLine(ctx, [[x1, y0], [x1, y1], [x2, y1], [x2, y0]], {
+          seed: 750 + gi * 23, t, progress: ease.outCubic(gp), width: 3, color: col, amp: 0.6
+        });
+        if (gp > 0.3 && g.label !== undefined) {
+          ctx.save();
+          ctx.font = `700 26px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = col;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(String(g.label), midX, y1 - 8);
+          ctx.restore();
+        }
+        anchors.push({ cx: midX, cy: y1 - 22, rx: 30, ry: 22 });
+      }
+    });
+    return anchors;
+  }
+
+  function drawColumnArithmetic(ctx, cfg) {
+    // Supports revealing specific number of columns from right, plus terracotta carry markers
+    const {
+      x, y, w, h,
+      label = 'ALT ALTA TOPLAMA',
+      carriesTop = '',       // string matching result columns
+      row1 = '',
+      op = '+',
+      row2 = '',
+      result = '',
+      row1Note = '',
+      row2Note = '',
+      resultNote = '',
+      revealedCols = 99,     // how many columns from right are revealed
+      activeColFromRight = -1,
+      crossOutLeftCarry = false,
+      highlightLeftCarry = false,
+      endAroundArrow = false,
+      endAroundProgress = 0,
+      t = 0
+    } = cfg;
+
+    drawCard(ctx, x, y, w, h, { radius: 22 });
+    ctx.save();
+    ctx.font = `600 11px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + 24, y + 24);
+
+    const cols = Math.max(row1.length, row2.length, result.length);
+    const cellW = Math.min(46, (w - 230) / Math.max(1, cols));
+    const rightAnchor = x + w - 165;
+    const baseY = y + 114;
+    const rowGap = 54;
+
+    const r1Pad = row1.padStart(cols, ' ');
+    const r2Pad = row2.padStart(cols, ' ');
+    const resPad = result.padStart(cols, ' ');
+    const ctPad = carriesTop ? carriesTop.padStart(cols, ' ') : '';
+
+    // Carry label
+    ctx.font = `600 14px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.terracotta;
+    ctx.textAlign = 'right';
+    ctx.fillText('elde:', rightAnchor - cols * cellW - 14, baseY - 40);
+
+    // Operator
+    ctx.font = `700 30px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.terracotta;
+    ctx.textAlign = 'center';
+    ctx.fillText(op, rightAnchor - cols * cellW - 18, baseY + rowGap);
+
+    let leftCarryPos = null;
+    let rightBitPos = null;
+    let activeColBox = null;
+
+    for (let c = 0; c < cols; c++) {
+      const fromRight = cols - 1 - c;
+      const cx = rightAnchor - (fromRight + 0.5) * cellW;
+      const isVisible = fromRight < revealedCols;
+
+      if (fromRight === activeColFromRight) {
+        ctx.fillStyle = 'rgba(227, 201, 160, 0.35)';
+        roundRectPath(ctx, cx - cellW * 0.44, baseY - 56, cellW * 0.88, rowGap * 2 + 100, 10);
+        ctx.fill();
+        activeColBox = { cx, cy: baseY + rowGap, rx: cellW * 0.65, ry: rowGap + 34 };
+      }
+
+      if (ctPad[c] && ctPad[c] !== ' ' && fromRight <= revealedCols) {
+        ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+        roundRectPath(ctx, cx - 14, baseY - 54, 28, 28, 8);
+        ctx.fill();
+        ctx.font = `700 20px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = '#9A4826';
+        ctx.textAlign = 'center';
+        ctx.fillText(ctPad[c], cx, baseY - 40);
+      }
+
+      ctx.font = `700 32px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PALETTE.ink;
+      if (r1Pad[c] !== ' ') ctx.fillText(r1Pad[c], cx, baseY);
+      if (r2Pad[c] !== ' ') ctx.fillText(r2Pad[c], cx, baseY + rowGap);
+
+      if (isVisible && resPad[c] !== ' ') {
+        const isFirstCarry = c === 0 && highlightLeftCarry;
+        const resY = baseY + rowGap * 2 + 16;
+        if (isFirstCarry) {
+          ctx.fillStyle = 'rgba(207, 138, 104, 0.25)';
+          roundRectPath(ctx, cx - 18, resY - 22, 36, 44, 10);
+          ctx.fill();
+          ctx.fillStyle = '#9A4826';
+          leftCarryPos = { x: cx, y: resY };
+        } else {
+          ctx.fillStyle = PALETTE.green;
+        }
+        ctx.fillText(resPad[c], cx, resY);
+        if (isFirstCarry && crossOutLeftCarry) {
+          drawSketchLine(ctx, [[cx - 14, resY + 14], [cx + 14, resY - 14]], {
+            seed: 912, t, width: 3.5, color: PALETTE.error
+          });
+        }
+      }
+      if (fromRight === 0) rightBitPos = { x: cx, y: baseY + rowGap * 2 + 16 };
+    }
+
+    const lineY = baseY + rowGap * 1.5 + 4;
+    drawSketchLine(ctx, [[rightAnchor - cols * cellW - 22, lineY], [rightAnchor + 8, lineY]], {
+      seed: 620, t, width: 2.8, color: PALETTE.ink, amp: 0.6
+    });
+
+    ctx.font = `600 17px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'left';
+    if (row1Note) ctx.fillText(row1Note, rightAnchor + 14, baseY);
+    if (row2Note) ctx.fillText(row2Note, rightAnchor + 14, baseY + rowGap);
+    if (resultNote && revealedCols >= cols) {
+      ctx.fillStyle = PALETTE.green;
+      ctx.fillText(resultNote, rightAnchor + 14, baseY + rowGap * 2 + 16);
+    }
+
+    if (endAroundArrow && leftCarryPos && rightBitPos && endAroundProgress > 0.02) {
+      drawSketchArrow(ctx, leftCarryPos.x, leftCarryPos.y + 24, rightBitPos.x, rightBitPos.y + 26, -52, {
+        seed: 677, t, progress: endAroundProgress, width: 3.4, color: PALETTE.terracotta
+      });
+    }
+    ctx.restore();
+    return { leftCarryPos, rightBitPos, activeColBox };
+  }
+
+  function drawCountdownRing(ctx, cx, cy, progress, totalSec) {
+    const rem = Math.ceil((1 - clamp01(progress)) * totalSec);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(36, 55, 45, 0.14)';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = PALETTE.terracotta;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 36, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - clamp01(progress)));
+    ctx.stroke();
+
+    ctx.font = `700 28px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(Math.max(1, rem)), cx, cy + 1);
+    ctx.restore();
+  }
+
+  function drawIntroCard(ctx, chMeta, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.45));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 20);
+    ctx.scale(lerp(0.92, 1, p), lerp(0.92, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.25);
+
+    drawCard(ctx, -400, -155, 800, 310, { radius: 24 });
+
+    ctx.fillStyle = chMeta.accent;
+    roundRectPath(ctx, -84, -106, 168, 32, 999);
+    ctx.fill();
+    ctx.font = `700 13px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num}`, 0, -90);
+
+    drawTextFit(ctx, chMeta.title, 0, -12, 720, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 54, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[-150, 40], [150, 40]], {
+      seed: 10 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.65)), width: 3.5, color: chMeta.accent
+    });
+
+    if (META.ilkBolumNotu && chMeta.num === CHAPTER_META[0].num) {
+      ctx.font = `600 15px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(META.ilkBolumNotu, 0, 82);
+      ctx.font = `500 13px 'Inter', sans-serif`;
+      ctx.fillText(META.kartKunye, 0, 114);
+    } else {
+      ctx.font = `500 15px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.muted;
+      ctx.textAlign = 'center';
+      ctx.fillText(META.kartKunye, 0, 88);
+    }
+    ctx.restore();
+  }
+
+  function drawOutroCard(ctx, chMeta, lt, t) {
+    const p = ease.outCubic(clamp01(lt / 0.35));
+    ctx.save();
+    ctx.globalAlpha = p;
+    drawCard(ctx, W / 2 - 400, H / 2 - 145, 800, 290, { radius: 24 });
+
+    ctx.font = `600 14px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`BÖLÜM 0${chMeta.num} TAMAMLANDI`, W / 2, H / 2 - 72);
+
+    drawTextFit(ctx, chMeta.nextTitle, W / 2, H / 2 - 8, 720, {
+      family: "'Instrument Serif', serif", italic: true, weight: 400, size: 42, align: 'center'
+    });
+
+    drawSketchLine(ctx, [[W / 2 - 120, H / 2 + 44], [W / 2 + 120, H / 2 + 44]], {
+      seed: 90 + chMeta.num, t, progress: ease.inOutCubic(clamp01(lt / 0.6)), width: 3, color: PALETTE.sage
+    });
+    ctx.restore();
+  }
+
+  function drawHookQuestion(ctx, question, badge, lt, t) {
+    const p = ease.outBack(clamp01(lt / 0.42));
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 34);
+    ctx.scale(lerp(0.9, 1, p), lerp(0.9, 1, p));
+    ctx.globalAlpha = clamp01(lt / 0.2);
+
+    ctx.fillStyle = 'rgba(227, 201, 160, 0.5)';
+    roundRectPath(ctx, -190, -124, 380, 32, 999);
+    ctx.fill();
+    ctx.font = `600 12px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PALETTE.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badge, 0, -108);
+
+    ctx.font = `italic 400 52px 'Instrument Serif', serif`;
+    ctx.fillStyle = PALETTE.ink;
+    const words = question.split(' ');
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+      const test = cur ? `${cur} ${w}` : w;
+      if (ctx.measureText(test).width > 940) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+
+    lines.forEach((ln, i) => {
+      ctx.fillText(ln, 0, -16 + (i - (lines.length - 1) / 2) * 64);
+    });
+
+    const lineY = lines.length * 36 + 24;
+    drawSketchWaveUnderline(ctx, -160, lineY, 320, {
+      seed: 333, t, progress: ease.inOutCubic(clamp01((lt - 0.18) / 0.55)), color: PALETTE.terracotta, width: 3.5
+    });
+    ctx.restore();
+  }
+
+  function drawExam5Options(ctx, cfg) {
+    // 5-option exam layout strictly above y=580 so bottom 110px subtitle zone stays untouched
+    const {
+      question = '',
+      options = [],     // [{ key:'A'..'E', text:'...', note:'...' }]
+      correctKey = 'B',
+      mode = 'q',       // 'q' | 'wait' | 'a' | 'traps'
+      focusWrongKeys = [], // keys highlighted in 'traps' mode
+      p = 0,
+      lt = 0,
+      t = 0,
+      badgeText = ''
+    } = cfg;
+
+    // Top Question Banner: y=56..154
+    drawCard(ctx, 64, 54, 1152, 98, { radius: 20 });
+    ctx.fillStyle = 'rgba(207, 138, 104, 0.22)';
+    roundRectPath(ctx, 88, 68, 116, 24, 999);
+    ctx.fill();
+    ctx.font = `700 11px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = '#8E4B2D';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SINAV ANI', 146, 80);
+
+    if (badgeText) {
+      ctx.font = `700 12px 'JetBrains Mono', monospace`;
+      const bw = ctx.measureText(badgeText).width + 26;
+      ctx.fillStyle = 'rgba(227, 201, 160, 0.55)';
+      roundRectPath(ctx, 218, 66, bw, 28, 999);
+      ctx.fill();
+      ctx.fillStyle = PALETTE.ink;
+      ctx.fillText(badgeText, 218 + bw / 2, 80);
+    }
+
+    drawTextFit(ctx, question, 88, 122, 960, {
+      family: "'Inter', sans-serif", weight: 700, size: 22, minSize: 15, align: 'left'
+    });
+
+    if (mode === 'wait') {
+      drawCountdownRing(ctx, 1156, 103, p, 4);
+    } else if (mode === 'a' || mode === 'traps') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(46, 125, 79, 0.14)';
+      roundRectPath(ctx, 1068, 80, 124, 46, 14);
+      ctx.fill();
+      ctx.strokeStyle = PALETTE.green;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = `700 17px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = PALETTE.green;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`CEVAP ${correctKey}`, 1130, 103);
+      ctx.restore();
+    }
+
+    // 5 options: A, B (row 0), C, D (row 1), E (row 2 left) — total y=168..574
+    const cardW = 562, cardH = 122, gapX = 28, gapY = 14;
+    const startX = 64, startY = 168;
+    let focusTarget = null;
+    if (mode === 'a' || mode === 'traps') {
+      const answerIndex = options.findIndex(opt => opt.key === correctKey);
+      if (answerIndex >= 0) trackHelper(ctx, 'answer', `${strHash(question)},${correctKey}`, 1, {
+        x: startX + (answerIndex % 2) * (cardW + gapX) + cardW - 35,
+        y: startY + Math.floor(answerIndex / 2) * (cardH + gapY) + 30
+      });
+    }
+
+    options.forEach((opt, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const ox = startX + col * (cardW + gapX);
+      const oy = startY + row * (cardH + gapY);
+      const isCorrect = opt.key === correctKey;
+      const isWrongFocused = focusWrongKeys.includes(opt.key);
+
+      let alpha = 1;
+      let stroke = 'rgba(36, 55, 45, 0.09)';
+      if (mode === 'a') {
+        alpha = isCorrect ? 1 : 0.62;
+        if (isCorrect) stroke = PALETTE.green;
+      } else if (mode === 'traps') {
+        alpha = (isWrongFocused || isCorrect) ? 1 : 0.45;
+        if (isWrongFocused) stroke = PALETTE.error;
+        else if (isCorrect) stroke = PALETTE.green;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      drawCard(ctx, ox, oy, cardW, cardH, { radius: 18, stroke });
+
+      ctx.fillStyle = isCorrect && (mode === 'a' || mode === 'traps')
+        ? PALETTE.green
+        : (isWrongFocused ? PALETTE.error : PALETTE.ink);
+      roundRectPath(ctx, ox + 18, oy + 18, 38, 38, 10);
+      ctx.fill();
+      ctx.font = `700 18px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(opt.key, ox + 37, oy + 37);
+
+      drawTextFit(ctx, opt.text, ox + 68, oy + 37, cardW - 86, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 22, minSize: 13, align: 'left'
+      });
+
+      const showNote = (mode === 'a' && isCorrect) || (mode === 'traps' && (isWrongFocused || (opt.showInTraps && opt.note)));
+      if (showNote && opt.note) {
+        drawTextFit(ctx, opt.note, ox + 20, oy + 88, cardW - 40, {
+          family: "'Inter', sans-serif",
+          weight: 600,
+          size: 16,
+          minSize: 12,
+          color: isCorrect ? PALETTE.green : PALETTE.error,
+          align: 'left'
+        });
+      }
+      ctx.restore();
+
+      if ((mode === 'a' && isCorrect) || (mode === 'traps' && isWrongFocused && !focusTarget)) {
+        focusTarget = { cx: ox + cardW / 2, cy: oy + cardH / 2, rx: cardW / 2 + 6, ry: cardH / 2 + 6, col: isCorrect ? PALETTE.green : PALETTE.error };
+      }
+    });
+
+    // Right side summary note in row 2 when in answer/traps mode
+    if ((mode === 'a' || mode === 'traps') && options.length === 5) {
+      drawCard(ctx, startX + cardW + gapX, startY + 2 * (cardH + gapY), cardW, cardH, {
+        radius: 18, fill: 'rgba(227, 201, 160, 0.25)', stroke: PALETTE.sand, shadow: false
+      });
+      drawTextFit(ctx, mode === 'a' ? 'Doğru cevabı anla, sonra tuzakları gör' : 'Her yanlış şıkkın hata kaynağı', startX + cardW + gapX + 24, startY + 2 * (cardH + gapY) + 40, cardW - 48, {
+        family: "'JetBrains Mono', monospace", weight: 700, size: 14, color: '#7E5A28'
+      });
+      const focusOpt = options.find(o => focusWrongKeys.includes(o.key)) || options.find(o => o.key === correctKey);
+      if (focusOpt && focusOpt.note) {
+        drawTextFit(ctx, `${focusOpt.key}: ${focusOpt.note}`, startX + cardW + gapX + 24, startY + 2 * (cardH + gapY) + 82, cardW - 48, {
+          size: 17, minSize: 13, color: PALETTE.ink
+        });
+      }
+    }
+
+    if (focusTarget) {
+      drawFocusZink(ctx, focusTarget.cx, focusTarget.cy, focusTarget.rx, focusTarget.ry, lt, t, {
+        color: focusTarget.col, width: 4
+      });
+    }
+  }
+
+  // ==========================================================
+  // 5. Beat Specs & Timeline Builder
+  // ==========================================================
+
+  let TIMELINE = { beats: [], chapters: [], duration: 0, sfxEvents: [], narrationAudio: null };
+
+  function buildTimeline() {
+    const rawData = JSON.parse(document.getElementById('narration-data').textContent.trim() || '[]');
+    let rawAudio = {};
+    try { rawAudio = JSON.parse(document.getElementById('narration-audio').textContent.trim() || '{}'); } catch (e) { rawAudio = {}; }
+
+    const hasAudioOffsets = rawAudio && rawAudio.src && Array.isArray(rawAudio.offsets);
+    let cursor = 0;
+    const beats = [];
+    const sfxEvents = [];
+
+    rawData.forEach((item, idx) => {
+      let dur = Number(item.seconds) || 3.0;
+      let audioSlice = null;
+      if (hasAudioOffsets && rawAudio.offsets[idx]) {
+        const [s, e] = rawAudio.offsets[idx];
+        if (typeof s === 'number' && typeof e === 'number' && e - s > 0.25) {
+          dur = e - s;
+          audioSlice = [s, e];
+        }
+      }
+      const spec = BEAT_SPECS[item.id] || { scene: 'intro', sfx: [] };
+      if (!['intro', 'outro'].includes(spec.scene)) {
+        dur *= THEME.tempo;
+        if (String(item.text || '').trim()) dur = Math.max(4.5, dur);
+      }
+      const beat = {
+        index: idx, id: item.id, chapter: item.chapter, text: item.text || '',
+        start: cursor, end: cursor + dur, duration: dur, scene: spec.scene, audioSlice
+      };
+      beats.push(beat);
+      (spec.sfx || []).forEach((ev, sIdx) => {
+        sfxEvents.push({
+          id: `${item.id}_sfx_${sIdx}`,
+          t: cursor + Math.min(dur - 0.0005, clamp01(ev.at) * dur),
+          type: ev.type, gain: ev.gain ?? 0.8, dur: ev.dur ?? 0.3, pitch: ev.pitch ?? 1, explicit: true
+        });
+      });
+      cursor += dur;
+    });
+
+    const chapters = CHAPTER_META.map((meta, mIdx) => {
+      const chBeats = beats.filter(b => b.chapter === meta.num);
+      const start = chBeats.length ? chBeats[0].start : 0;
+      const end = chBeats.length ? chBeats[chBeats.length - 1].end : 0;
+      const nextMeta = CHAPTER_META[mIdx + 1] || null;
+      return {
+        ...meta, start, end, duration: end - start,
+        nextTitle: nextMeta ? `Sıradaki: Bölüm ${nextMeta.num} — ${nextMeta.title}` : META.sonNot
+      };
+    });
+
+    sfxEvents.sort((a, b) => a.t - b.t);
+    TIMELINE = { beats, chapters, duration: cursor, sfxEvents, explicitSfx: sfxEvents.slice(), fxEvents: [],
+      narrationAudio: (rawAudio && rawAudio.src) ? rawAudio : null };
+  }
+
+  const META = {
+  onek: 'mk-h1',
+  kartKunye: 'Mikroişlemci Mimarisi • Vize Hazırlığı',
+  ilkBolumNotu: '',
+  sonNot: 'Komutu, yazmacı ve adresi ayrı ayrı izle.'
+};
+
+const CHAPTER_META = [
+  { num: 1, title: 'Komutun iki yüzü', filename: 'mk-h1-01-komut.mp4', accent: PALETTE.sage },
+  { num: 2, title: 'RISC ve CISC', filename: 'mk-h1-02-risc-cisc.mp4', accent: PALETTE.lavender },
+  { num: 3, title: 'BIU, EU ve komut kuyruğu', filename: 'mk-h1-03-biu-eu.mp4', accent: PALETTE.terracotta },
+  { num: 4, title: 'Yazmaçlardan adrese', filename: 'mk-h1-04-yazmac-ve-adres.mp4', accent: PALETTE.ice }
+];
+
+const H1_CPU = { byteBits: 8, wordBits: 16, addressBits: 20, queueBytes: 6, rvBits: 32 };
+const H1_INPUT = { demoWord: 0x2050, labWord: 0x1234, labByte: 7, segment: 0x0200, offset: 0x0100 };
+const H1_INK = '#314839';
+const H1_MUTED = '#50675A';
+const H1_GREEN = '#DBECDD';
+const H1_PURPLE = '#EDE7F6';
+const H1_SAND = '#F3E7D0';
+const H1_RED = '#F7E3DC';
+const H1_REGISTER_NAMES = ['AX', 'BX', 'CX', 'DX'];
+const H1_SEGMENTS = [['CS', 'Kod'], ['DS', 'Veri'], ['SS', 'Yığın'], ['ES', 'Ek segment']];
+
+function h1Hex(value, digits = 2, suffix = 'h') {
+  return value.toString(16).toUpperCase().padStart(digits, '0') + suffix;
+}
+
+function h1BytePair(word) {
+  const radix = 2 ** H1_CPU.byteBits;
+  return { high: Math.floor(word / radix), low: word % radix };
+}
+
+function h1MovImmediate(register, immediate) {
+  if (register === 'AL') return [0xB0, immediate];
+  const { high, low } = h1BytePair(immediate);
+  return [0xB8, low, high];
+}
+
+function h1AddressSpace(bits) {
+  return 2 ** bits;
+}
+
+function h1SegmentAddress(segment, offset) {
+  const scale = 2 ** (H1_CPU.addressBits - H1_CPU.wordBits);
+  const base = segment * scale;
+  return { scale, base, physical: (base + offset) % h1AddressSpace(H1_CPU.addressBits) };
+}
+
+function h1RegisterTrace(word, newLow) {
+  const empty = { AX: 0, BX: 0, CX: 0, DX: 0 };
+  const initialized = { ...empty, AX: word };
+  const { high } = h1BytePair(word);
+  const replaced = { ...initialized, AX: high * 2 ** H1_CPU.byteBits + newLow };
+  return [empty, initialized, replaced, { ...replaced, BX: replaced.AX }];
+}
+
+function h1QueueAfter(queue, count, takenBranch = false) {
+  return takenBranch ? [] : queue.slice(count);
+}
+
+const H1_WORD_CODE = h1MovImmediate('AX', H1_INPUT.demoWord);
+const H1_BYTE_CODE = h1MovImmediate('AL', H1_INPUT.labByte);
+const H1_QUEUE = [...H1_WORD_CODE, ...H1_BYTE_CODE, 0x90];
+const H1_SPACE = h1AddressSpace(H1_CPU.addressBits);
+const H1_MIB = H1_SPACE / 1024 ** 2;
+const H1_SEGMENT_ADDRESS = h1SegmentAddress(H1_INPUT.segment, H1_INPUT.offset);
+const H1_TRACE = h1RegisterTrace(H1_INPUT.labWord, H1_INPUT.labByte);
+const H1_TRACE_CODE = [
+  `MOV AX, ${h1Hex(H1_INPUT.labWord, 4)}`,
+  `MOV AL, ${h1Hex(H1_INPUT.labByte)}`,
+  'MOV BX, AX'
+];
+
+function h1PairText(high, low) {
+  return `AH ${h1Hex(high)}   AL ${h1Hex(low)}`;
+}
+
+function h1RegisterExam() {
+  const loaded = h1BytePair(H1_TRACE[1].AX);
+  const updated = h1BytePair(H1_TRACE[2].AX);
+  return [
+    [h1PairText(loaded.high, loaded.low), 'İkinci MOV satırı atlanmış.'],
+    [h1PairText(updated.low, updated.high), 'Üst ve alt bayt yer değiştirmiş.'],
+    [h1PairText(H1_TRACE[0].AX, updated.low), 'AL’ye yazmak AH’yi sıfırlamaz.'],
+    [h1PairText(updated.low, updated.low), 'MOV yalnızca AL’yi değiştirir.'],
+    [h1PairText(updated.high, updated.low), 'Üst bayt korunur, alt bayt güncellenir.']
+  ];
+}
+
+const H1_EXAMS = {
+  isa: {
+    question: ['Bir ISA neleri tanımlar?'],
+    correct: 'B',
+    options: [
+      ['Yalnızca saat hızını', 'Hız, işlemci modeline göre değişir.'],
+      ['Komutları ve görünür yazmaçları', 'Yazılım bu kurallara göre komut verir.'],
+      ['İşlemcinin iç devre düzenini', 'Devre düzeni mikromimariye aittir.'],
+      ['Tek bir üreticiyi', 'Farklı üreticiler aynı ISA’yı uygulayabilir.'],
+      ['Assembly çeviri aracını', 'Çeviriyi assembler yapar.']
+    ]
+  },
+  risc: {
+    question: ['RV32I, bellekteki bir değeri yazmaca nasıl ekler?'],
+    correct: 'D',
+    options: [
+      ['ADD ile doğrudan bellekten okur', 'RV32I ADD, yazmaçları toplar.'],
+      ['Önce ADD, sonra yükleme yapar', 'Toplamadan önce değer okunmalıdır.'],
+      ['Önce belleğe yazar, sonra toplar', 'Belleğe yazmak veriyi içeri almaz.'],
+      ['Bellekten yükler, yazmaçları toplar', 'Yükleme, değeri toplama için hazırlar.'],
+      ['Yalnızca yükleme yapar', 'Yükleme tek başına toplama yapmaz.']
+    ]
+  },
+  biu: {
+    question: ['EU bir komutu yürütürken BIU ne yapabilir?'],
+    correct: 'A',
+    options: [
+      ['Sonraki komut baytlarını getirir', 'Dış yol uygunsa kuyruğu besler.'],
+      ['Her komutun bitmesini bekler', 'Getirme ve yürütme örtüşebilir.'],
+      ['Toplama sonucunu hesaplar', 'Aritmetik birimi EU’dadır.'],
+      ['Komutun anlamını çözer', 'Kuyruktaki komutu EU çözer.'],
+      ['Sonuca göre bayrakları günceller', 'Bayrakları yürütme birimi yönetir.']
+    ]
+  },
+  registers: {
+    question: ['Bu iki komuttan sonra AH ve AL ne olur?', H1_TRACE_CODE.slice(0, 2).join('   /   ')],
+    correct: 'E',
+    options: h1RegisterExam()
+  }
+};
+
+function h1Target(x, y, w, h) {
+  return { x, y, w, h };
+}
+
+function h1Beat(scene, step, target, note, kind = 'arrow') {
+  return { scene, step, ann: { target, note, kind, side: 'below', at: 0.42 } };
+}
+
+function h1ExamBeat(exam, step) {
+  const spec = H1_EXAMS[exam];
+  const row = spec.correct.charCodeAt(0) - 'A'.charCodeAt(0);
+  if (step === 0) return { scene: `exam-${exam}`, step };
+  const target = step === 1 ? h1Target(118, 208 + row * 61, 38, 38) : h1Target(676, 330, 345, 38);
+  const note = step === 1 ? spec.options[row][1] : 'Her şıkkın sağında hangi kavrama dayandığını görebilirsin.';
+  return h1Beat(`exam-${exam}`, step, target, note, step === 1 ? 'circle' : 'none');
+}
+
+const BEAT_SPECS = {
+  c1b00: { scene: 'intro' },
+  c1b01: h1Beat('layers', 0, h1Target(511, 211, 258, 99), 'Komut kümesi mimarisi yazılımın işlemciye hangi komutları verebildiğini belirler.'),
+  c1b02: h1Beat('layers', 1, h1Target(852, 372, 314, 49), 'Aynı komutları uygulayan iki çekirdek farklı iç tasarımlara sahip olabilir.'),
+  c1b03: h1Beat('encoding', 0, h1Target(156, 261, 366, 160), 'Assembly, komutun adını ve kullandığı değerleri okunabilir biçimde gösterir.'),
+  c1b04: h1Beat('encoding', 1, h1Target(817, 307, 319, 72), 'Assembler, yazılan komutu işlemcinin okuyabileceği makine koduna çevirir.'),
+  c1b05: h1Beat('build', 0, h1Target(319, 268, 150, 96), 'Derleyici, kaynak koddaki işlemleri hedef işlemcinin komutlarıyla ifade eder.'),
+  c1b06a: h1Beat('build', 1, h1Target(540, 268, 150, 96), 'Assembler çevirdiği komutları daha sonra bağlanacak nesne dosyasına yazar.'),
+  c1b06: h1Beat('build', 2, h1Target(762, 268, 150, 96), 'Bağlayıcı, assembler çıktısını diğer nesnelerle birleştirip programı oluşturur.'),
+  c1b07: h1Beat('build', 3, h1Target(983, 268, 150, 96), 'Yükleyici, programı belleğe alır ve başlangıç adresini kurar.'),
+  c1b08: h1ExamBeat('isa', 0),
+  c1b09: h1ExamBeat('isa', 1),
+  c1b10: h1ExamBeat('isa', 2),
+  c1b11: { scene: 'outro' },
+
+  c2b00: { scene: 'intro' },
+  c2b01: h1Beat('compare', 0, h1Target(762, 176, 345, 46), 'CISC, daha çeşitli komut ve adresleme biçimleri sunan bir yaklaşımdır.'),
+  c2b02: h1Beat('compare', 1, h1Target(767, 290, 325, 117), 'Gösterilen CISC komutlarının uzunluğu değişirken temel RISC komutları eşit uzunluktadır.'),
+  c2b03: h1Beat('access', 0, h1Target(174, 233, 391, 68), 'Bu yükleme, bellekteki değeri toplama komutunun okuyacağı yazmaca taşır.'),
+  c2b04: h1Beat('access', 1, h1Target(731, 354, 360, 68), 'Köşeli parantez, toplamanın bellekteki değeri doğrudan okuyacağını gösterir.'),
+  c2b05: h1Beat('access', 2, h1Target(785, 472, 340, 42), 'Hoca, vizede ağırlığın Intel işlemcideki konulara verileceğini söyledi.'),
+  c2b06: h1ExamBeat('risc', 0),
+  c2b07: h1ExamBeat('risc', 1),
+  c2b08: h1ExamBeat('risc', 2),
+  c2b09: { scene: 'outro' },
+
+  c3b00: { scene: 'intro' },
+  c3b01: h1Beat('bus', 0, h1Target(96, 157, 325, 39), 'Yol arabirim birimi, işlemcinin bellek ve giriş çıkış bağlantısını yönetir.'),
+  c3b02: h1Beat('bus', 1, h1Target(494, 297, 281, 68), 'Yol arabirim birimi, getirdiği komut baytlarını sırayla kuyruğa koyar.'),
+  c3b03: h1Beat('bus', 2, h1Target(869, 228, 296, 38), 'Yürütme birimi, komutun baytlarını kuyruktan alıp anlamını çözer ve çalıştırır.'),
+  c3b04: h1Beat('space', 0, h1Target(126, 200, 346, 59), 'On altı bitlik veri yolu, bir aktarımda taşıyabildiği veri genişliğini gösterir.'),
+  c3b05: h1Beat('space', 1, h1Target(126, 361, 273, 60), 'Yirmi adres bitinin her biri sıfır veya bir olabilir.'),
+  c3b06: h1Beat('space', 2, h1Target(779, 365, 353, 55), 'Her adreste bir bayt bulunduğu için adres sayısı kapasiteyi verir.'),
+  c3b07: h1Beat('pipeline', 0, h1Target(580, 188, 225, 209), 'Yürütme sürerken sıradaki komut getirilebildiği için iki işlem örtüşür.'),
+  c3b08: h1Beat('pipeline', 1, h1Target(581, 456, 219, 48), 'Atlama gerçekleşince eski baytlar bırakılır ve yeni adresten getirme başlar.'),
+  c3b09: h1ExamBeat('biu', 0),
+  c3b10: h1ExamBeat('biu', 1),
+  c3b11: h1ExamBeat('biu', 2),
+  c3b12: { scene: 'outro' },
+
+  c4b00: { scene: 'intro' },
+  c4b01: h1Beat('registers', 0, h1Target(748, 173, 349, 47), 'Yazmaçlar işlemci içinde bulunur ve geçici değerleri tutar.'),
+  c4b02: h1Beat('registers', 1, h1Target(791, 294, 117, 52), 'İlk kopyalama komutu, verilen değeri bütün hedef yazmaca yazar.'),
+  c4b03: h1Beat('registers', 2, h1Target(907, 294, 270, 52), 'Üst bayt ve alt bayt aynı yazmacın iki parçasıdır.'),
+  c4b04: h1Beat('registers', 3, h1Target(1039, 294, 138, 52), 'Yalnız alt bayta yazdığımız için üst bayt aynı kalır.'),
+  c4b05: h1Beat('registers', 4, h1Target(791, 359, 117, 52), 'Son komut, kaynak yazmacın değerini değiştirmeden diğer yazmaca kopyalar.'),
+  c4b06: h1Beat('segments', 0, h1Target(125, 264, 225, 42), 'Segment yazmaçları kod, veri ve yığın gibi alanların başlangıcını belirler.'),
+  c4b07: h1Beat('segments', 1, h1Target(256, 435, 276, 55), 'Komut işaretçisi, sıradaki komutun kod segmenti içindeki uzaklığını tutar.'),
+  c4b08: h1Beat('segments', 2, h1Target(893, 437, 269, 54), 'Segment değerini on altıyla çarpıp ofseti ekleyerek fiziksel adresi buluruz.'),
+  c4b09: h1ExamBeat('registers', 0),
+  c4b10: h1ExamBeat('registers', 1),
+  c4b11: h1ExamBeat('registers', 2),
+  c4b12: { scene: 'outro' }
+};
+
+function selfTest() {
+  const checks = [
+    ['MOV AX kodlaması', H1_WORD_CODE.map(byte => h1Hex(byte, 2, '')).join(' '), 'B8 50 20'],
+    ['MOV AL kodlaması', H1_BYTE_CODE.map(byte => h1Hex(byte, 2, '')).join(' '), 'B0 07'],
+    ['MOV AX uzunluğu', H1_WORD_CODE.length, 3],
+    ['MOV AL uzunluğu', H1_BYTE_CODE.length, 2],
+    ['RV32I temel komut genişliği', H1_CPU.rvBits / H1_CPU.byteBits, 4],
+    ['Kuyruk kapasitesi', H1_QUEUE.length, H1_CPU.queueBytes],
+    ['Kuyruk kapasitesi bit', H1_CPU.queueBytes * H1_CPU.byteBits, 48],
+    ['EU aldıktan sonra kalan baytlar', h1QueueAfter(H1_QUEUE, H1_WORD_CODE.length).join(','), '176,7,144'],
+    ['Atlama sonrası kuyruk', h1QueueAfter(H1_QUEUE, 0, true).length, 0],
+    ['Adres sayısı', H1_SPACE, 1048576],
+    ['Adres uzayı MiB', H1_MIB, 1],
+    ['Veri yolu bit', H1_CPU.wordBits, 16],
+    ['Segment çarpanı', H1_SEGMENT_ADDRESS.scale, 16],
+    ['Segment tabanı', h1Hex(H1_SEGMENT_ADDRESS.base, 5), '02000h'],
+    ['Fiziksel adres', h1Hex(H1_SEGMENT_ADDRESS.physical, 5), '02100h'],
+    ['Gerçek 8086 adres sarması', h1SegmentAddress(0xFFFF, 0x0010).physical, 0],
+    ['İlk MOV sonrası AX', h1Hex(H1_TRACE[1].AX, 4), '1234h'],
+    ['İlk MOV sonrası AH', h1Hex(h1BytePair(H1_TRACE[1].AX).high), '12h'],
+    ['İlk MOV sonrası AL', h1Hex(h1BytePair(H1_TRACE[1].AX).low), '34h'],
+    ['AL yazıldıktan sonra AX', h1Hex(H1_TRACE[2].AX, 4), '1207h'],
+    ['AL yazıldıktan sonra AH', h1Hex(h1BytePair(H1_TRACE[2].AX).high), '12h'],
+    ['AL yazıldıktan sonra AL', h1Hex(h1BytePair(H1_TRACE[2].AX).low), '07h'],
+    ['BX kopyası ve AX korunumu', [H1_TRACE[3].BX, H1_TRACE[3].AX].map(n => h1Hex(n, 4)).join(' '), '1207h 1207h'],
+    ['CX ve DX korunumu', [H1_TRACE[3].CX, H1_TRACE[3].DX].join(','), '0,0'],
+    ['Yazmaç sorusunun yanıtı', H1_EXAMS.registers.options[4][0], 'AH 12h   AL 07h']
+  ];
+  for (const [name, exam] of Object.entries(H1_EXAMS)) {
+    checks.push([`${name} benzersiz şıklar`, new Set(exam.options.map(([label]) => label)).size, 5]);
+  }
+  const failed = checks.filter(([, actual, expected]) => actual !== expected);
+  if (failed.length) {
+    const warning = document.createElement('div');
+    warning.className = 'audit-badge';
+    warning.style.background = PALETTE.error;
+    warning.textContent = 'Hafta 1 hesap denetimi başarısız.';
+    document.body.appendChild(warning);
+    console.error('Hafta 1 selfTest:', failed);
+    throw new Error('Hafta 1 hesap denetimi başarısız.');
+  }
+  console.info(`selfTest: ${checks.length}/${checks.length} OK`);
+}
+
+function h1Text(ctx, value, x, y, maxW, size = 29, opts = {}) {
+  drawTextFit(ctx, String(value), x, y, maxW, {
+    size, minSize: opts.numeric ? 32 : 22,
+    family: opts.code ? "'JetBrains Mono', monospace" : "'Inter', sans-serif",
+    color: opts.color || H1_INK, align: opts.align || 'left', weight: opts.weight || 650
+  });
+}
+
+function h1Center(ctx, value, x, y, maxW, size, opts = {}) {
+  h1Text(ctx, value, x, y, maxW, size, { ...opts, align: 'center' });
+}
+
+function h1Heading(ctx, text) {
+  h1Text(ctx, text, 92, 97, 1096, 43, { weight: 750 });
+}
+
+function h1Fill(ctx, x, y, w, h, fill, radius = 13) {
+  ctx.save();
+  ctx.fillStyle = fill;
+  roundRectPath(ctx, x, y, w, h, radius);
+  ctx.fill();
+  ctx.restore();
+}
+
+function h1Rule(ctx, x1, y1, x2, y2, t, color = PALETTE.sage) {
+  drawSketchLine(ctx, [[x1, y1], [x2, y2]], { t, color, width: 2.1, seed: x1 + y1, amp: 0.45 });
+}
+
+function h1Arrow(ctx, x1, y1, x2, y2, t, progress = 1, color = H1_MUTED) {
+  drawSketchArrow(ctx, x1, y1, x2, y2, 0, { t, progress, color, seed: x1 + y1, dotTip: false });
+}
+
+function h1Layers(ctx, step, t, p) {
+  h1Heading(ctx, 'Yazılım işlemciyle nasıl konuşur?');
+  const blocks = [
+    [102, 'Yazılım', 'Program ve araçlar', PALETTE.card],
+    [505, 'ISA', 'Komut kümesi mimarisi', H1_GREEN],
+    [908, 'Donanım', 'İşlemci çekirdeği', PALETTE.card]
+  ];
+  for (const [x, label, detail, fill] of blocks) {
+    drawCard(ctx, x, 210, 270, 121, { fill });
+    h1Center(ctx, label, x + 135, 245, 238, 39);
+    h1Center(ctx, detail, x + 135, 292, 238, 26);
+  }
+  h1Arrow(ctx, 385, 266, 490, 266, t, p);
+  h1Arrow(ctx, 788, 266, 895, 266, t, p);
+  if (step === 1) {
+    h1Rule(ctx, 1043, 337, 1043, 354, t);
+    h1Rule(ctx, 924, 354, 1099, 354, t);
+    h1Arrow(ctx, 924, 354, 924, 374, t, p);
+    h1Arrow(ctx, 1099, 354, 1099, 374, t, p);
+    h1Fill(ctx, 838, 381, 173, 72, H1_PURPLE);
+    h1Fill(ctx, 1021, 381, 157, 72, H1_PURPLE);
+    h1Center(ctx, 'Çekirdek A', 924, 417, 151, 27);
+    h1Center(ctx, 'Çekirdek B', 1099, 417, 139, 27);
+  }
+}
+
+function h1Encoding(ctx, step, t, p) {
+  h1Heading(ctx, 'Aynı komutun iki gösterimi');
+  drawCard(ctx, 102, 208, 425, 244);
+  drawCard(ctx, 782, 208, 396, 244, { fill: H1_PURPLE });
+  h1Text(ctx, 'Assembly', 130, 253, 366, 32);
+  h1Text(ctx, 'Makine kodu', 810, 253, 337, 32);
+  h1Text(ctx, `MOV AX, ${h1Hex(H1_INPUT.demoWord, 4)}`, 130, 343, 368, 38, { code: true, numeric: true });
+  h1Center(ctx, 'Assembler', 653, 294, 194, 27);
+  h1Arrow(ctx, 550, 340, 753, 340, t, step === 0 ? 0.24 : p);
+  H1_WORD_CODE.forEach((byte, i) => {
+    const x = 816 + i * 111;
+    h1Fill(ctx, x, 309, 102, 70, PALETTE.card);
+    const value = step === 0 ? '·' : h1Hex(byte, 2, '');
+    h1Center(ctx, value, x + 51, 345, 84, 38, { code: true, numeric: step === 1 });
+  });
+}
+
+function h1Build(ctx, step, t, p) {
+  h1Heading(ctx, 'Kaynak koddan çalışan programa');
+  const files = ['Kaynak kod', 'Assembly', 'Nesne dosyası', 'Program', 'Bellek'];
+  const transitions = ['Derleyici', 'Assembler', 'Bağlayıcı', 'Yükleyici'];
+  const active = step + 1;
+  files.forEach((file, index) => {
+    const x = 98 + index * 221;
+    drawCard(ctx, x, 270, 163, 101, { fill: index === active ? H1_GREEN : PALETTE.card });
+    h1Center(ctx, file, x + 81.5, 322, 145, 27);
+    if (index > 0 && index <= active) {
+      const cx = x - 29;
+      h1Center(ctx, transitions[index - 1], cx, index % 2 === 0 ? 405 : 235, 150, 25);
+      h1Arrow(ctx, x - 53, 320, x - 7, 320, t, index === active ? p : 1);
+    }
+  });
+}
+
+function h1ByteStrip(ctx, x, y, count, color) {
+  for (let i = 0; i < count; i++) h1Fill(ctx, x + i * 56, y, 48, 32, color, 6);
+}
+
+function h1Compare(ctx, step) {
+  h1Heading(ctx, 'İki komut kümesi yaklaşımı');
+  const height = step === 0 ? 141 : 371;
+  drawCard(ctx, 102, 156, 512, height, { fill: H1_GREEN });
+  drawCard(ctx, 666, 156, 512, height, { fill: H1_PURPLE });
+  h1Text(ctx, 'RISC  ·  RV32I', 132, 199, 452, 38, { numeric: true });
+  h1Text(ctx, 'CISC  ·  8086', 696, 199, 452, 38, { numeric: true });
+  h1Text(ctx, 'Düzenli komut biçimleri', 132, 250, 452, 28);
+  h1Text(ctx, 'Zengin komut ve adresleme biçimleri', 696, 250, 452, 28);
+  if (step === 0) return;
+  const rvBytes = H1_CPU.rvBits / H1_CPU.byteBits;
+  h1Text(ctx, 'Örnek komut uzunlukları', 132, 302, 438, 25);
+  h1Text(ctx, 'Örnek komut uzunlukları', 696, 302, 438, 25);
+  [[ 'ADD', 'LW' ], [ 'MOV AL', 'MOV AX' ]].forEach((names, column) => {
+    const x = 132 + column * 564;
+    names.forEach((name, row) => {
+      const y = 359 + row * 104;
+      const count = column === 0 ? rvBytes : [H1_BYTE_CODE.length, H1_WORD_CODE.length][row];
+      h1Text(ctx, name, x, y, 125, 27, { code: true });
+      h1ByteStrip(ctx, x + 127, y - 16, count, column === 0 ? PALETTE.sage : PALETTE.lavender);
+      h1Text(ctx, `${count} bayt`, x + 358, y, 101, 33, { numeric: true });
+    });
+  });
+}
+
+function h1Access(ctx, step, t, p) {
+  h1Heading(ctx, 'Bellekteki değeri yazmaca ekle');
+  drawCard(ctx, 102, 150, 512, 387);
+  drawCard(ctx, 666, 150, 512, 387);
+  h1Text(ctx, 'RV32I', 132, 192, 450, 36, { numeric: true });
+  h1Text(ctx, '8086', 696, 192, 450, 36, { numeric: true });
+  h1Fill(ctx, 132, 234, 452, 86, H1_GREEN);
+  h1Text(ctx, 'LW t0, 0(a0)', 150, 260, 400, 33, { code: true, numeric: true });
+  h1Text(ctx, 'Bellekten yükle', 150, 300, 400, 24);
+  h1Arrow(ctx, 358, 324, 358, 346, t, p);
+  h1Fill(ctx, 132, 354, 452, 86, H1_GREEN);
+  h1Text(ctx, 'ADD a1, a1, t0', 150, 380, 400, 33, { code: true, numeric: true });
+  h1Text(ctx, 'Yazmaçları topla', 150, 420, 400, 24);
+  if (step >= 1) {
+    h1Fill(ctx, 696, 354, 452, 86, H1_PURPLE);
+    h1Text(ctx, 'ADD AX, [BX]', 714, 380, 400, 33, { code: true });
+    h1Text(ctx, 'Bellekten oku ve topla', 714, 420, 400, 24);
+  }
+  if (step === 2) {
+    h1Text(ctx, 'Ripes ile izle', 132, 488, 446, 26);
+    h1Text(ctx, 'emu8086 ile izle  ·  Vize ağırlığı', 696, 488, 446, 32, { numeric: true });
+  }
+}
+
+function h1Bus(ctx, step, t, p) {
+  h1Heading(ctx, 'Getirme ve yürütme ayrı birimlerde');
+  drawCard(ctx, 94, 145, 331, 287, { fill: H1_GREEN });
+  drawCard(ctx, 855, 145, 331, 287, { fill: H1_PURPLE });
+  h1Text(ctx, 'BIU', 118, 184, 277, 39);
+  h1Text(ctx, 'Yol arabirim birimi', 118, 242, 278, 28);
+  h1Text(ctx, 'Komut getirir', 118, 303, 278, 28);
+  h1Text(ctx, 'Bellek ve giriş/çıkış', 118, 363, 278, 27);
+  h1Text(ctx, 'EU', 879, 184, 277, 39);
+  h1Text(ctx, 'Yürütme birimi', 879, 242, 278, 28);
+  h1Text(ctx, 'Komutu çözer ve yürütür', 879, 303, 278, 28);
+  h1Text(ctx, 'ALU · Aritmetik ve mantık', 879, 357, 278, 25);
+  h1Text(ctx, 'Yazmaçlar ve bayraklar', 879, 394, 278, 25);
+  h1Center(ctx, `Kuyruk · ${H1_CPU.queueBytes} bayt`, 640, 245, 348, 35, { numeric: true });
+  const consumed = step === 2 ? H1_WORD_CODE.length : 0;
+  const readComplete = step === 2 && p >= 0.7;
+  const queued = step === 0 ? [] : h1QueueAfter(H1_QUEUE, readComplete ? consumed : 0);
+  for (let i = 0; i < H1_CPU.queueBytes; i++) {
+    const x = 451 + i * 64;
+    const reading = !readComplete && i < consumed;
+    h1Fill(ctx, x, 300, 58, 62, reading ? H1_SAND : H1_GREEN, 9);
+    const ready = step !== 1 || p >= (i + 1) / (H1_CPU.queueBytes + 1);
+    if (ready && queued[i] !== undefined) {
+      h1Center(ctx, h1Hex(queued[i], 2, ''), x + 29, 331, 53, 34, { code: true, numeric: true });
+    }
+  }
+  if (step === 1) h1Arrow(ctx, 429, 385, 813, 385, t, p);
+  if (step === 2) {
+    h1Arrow(ctx, 543, 399, 842, 399, t, p);
+    h1Center(ctx, `EU ${consumed} baytı alır`, 642, 458, 400, 34, { numeric: true });
+  }
+  h1Center(ctx, 'Hoca, BIU ve EU ayrımını vurguladı.', 640, 514, 995, 27);
+}
+
+function h1Space(ctx, step, t) {
+  h1Heading(ctx, 'Veri genişliği ve adres genişliği');
+  drawCard(ctx, 102, 155, 1076, 371);
+  h1Fill(ctx, 120, 188, 1040, 104, H1_PURPLE);
+  h1Text(ctx, `${H1_CPU.wordBits} bit veri`, 141, 239, 264, 40, { numeric: true });
+  h1Text(ctx, 'Veri yolu, yazmaç ve ALU genişliği', 482, 239, 623, 30);
+  if (step < 1) return;
+  h1Fill(ctx, 120, 327, 1040, 152, H1_GREEN);
+  h1Text(ctx, `${H1_CPU.addressBits} bit adres`, 141, 389, 269, 39, { numeric: true });
+  h1Text(ctx, 'Her bit iki durum alır', 141, 444, 277, 25);
+  const superscript = Array.from(String(H1_CPU.addressBits), char => '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(char)]).join('');
+  h1Center(ctx, `2${superscript} adres`, 594, 389, 240, 42, { numeric: true });
+  if (step === 2) {
+    h1Arrow(ctx, 723, 387, 785, 387, t);
+    h1Center(ctx, `${H1_SPACE.toLocaleString('tr-TR')} bayt`, 974, 386, 341, 39, { numeric: true });
+    h1Center(ctx, `${H1_MIB} MB (MiB)`, 974, 443, 341, 35, { numeric: true });
+  }
+}
+
+function h1Pipeline(ctx, step, t, p) {
+  h1Heading(ctx, 'Önden getirme, işleri örtüştürür');
+  drawCard(ctx, 102, 149, 1076, 391);
+  h1Text(ctx, 'BIU', 126, 246, 137, 36);
+  h1Text(ctx, 'EU', 126, 356, 137, 36);
+  const blocks = [
+    [304, 205, 'Getir', 0, H1_GREEN],
+    [581, 205, 'Getir', 1, H1_GREEN],
+    [581, 315, 'Çöz ve yürüt', 0, H1_PURPLE],
+    [858, 315, 'Çöz ve yürüt', 1, H1_PURPLE]
+  ];
+  h1Fill(ctx, 567, 181, 254, 229, H1_SAND);
+  blocks.forEach(([x, y, label, index, fill], i) => {
+    if (p < 0.12 + i * 0.11 && step === 0) return;
+    h1Fill(ctx, x, y, 225, 80, fill);
+    h1Center(ctx, `${label} ${index + 1}`, x + 112.5, y + 40, 199, 34, { numeric: true });
+  });
+  h1Rule(ctx, 229, 414, 1112, 414, t);
+  if (step === 0) {
+    h1Center(ctx, 'Aynı zaman dilimi', 695, 471, 455, 29);
+  } else {
+    h1Text(ctx, 'Atlama gerçekleşir', 126, 480, 273, 27);
+    h1Arrow(ctx, 407, 480, 542, 480, t, p);
+    h1Center(ctx, 'Kuyruk boşalır', 692, 480, 248, 29);
+    h1Arrow(ctx, 826, 480, 882, 480, t, p);
+    h1Center(ctx, 'Yeni adresten getir', 1019, 480, 260, 27);
+  }
+}
+
+function h1Registers(ctx, step) {
+  h1Heading(ctx, 'Bir yazmacı bayt bayt izle');
+  drawCard(ctx, 92, 151, 458, 410);
+  drawCard(ctx, 566, 151, 621, 410);
+  h1Text(ctx, 'Assembly', 122, 190, 400, 32);
+  h1Text(ctx, 'Yazmaç paneli', 594, 190, 544, 32);
+  const snapshot = H1_TRACE[[0, 1, 1, 2, 3][step]];
+  const activeLine = [ -1, 0, 0, 1, 2 ][step];
+  const activeReg = step === 4 ? 'BX' : 'AX';
+  H1_TRACE_CODE.forEach((line, index) => {
+    const y = 273 + index * 82;
+    if (index === activeLine) h1Fill(ctx, 112, y - 29, 416, 58, H1_SAND);
+    h1Center(ctx, index + 1, 145, y, 42, 35, { code: true, numeric: true, color: H1_MUTED });
+    h1Text(ctx, line, 184, y, 329, 37, { code: true, numeric: true });
+  });
+  h1Text(ctx, 'Yazmaç', 596, 255, 140, 24);
+  h1Center(ctx, `${H1_CPU.wordBits} bit`, 844, 255, 115, 32, { numeric: true });
+  h1Center(ctx, 'Üst bayt', 970, 255, 127, 25);
+  h1Center(ctx, 'Alt bayt', 1101, 255, 127, 25);
+  H1_REGISTER_NAMES.forEach((name, index) => {
+    const y = 321 + index * 65;
+    const prefix = name[0];
+    const { high, low } = h1BytePair(snapshot[name]);
+    const active = step > 0 && name === activeReg;
+    if (active) h1Fill(ctx, 585, y - 28, 582, 56, H1_GREEN);
+    if (name === 'AX' && step === 2) h1Fill(ctx, 908, y - 25, 256, 50, H1_PURPLE);
+    if (name === 'AX' && step === 3) h1Fill(ctx, 1037, y - 25, 127, 50, H1_SAND);
+    h1Text(ctx, name, 608, y, 119, 32, { code: true });
+    h1Center(ctx, h1Hex(snapshot[name], 4), 844, y, 112, 35, { code: true, numeric: true });
+    h1Center(ctx, `${prefix}H ${h1Hex(high)}`, 970, y, 123, 32, { code: true, numeric: true });
+    h1Center(ctx, `${prefix}L ${h1Hex(low)}`, 1101, y, 123, 32, { code: true, numeric: true });
+  });
+}
+
+function h1Segments(ctx, step, t, p) {
+  h1Heading(ctx, 'Segment ve ofset adresi birlikte kurar');
+  H1_SEGMENTS.forEach(([reg, role], index) => {
+    const x = 102 + index * 276;
+    const active = (step === 1 && reg === 'CS') || (step === 2 && reg === 'DS');
+    drawCard(ctx, x, 155, 248, 168, { fill: active ? H1_GREEN : PALETTE.card });
+    h1Center(ctx, reg, x + 124, 212, 190, 43, { code: true });
+    h1Center(ctx, role, x + 124, 275, 190, 31);
+  });
+  if (step === 0) return;
+  drawCard(ctx, 102, 372, 1076, 161, { fill: H1_PURPLE });
+  if (step === 1) {
+    h1Text(ctx, 'Sıradaki komut', 128, 414, 365, 25);
+    h1Center(ctx, 'CS : IP', 389, 465, 280, 49, { code: true });
+    h1Arrow(ctx, 537, 460, 714, 460, t, p);
+    h1Text(ctx, 'Kod segmenti + komut ofseti', 733, 465, 417, 31);
+  } else {
+    h1Text(ctx, 'DS değeri × segment çarpanı', 128, 418, 411, 26);
+    h1Text(ctx, 'Ofset', 676, 418, 144, 26);
+    h1Text(ctx, 'Fiziksel adres', 923, 418, 225, 26);
+    const { scale, physical } = H1_SEGMENT_ADDRESS;
+    h1Text(ctx, `${h1Hex(H1_INPUT.segment, 4)} × ${h1Hex(scale)}`, 128, 476, 389, 43, { code: true, numeric: true });
+    h1Center(ctx, '+', 572, 476, 75, 43);
+    h1Text(ctx, h1Hex(H1_INPUT.offset, 4), 676, 476, 145, 43, { code: true, numeric: true });
+    h1Center(ctx, '=', 850, 476, 63, 43);
+    h1Text(ctx, h1Hex(physical, 5), 923, 476, 225, 43, { code: true, numeric: true });
+  }
+}
+
+function h1Exam(ctx, exam, step, t, p) {
+  h1Text(ctx, 'Sınav anı', 93, 66, 782, 29, { color: H1_MUTED });
+  h1Text(ctx, exam.question[0], 93, 115, 1093, 41, { weight: 750 });
+  if (exam.question[1]) h1Text(ctx, exam.question[1], 93, 166, 1093, 32, { code: true, numeric: true });
+  const full = step === 2;
+  exam.options.forEach(([label, why], i) => {
+    const key = String.fromCharCode('A'.charCodeAt(0) + i);
+    const y = 201 + i * 61;
+    const active = step >= 1 && key === exam.correct;
+    drawCard(ctx, 101, y, 1078, 54, { fill: active ? H1_GREEN : PALETTE.card, radius: 13, shadow: false });
+    h1Fill(ctx, 115, y + 7, 45, 40, active ? PALETTE.sage : PALETTE.softFill, 8);
+    h1Center(ctx, key, 137.5, y + 27, 37, 28);
+    h1Text(ctx, label, 178, y + 27, 458, exam === H1_EXAMS.registers ? 34 : 28,
+      { code: exam === H1_EXAMS.registers, numeric: exam === H1_EXAMS.registers });
+    if (full && p >= 0.1 + i * 0.11) {
+      h1Rule(ctx, 652, y + 10, 652, y + 44, t, PALETTE.sage);
+      h1Text(ctx, why, 677, y + 27, 483, 26, { color: active ? PALETTE.green : H1_MUTED });
+    }
+  });
+}
+
+function h1ChapterCard(ctx, chapter, outro, t, p) {
+  drawCard(ctx, 215, 203, 850, 308);
+  h1Center(ctx, `Bölüm ${chapter.num}${outro ? ' tamamlandı' : ''}`, 640, 264, 785, 34, { numeric: true });
+  h1Center(ctx, outro ? chapter.nextTitle : chapter.title, 640, 342, 777, 49, { weight: 750 });
+  drawSketchLine(ctx, [[515, 395], [765, 395]], {
+    t, seed: chapter.num, width: 3, color: chapter.accent, progress: p
+  });
+  h1Center(ctx, META.kartKunye, 640, 450, 777, 26, { color: H1_MUTED });
+}
+
+function renderChapterScene(ctx, beat, lt, dur, t, chMeta) {
+  const { scene, step } = BEAT_SPECS[beat.id];
+  const p = clamp01(lt / Math.min(dur * 0.75, 0.88));
+  if (scene.startsWith('exam-')) {
+    h1Exam(ctx, H1_EXAMS[scene.slice(5)], step, t, p);
+    return;
+  }
+  switch (scene) {
+    case 'intro': h1ChapterCard(ctx, chMeta, false, t, p); break;
+    case 'outro': h1ChapterCard(ctx, chMeta, true, t, p); break;
+    case 'layers': h1Layers(ctx, step, t, p); break;
+    case 'encoding': h1Encoding(ctx, step, t, p); break;
+    case 'build': h1Build(ctx, step, t, p); break;
+    case 'compare': h1Compare(ctx, step); break;
+    case 'access': h1Access(ctx, step, t, p); break;
+    case 'bus': h1Bus(ctx, step, t, p); break;
+    case 'space': h1Space(ctx, step, t); break;
+    case 'pipeline': h1Pipeline(ctx, step, t, p); break;
+    case 'registers': h1Registers(ctx, step); break;
+    case 'segments': h1Segments(ctx, step, t, p); break;
+    default: throw new Error(`Bilinmeyen Hafta 1 sahnesi: ${scene}`);
+  }
+}
+
+
+  // ==========================================================
+  // 6. Ekran dışı ölçüm, okuma beklemeleri ve zaman eşleme
+  // ==========================================================
+  const END_EPS = 0.0005;
+
+  function measureTextBox(ctx, text, x, y, maxWidth) {
+    const m = ctx.measureText(text);
+    const size = parseFloat(ctx.font.match(/([\d.]+)px/)?.[1] || '24');
+    const align = ctx.textAlign;
+    const right = align === 'right' || (align === 'end' && ctx.direction !== 'rtl') || (align === 'start' && ctx.direction === 'rtl');
+    const center = align === 'center';
+    const shift = right ? m.width : center ? m.width / 2 : 0;
+    const left = Number.isFinite(m.actualBoundingBoxLeft) ? m.actualBoundingBoxLeft : shift;
+    const r = Number.isFinite(m.actualBoundingBoxRight) ? m.actualBoundingBoxRight : m.width - shift;
+    const ascent = Number.isFinite(m.actualBoundingBoxAscent) ? m.actualBoundingBoxAscent : size * 0.8;
+    const descent = Number.isFinite(m.actualBoundingBoxDescent) ? m.actualBoundingBoxDescent : size * 0.2;
+    const scale = maxWidth > 0 && m.width > maxWidth ? maxWidth / m.width : 1;
+    return { x0: x - left * scale, x1: x + r * scale, y0: y - ascent, y1: y + descent };
+  }
+
+  function pointsBox(points) {
+    return {
+      x0: Math.min(...points.map(p => p.x)), x1: Math.max(...points.map(p => p.x)),
+      y0: Math.min(...points.map(p => p.y)), y1: Math.max(...points.map(p => p.y))
+    };
+  }
+
+  function transformBox(box, matrix) {
+    return pointsBox([[box.x0, box.y0], [box.x1, box.y0], [box.x1, box.y1], [box.x0, box.y1]]
+      .map(([x, y]) => ({ x: matrix.a * x + matrix.c * y + matrix.e, y: matrix.b * x + matrix.d * y + matrix.f })));
+  }
+
+  function captureFrame(t, target, cardsNeeded = false) {
+    const texts = [], cards = [], originals = new Map();
+    let points = [];
+    const hook = (name, before) => {
+      const own = Object.getOwnPropertyDescriptor(target, name);
+      const native = target[name];
+      originals.set(name, own);
+      target[name] = function(...args) { before(...args); return native.apply(this, args); };
+    };
+    const addPoint = (x, y) => {
+      const m = target.getTransform();
+      points.push({ x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f });
+    };
+    const addCard = pts => {
+      if (pts.length < 4 || target.globalAlpha <= 0.3) return;
+      const box = pointsBox(pts), w = box.x1 - box.x0, h = box.y1 - box.y0;
+      if (w > 60 && w < 1270 && h > 30 && h < 700) cards.push(box);
+    };
+    hook('fillText', (value, x, y, maxWidth) => {
+      const text = String(value).trim();
+      if (!text || target.globalAlpha <= 0.2) return;
+      const matrix = target.getTransform();
+      const box = transformBox(measureTextBox(target, text, x, y, maxWidth), matrix);
+      if (box.x1 <= 0 || box.y1 <= 0 || box.x0 >= W || box.y0 >= H) {
+        // Tamamen ekran dışı yazılar da denetimde raporlanmalı, hold hesabında sayılmaz.
+        if (!cardsNeeded) return;
+      }
+      texts.push({ ...box, text, alpha: target.globalAlpha, rotated: Math.abs(matrix.b) > 1e-8 || Math.abs(matrix.c) > 1e-8 });
+    });
+    if (cardsNeeded) {
+      hook('beginPath', () => { points = []; });
+      hook('moveTo', addPoint); hook('lineTo', addPoint);
+      hook('rect', (x, y, w, h) => { addPoint(x, y); addPoint(x + w, y); addPoint(x + w, y + h); addPoint(x, y + h); });
+      hook('roundRect', (x, y, w, h) => { addPoint(x, y); addPoint(x + w, y); addPoint(x + w, y + h); addPoint(x, y + h); });
+      hook('arcTo', (x1, y1, x2, y2) => { addPoint(x1, y1); addPoint(x2, y2); });
+      hook('quadraticCurveTo', (cx, cy, x, y) => { addPoint(cx, cy); addPoint(x, y); });
+      hook('bezierCurveTo', (a, b, c, d, x, y) => { addPoint(a, b); addPoint(c, d); addPoint(x, y); });
+      hook('arc', (x, y, r, start, end, ccw) => {
+        let span = end - start;
+        if (!ccw && span < 0) span = span % (Math.PI * 2) + Math.PI * 2;
+        if (ccw && span > 0) span = span % (Math.PI * 2) - Math.PI * 2;
+        span = clamp(span, -Math.PI * 2, Math.PI * 2);
+        for (let i = 0; i <= 24; i++) addPoint(x + r * Math.cos(start + span * i / 24), y + r * Math.sin(start + span * i / 24));
+      });
+      hook('fill', () => addCard(points));
+      hook('fillRect', (x, y, w, h) => {
+        const box = transformBox({ x0: x, y0: y, x1: x + w, y1: y + h }, target.getTransform());
+        addCard([{ x: box.x0, y: box.y0 }, { x: box.x1, y: box.y0 }, { x: box.x1, y: box.y1 }, { x: box.x0, y: box.y1 }]);
+      });
+    }
+    try {
+      renderFrame(t, null, target, { subtitles: false, strict: true, measurement: true });
+      return { texts, cards };
+    } finally {
+      for (const [name, own] of originals) {
+        if (own) Object.defineProperty(target, name, own);
+        else delete target[name];
+      }
+    }
+  }
+
+  function buildPlaybackTiming(recalculateHolds = true) {
+    const offscreen = document.createElement('canvas');
+    offscreen.width = W; offscreen.height = H;
+    const target = offscreen.getContext('2d');
+    let previous = new Set(), previousCards = new Set(), playCursor = 0;
+    const annWas = annEnabled;
+    TIMELINE.beats.forEach(beat => {
+      if (recalculateHolds) {
+        annEnabled = false;
+        const { texts, cards } = captureFrame(beat.end - END_EPS, target, true);
+        annEnabled = annWas;
+        const current = new Set(texts.filter(item => item.alpha > 0.5).map(item => item.text.replace(/\s+/g, ' ')));
+        const newWords = [...current].filter(text => !previous.has(text))
+          .reduce((count, text) => count + text.split(/\s+/).filter(Boolean).length, 0);
+        beat.newWords = newWords;
+        // Süreklilik: önceki beat'le ortak yazı oranı. Yüksekse sahne adı değişse de geçiş yapılmaz (Claude düzeltmesi).
+        beat.sharedRatio = current.size ? [...current].filter(text => previous.has(text)).length / current.size : 0;
+        const cardKey = box => [box.x0, box.y0, box.x1, box.y1].map(n => Math.round(n / 4)).join(',');
+        const fresh = [...texts.filter(item => !previous.has(item.text.replace(/\s+/g, ' '))),
+          ...cards.filter(card => !previousCards.has(cardKey(card)))];
+        const union = boxes => boxes.length ? { x0: Math.min(...boxes.map(b => b.x0)), y0: Math.min(...boxes.map(b => b.y0)),
+          x1: Math.max(...boxes.map(b => b.x1)), y1: Math.max(...boxes.map(b => b.y1)) } : null;
+        const focusBox = union(fresh);
+        beat.focus = focusBox ? { x: (focusBox.x0 + focusBox.x1) / 2, y: (focusBox.y0 + focusBox.y1) / 2 } : { x: W / 2, y: H / 2 };
+        beat.bounds = union([...texts, ...cards]);
+        beat.cameraEndScale = cameraAt(beat, beat.end - END_EPS).scale;
+        // Okuma süresi 0,5 + 0,3×kelime (HyperFrames). Yazı beat içinde belirdiği için beat'in yarısı zaten
+        // okumaya gider; bekleme yalnız kalan kısım kadar (Claude düzeltmesi: ilk sürüm toplamı 4,8 → 8,9 dk yapıyordu).
+        // Yalnız bu adımın notu görünür; önceki açıklamalar iz bırakmaz.
+        beat.annTrail = [];
+        beat.annLayout = ['intro', 'outro'].includes(beat.scene) ? null : layoutAnnotation(beat, target, texts, cards);
+        beat.spotFrom = null;
+        const noteWords = beat.annLayout ? beat.annLayout.words : 0;
+        beat.hold = ['intro', 'outro'].includes(beat.scene) ? 0.4 : clamp(0.5 + 0.3 * (newWords + noteWords) - 0.5 * beat.duration, 0.6, 4);
+        previous = current;
+        previousCards = new Set(cards.map(cardKey));
+      }
+      beat.playStart = playCursor;
+      beat.playContentEnd = playCursor + beat.duration;
+      beat.playEnd = beat.playContentEnd + beat.hold;
+      playCursor = beat.playEnd;
+    });
+    TIMELINE.playDuration = playCursor;
+    TIMELINE.chapters.forEach(ch => {
+      const beats = TIMELINE.beats.filter(b => b.chapter === ch.num);
+      ch.playStart = beats[0]?.playStart ?? 0;
+      ch.playEnd = beats[beats.length - 1]?.playEnd ?? 0;
+      ch.playDuration = ch.playEnd - ch.playStart;
+    });
+    TIMELINE.sfxEvents.forEach(ev => { ev.playT = contentToPlay(ev.t); });
+  }
+
+  function beatAtPlay(tp) {
+    return TIMELINE.beats.find(b => tp >= b.playStart && tp < b.playEnd) || TIMELINE.beats[TIMELINE.beats.length - 1];
+  }
+
+  function playToContent(tp) {
+    const beat = beatAtPlay(clamp(tp, 0, TIMELINE.playDuration));
+    if (!beat) return 0;
+    return Math.min(beat.end - END_EPS, beat.start + Math.max(0, tp - beat.playStart));
+  }
+
+  function contentToPlay(t) {
+    if (t >= TIMELINE.duration) return TIMELINE.playDuration;
+    const beat = TIMELINE.beats.find(b => t >= b.start && t < b.end);
+    return beat ? beat.playStart + t - beat.start : 0;
+  }
+
+  // 6a. Yardımcı izleri: 20 Hz ön tarama, saf kareler için değişmez başlangıç zamanları
+  function buildAutomaticMotion() {
+    const scratch = document.createElement('canvas'); scratch.width = W; scratch.height = H;
+    const probe = scratch.getContext('2d');
+    // Ölçümde çizgi yolları/transformlar çalışır; piksel ve harf titremesi çizilmez.
+    for (const name of ['fill', 'stroke', 'fillRect', 'strokeRect', 'clearRect', 'fillText', 'strokeText', 'drawImage']) probe[name] = () => {};
+    const automatic = [], fxEvents = [];
+    let previous = new Map(), lastChapter = null;
+    const addSound = (beat, t, type, gain, dur, pitch = 1) => automatic.push({
+      id: `${beat.id}_auto_${automatic.length}`, t: clamp(t, beat.start, beat.end - END_EPS), type, gain, dur, pitch
+    });
+    const addFx = (beat, t, type, data = {}) => {
+      const event = { id: `${beat.id}_fx_${fxEvents.length}`, t: clamp(t, beat.start, beat.end - END_EPS),
+        type, x: W / 2, y: H / 2, power: 0.6, ...data };
+      event.x = clamp(Number.isFinite(event.x) ? event.x : W / 2, 0, W);
+      event.y = clamp(Number.isFinite(event.y) ? event.y : H / 2, 0, H);
+      event.power = clamp01(Number.isFinite(event.power) ? event.power : 0.6);
+      event.seed = strHash(event.id);
+      fxEvents.push(event);
+      const sound = { impact: 'thud', stamp: 'stamp', sparkle: 'ding', confetti: 'success' }[type];
+      if (sound) addSound(beat, event.t, sound, 0.35 + event.power * 0.45, type === 'confetti' ? 0.7 : 0.3);
+    };
+    const savedFrame = frameMotion, savedJitter = jitterT;
+    try {
+      for (const beat of TIMELINE.beats) {
+        if (lastChapter !== beat.chapter) previous = new Map();
+        lastChapter = beat.chapter;
+        beat.motionUses = new Map();
+        const prior = TIMELINE.beats[beat.index - 1];
+        if (prior?.chapter !== beat.chapter) {
+          addSound(beat, beat.start, 'riser', 0.38, 0.8);
+          addSound(beat, beat.start + 0.48, 'thud', 0.45, 0.25);
+        } else if (prior?.scene !== beat.scene && (beat.sharedRatio ?? 0) < 0.35) addSound(beat, beat.start + 0.08, 'whoosh', 0.45, 0.35);
+        for (const fx of BEAT_SPECS[beat.id]?.fx || []) {
+          if (['impact', 'stamp', 'sparkle', 'confetti'].includes(fx.type)) {
+            addFx(beat, beat.start + clamp01(Number(fx.at) || 0) * beat.duration, fx.type,
+              { x: fx.x ?? W / 2, y: fx.y ?? H / 2, power: fx.power ?? 0.6, scope: 'scene' });
+          }
+        }
+        const count = Math.max(1, Math.ceil(beat.duration * 20));
+        for (let sample = 0; sample <= count; sample++) {
+          const t = beat.start + Math.min(beat.duration - END_EPS, sample / 20);
+          frameMotion = { beat, t, probe: true, measurement: true, counts: new Map(), uses: new Map() };
+          jitterT = t;
+          const ch = TIMELINE.chapters.find(c => c.num === beat.chapter);
+          probe.save();
+          try { renderChapterScene(probe, beat, t - beat.start, beat.duration, t, ch); }
+          finally { probe.restore(); }
+          const current = new Map();
+          for (const [key, use] of frameMotion.uses) {
+            if (!use.visible) continue;
+            const old = previous.get(key);
+            const span = old?.span || { born: t, start: t, end: t };
+            span.end = t;
+            let spans = beat.motionUses.get(key);
+            if (!spans) { spans = []; beat.motionUses.set(key, spans); }
+            if (!spans.includes(span)) spans.push(span);
+            current.set(key, { ...use, span, t });
+            if (!old) {
+              if (use.type === 'card') addSound(beat, t, 'paper', 0.23, 0.22);
+              if (use.type === 'label') {
+                addFx(beat, t, 'stamp', { x: use.x, y: use.y, power: 0.5, scope: 'label' });
+                addFx(beat, t, 'impact', { x: use.x, y: use.y, power: 0.25, scope: 'label' });
+              }
+              if (use.type === 'answer') addFx(beat, t, 'sparkle', { x: use.x, y: use.y, power: 0.55 });
+            }
+            // Kalem/marker sesi yalnız yazı başlarken bir kez, kısık (Sefa: sürekli "ZIIII" kafa şişiriyordu).
+            if ((use.type === 'pen' || use.type === 'marker') && !old && use.progress < 1) {
+              addSound(beat, t, use.type, use.type === 'pen' ? 0.09 : 0.11, 0.10);
+            }
+            if (use.type === 'counter') {
+              Array.from(use.text).forEach((ch, i) => {
+                const settledAt = (i * 0.06 + 0.22) / use.duration;
+                if (/\d/.test(ch) && use.progress >= settledAt && (old?.progress ?? 0) < settledAt) {
+                  const crossing = old && use.progress > old.progress
+                    ? lerp(old.t, t, clamp01((settledAt - old.progress) / (use.progress - old.progress))) : t;
+                  addSound(beat, crossing, 'tick', 0.4, 0.08, Math.pow(2, (Number(ch) - 4) / 36));
+                }
+              });
+            }
+          }
+          previous = current;
+        }
+      }
+    } finally { frameMotion = savedFrame; jitterT = savedJitter; }
+    // Önce açık içerik olayları korunur; 60 ms çevresindeki aynı otomatik tür tek sese katılır.
+    const merged = (TIMELINE.explicitSfx || []).map(ev => ({ ...ev }));
+    const byType = new Map();
+    for (const ev of merged) {
+      const type = canonicalSfxType(ev.type);
+      if (!byType.has(type)) byType.set(type, []);
+      byType.get(type).push(ev);
+    }
+    for (const ev of automatic.sort((a, b) => a.t - b.t)) {
+      const type = canonicalSfxType(ev.type), same = byType.get(type) || [];
+      const neighbor = same.find(other => Math.abs(other.t - ev.t) < 0.060 - 1e-8);
+      if (neighbor) {
+        // Açık olayın zamanı, perdesi ve seviyesi değişmez; uzun çizimde süre korunur.
+        if (!neighbor.explicit) neighbor.dur = Math.max(neighbor.dur, ev.t + ev.dur - neighbor.t);
+      } else { merged.push(ev); same.push(ev); byType.set(type, same); }
+    }
+    TIMELINE.sfxEvents = merged.sort((a, b) => a.t - b.t);
+    TIMELINE.sfxEvents.forEach(ev => { ev.playT = contentToPlay(ev.t); });
+    TIMELINE.fxEvents = fxEvents.sort((a, b) => a.t - b.t);
+    transitionCache.clear();
+  }
+
+  // ==========================================================
+  // 6b. Yerleşim denetimi: tam tuval, altyazı hariç, dört örnek/beat
+  // ==========================================================
+  function audit() {
+    if (!state.ready) throw new Error('Denetim için fontların yüklenmesini bekleyin: __motor.ready');
+    const say = { EKRAN_DISI: 0, KARTTAN_TASMA: 0, YAZI_CAKISMA: 0, KART_CAKISMA: 0 };
+    const ornek = [];
+    const offscreen = document.createElement('canvas');
+    offscreen.width = W; offscreen.height = H;
+    const target = offscreen.getContext('2d');
+    const area = b => Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0);
+    const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+    const contains = (b, x, y) => x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1;
+    const issue = (tur, beat, t, a, b) => {
+      say[tur]++;
+      if (ornek.length < 200) ornek.push({ tur, beat: beat.id, saniye: Number(t.toFixed(3)),
+        yazi: a.text || '', diger: b?.text || '', kutu: { x0: a.x0, y0: a.y0, x1: a.x1, y1: a.y1 } });
+    };
+    for (const beat of TIMELINE.beats) {
+      if (['intro', 'outro'].includes(beat.scene)) continue;
+      for (const fraction of [0.3, 0.55, 0.8, 0.97]) {
+        const t = beat.start + beat.duration * fraction;
+        const { texts, cards } = captureFrame(t, target, true);
+        for (const text of texts) {
+          if (text.x0 < 4 || text.x1 > W - 4 || text.y0 < 4 || text.y1 > H - 4) issue('EKRAN_DISI', beat, t, text);
+          const cx = (text.x0 + text.x1) / 2, cy = (text.y0 + text.y1) / 2;
+          const parent = cards.filter(card => contains(card, cx, cy) &&
+            (contains(card, text.x0 + 2, cy) || contains(card, text.x1 - 2, cy))).sort((a, b) => area(a) - area(b))[0];
+          if (parent && (text.x0 < parent.x0 - 2 || text.x1 > parent.x1 + 2 || text.y0 < parent.y0 - 2 || text.y1 > parent.y1 + 2)) {
+            issue('KARTTAN_TASMA', beat, t, text, parent);
+          }
+        }
+        for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) {
+          const a = texts[i], b = texts[j];
+          if (a.text === b.text && Math.abs(a.x0 - b.x0) <= 3 && Math.abs(a.y0 - b.y0) <= 3) continue;
+          const minArea = Math.min(area(a), area(b));
+          const threshold = a.rotated || b.rotated ? 0.30 : 0.12;
+          if (minArea > 0 && overlap(a, b) / minArea > threshold) issue('YAZI_CAKISMA', beat, t, a, b);
+        }
+        for (let i = 0; i < cards.length; i++) for (let j = i + 1; j < cards.length; j++) {
+          const a = cards[i], b = cards[j], minArea = Math.min(area(a), area(b));
+          const ratio = minArea > 0 ? overlap(a, b) / minArea : 0;
+          if (ratio > 0.05 && ratio < 0.90) issue('KART_CAKISMA', beat, t, a, b);
+        }
+      }
+    }
+    return { sorun: Object.values(say).reduce((a, b) => a + b, 0), say, ornek };
+  }
+
+  // ==========================================================
+  // 7. Kinetic Subtitles & 4-Segment Progress Bar (5–8)
+  // ==========================================================
+  function drawProgressBar(ctx, tp, exportScope) {
+    const barX = 44, barY = 14, barW = W - 88, barH = 5;
+    ctx.save();
+    if (exportScope) {
+      const ch = exportScope.chapter;
+      const p = clamp01((tp - ch.playStart) / Math.max(0.01, ch.playDuration));
+      ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+      roundRectPath(ctx, barX, barY, barW, barH, 3);
+      ctx.fill();
+      ctx.fillStyle = ch.accent;
+      roundRectPath(ctx, barX, barY, barW * p, barH, 3);
+      ctx.fill();
+    } else {
+      TIMELINE.chapters.forEach(ch => {
+        const sx = barX + ch.playStart / TIMELINE.playDuration * barW;
+        const segW = ch.playDuration / TIMELINE.playDuration * barW;
+        ctx.fillStyle = 'rgba(36, 55, 45, 0.12)';
+        roundRectPath(ctx, sx, barY, segW, barH, 3);
+        ctx.fill();
+        const fillP = clamp01((tp - ch.playStart) / Math.max(0.01, ch.playDuration));
+        if (fillP > 0) {
+          ctx.fillStyle = ch.accent;
+          roundRectPath(ctx, sx, barY, segW * fillP, barH, 3);
+          ctx.fill();
+        }
+      });
+    }
+    const start = exportScope?.chapter?.playStart ?? 0;
+    const duration = exportScope?.chapter?.playDuration ?? TIMELINE.playDuration;
+    ctx.strokeStyle = 'rgba(36,55,45,0.35)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const beat of TIMELINE.beats) {
+      const p = (beat.playStart - start) / duration;
+      if (p <= 0 || p >= 1) continue;
+      const x = barX + p * barW;
+      ctx.moveTo(x, barY - 2); ctx.lineTo(x, barY + barH + 2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawKineticSubtitles(ctx, beat, lt) {
+    if (!state.subtitlesOn || !beat || !beat.text) return;
+    const words = beat.text.trim().split(/\s+/);
+    if (!words.length) return;
+
+    const totalChars = words.reduce((s, w) => s + w.length + 1, 0);
+    const activeStart = 0.08;
+    const activeEnd = Math.max(activeStart + 0.4, beat.duration - 0.15);
+    const span = activeEnd - activeStart;
+    let cur = activeStart;
+    let activeIdx = 0;
+    for (let i = 0; i < words.length; i++) {
+      const wDur = ((words[i].length + 1) / totalChars) * span;
+      if (lt >= cur && lt <= cur + wDur) { activeIdx = i; break; }
+      if (lt > cur + wDur) activeIdx = i;
+      cur += wDur;
+    }
+
+    ctx.save();
+    ctx.font = `600 28px 'Inter', sans-serif`;
+    const maxLineW = 1060;
+    const spaceW = ctx.measureText(' ').width;
+    const lines = [[]];
+    let lineW = 0;
+    words.forEach((w, idx) => {
+      const ww = ctx.measureText(w).width;
+      if (lineW > 0 && lineW + spaceW + ww > maxLineW) { lines.push([]); lineW = 0; }
+      lines[lines.length - 1].push({ word: w, idx, w: ww });
+      lineW += (lineW > 0 ? spaceW : 0) + ww;
+    });
+    const shownLines = lines.slice(0, 2);
+
+    const baseTop = shownLines.length === 1 ? 658 : 630;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    shownLines.forEach((ln, lIdx) => {
+      const totalW = ln.reduce((acc, item, i) => acc + item.w + (i > 0 ? spaceW : 0), 0);
+      let x = (W - totalW) / 2;
+      const y = baseTop + lIdx * 38;
+      ln.forEach((item, i) => {
+        if (i > 0) x += spaceW;
+        if (item.idx === activeIdx) {
+          ctx.fillStyle = PALETTE.sand;
+          roundRectPath(ctx, x - 5, y + 6, item.w + 10, 11, 5);
+          ctx.fill();
+        }
+        ctx.fillStyle = item.idx === activeIdx ? PALETTE.ink : 'rgba(36, 55, 45, 0.72)';
+        ctx.fillText(item.word, x, y);
+        x += item.w;
+      });
+    });
+    ctx.restore();
+  }
+
+  // ==========================================================
+  // 8. SFX Synthesis Engine (Shared Live + Offline MP4)
+  // ==========================================================
+  // G?r?lt?, s?p?rme ve zarflar tohumlu PCM'de ?retilir; canl?/MP4 ayn? ?rnekleri ?alar.
+  const sfxBufferCache = new Map();
+  function canonicalSfxType(type) { return ({ scribble: 'pen', zink: 'ding' })[type] || type; }
+  function synthesizeSFX(ctx, requestedType, dur = 0.25, pitch = 1) {
+    const type = canonicalSfxType(requestedType);
+    const lengths = { whoosh: 0.35, tick: 0.09, pop: 0.14, thud: 0.28, stamp: 0.34,
+      ding: 0.55, success: 0.78, riser: 0.8, paper: 0.26, buzz: 0.23 };
+    const length = lengths[type] || clamp(dur, 0.08, 0.8), sr = ctx.sampleRate;
+    pitch = clamp(pitch, 0.5, 2);
+    const key = [sr, type, length.toFixed(3), pitch.toFixed(4)].join(':');
+    if (sfxBufferCache.has(key)) return sfxBufferCache.get(key);
+    const buffer = ctx.createBuffer(2, Math.ceil(length * sr), sr);
+    const left = buffer.getChannelData(0), right = buffer.getChannelData(1);
+    const rng = mulberry32(strHash(key));
+    let slow = 0, fast = 0;
+    for (let i = 0; i < left.length; i++) {
+      const t = i / sr, p = t / length, noise = rng() * 2 - 1;
+      // ?ki tek kutuplu filtre fark?: bant ge?iren, frekans? zamanla s?p?r?len g?r?lt?.
+      const sweep = type === 'whoosh' ? 400 + Math.sin(p * Math.PI) * 2200 : type === 'riser' ? 300 + 2200 * p : (type === 'pen' || type === 'marker') ? 650 : 1400;
+      slow += (1 - Math.exp(-2 * Math.PI * sweep * 0.3 / sr)) * (noise - slow);
+      fast += (1 - Math.exp(-2 * Math.PI * sweep / sr)) * (noise - fast);
+      const band = fast - slow;
+      const attack = Math.min(1, t / 0.006), tail = Math.min(1, (length - t) / 0.025);
+      let value = 0, pan = 0;
+      if (type === 'whoosh' || type === 'riser') {
+        value = band * Math.sin(Math.PI * p) ** 1.5 * 1.5;
+        if (type === 'riser') value += Math.sin(2 * Math.PI * (160 * t + 180 * t * t) * pitch) * Math.sin(Math.PI * p) * 0.12;
+        pan = type === 'whoosh' ? -0.8 + 1.6 * p : 0;
+      } else if (type === 'pen' || type === 'marker' || type === 'paper') {
+        const grain = type === 'paper' ? (0.35 + 0.65 * Math.sin(t * 145) ** 6) : (0.55 + 0.45 * Math.sin(t * 23) ** 2); // vızıltı yok, yavaş doğal dalga
+        value = band * grain * (type === 'marker' ? 0.75 : 1.0) * Math.sin(Math.PI * p) ** 0.5;
+      } else if (type === 'tick') {
+        value = (Math.sin(2 * Math.PI * 820 * pitch * t) * 0.55 + band * 0.6) * Math.exp(-t * 70);
+      } else if (type === 'pop') {
+        value = Math.sin(2 * Math.PI * pitch * (450 * t - 1100 * t * t)) * Math.exp(-t * 30) * 0.7;
+      } else if (type === 'thud' || type === 'stamp') {
+        value = Math.sin(2 * Math.PI * pitch * (78 * t + 2 * (1 - Math.exp(-20 * t)))) * Math.exp(-t * 18) * 0.9;
+        value += band * Math.exp(-t * (type === 'stamp' ? 18 : 65)) * (type === 'stamp' ? 0.95 : 0.4);
+      } else if (type === 'ding' || type === 'success') {
+        const notes = type === 'success' ? [523.25, 659.25, 783.99] : [783.99];
+        for (let n = 0; n < notes.length; n++) {
+          const age = t - n * 0.13;
+          if (age >= 0) value += (Math.sin(2 * Math.PI * notes[n] * pitch * age) +
+            0.32 * Math.sin(2 * Math.PI * notes[n] * 2 * pitch * age)) * Math.min(1, age / 0.006) * Math.exp(-age * 10) * 0.5;
+        }
+      } else if (type === 'buzz') {
+        value = (Math.sin(2 * Math.PI * 145 * pitch * t) + 0.22 * Math.sin(2 * Math.PI * 435 * pitch * t)) * Math.sin(Math.PI * p) * 0.45;
+      }
+      value *= attack * tail;
+      left[i] = value * Math.cos((pan + 1) * Math.PI / 4);
+      right[i] = value * Math.sin((pan + 1) * Math.PI / 4);
+    }
+    sfxBufferCache.set(key, buffer);
+    if (sfxBufferCache.size > 96) sfxBufferCache.delete(sfxBufferCache.keys().next().value);
+    return buffer;
+  }
+
+  function scheduleSFX(ctx, dest, type, when, gainVal = 0.2, dur = 0.25, pitch = 1) {
+    const source = ctx.createBufferSource(), gain = ctx.createGain();
+    source.buffer = synthesizeSFX(ctx, type, dur, pitch);
+    gain.gain.value = clamp(gainVal, 0, 2) * 0.24;
+    source.connect(gain).connect(dest);
+    source.start(Math.max(0, when));
+    source.onended = () => { source.disconnect(); gain.disconnect(); };
+    return source;
+  }
+
+  // Ortak ana ??k??: kompres?r + ?rnek tepesini -3 dBFS alt?nda tutan yumu?ak limiter.
+  function createMasterBus(ctx, destination) {
+    const input = ctx.createDynamicsCompressor();
+    input.threshold.value = -18; input.knee.value = 12; input.ratio.value = 3.5;
+    input.attack.value = 0.005; input.release.value = 0.18;
+    const limiter = ctx.createWaveShaper(), curve = new Float32Array(4097), ceiling = Math.pow(10, -3 / 20);
+    for (let i = 0; i < curve.length; i++) curve[i] = ceiling * Math.tanh((i / (curve.length - 1) * 2 - 1) / ceiling);
+    limiter.curve = curve; // Oversampling yok: son ?rnekler de s?n?r?n i?inde kal?r.
+    input.connect(limiter).connect(destination);
+    return input;
+  }
+
+  // 8b. 84 BPM, iki ölçülük Cmaj7–Am7–Fmaj7–G6: aynı döngü, aynı oynatma zamanı
+  let musicPhrase = null;
+  function getMusicPhrase(ctx) {
+    if (musicPhrase) return musicPhrase;
+    const sr = 22050, pulse = 60 / 84, chordTime = pulse * 8, length = Math.round(chordTime * 4 * sr);
+    const buffer = ctx.createBuffer(2, length, sr), phraseTime = length / sr;
+    const chords = [[130.81, 164.81, 196, 246.94], [110, 130.81, 164.81, 196],
+      [87.31, 110, 130.81, 164.81], [98, 123.47, 146.83, 164.81]];
+    // Tam döngü frekansları birleşme noktasında faz sıçramasını önler.
+    const frequencies = chords.map(notes => notes.map(f => Math.round(f * phraseTime) / phraseTime));
+    const channels = [buffer.getChannelData(0), buffer.getChannelData(1)];
+    for (let i = 0; i < length; i++) {
+      const t = i / sr, chord = Math.floor(t / chordTime) % 4, local = t % chordTime;
+      const blend = ease.inOutPower2(local / 0.6), prior = (chord + 3) % 4;
+      const noteIndex = Math.floor(t / (pulse / 2)), noteAge = t % (pulse / 2);
+      const pluckF = frequencies[chord][[0, 2, 1, 3, 2, 1, 3, 2][noteIndex % 8]] * 2;
+      const pluck = (Math.sin(2 * Math.PI * pluckF * noteAge) + 0.13 * Math.sin(4 * Math.PI * pluckF * noteAge)) *
+        Math.min(1, noteAge / 0.012) * Math.exp(-noteAge * 14) * 0.022;
+      for (let channel = 0; channel < 2; channel++) {
+        let pad = 0;
+        for (let n = 0; n < 4; n++) {
+          const phase = channel * (n + 1) * 0.17;
+          pad += (Math.sin(2 * Math.PI * frequencies[chord][n] * t + phase) * blend +
+            Math.sin(2 * Math.PI * frequencies[prior][n] * t + phase) * (1 - blend)) * 0.025;
+        }
+        channels[channel][i] = pad + pluck * (channel ? 0.85 : 1);
+      }
+    }
+    // Düşük geçiren filtre PCM'e işlenir; seek ve MP4 aynı filtreli döngüyü kullanır.
+    const alpha = 1 - Math.exp(-2 * Math.PI * 850 / sr);
+    for (const samples of channels) {
+      let filtered = 0;
+      // Ön dolaşım filtre durumunu döngü sınırına yerleştirir.
+      for (const value of samples) filtered += alpha * (value - filtered);
+      for (let i = 0; i < samples.length; i++) { filtered += alpha * (samples[i] - filtered); samples[i] = filtered; }
+    }
+    musicPhrase = buffer;
+    return buffer;
+  }
+
+  function musicLevelAt(tp, start = 0, end = TIMELINE.playDuration) {
+    const chapter = TIMELINE.chapters.find(ch => tp >= ch.playStart && tp < ch.playEnd);
+    const chapterFade = chapter ? clamp01((tp - chapter.playStart) / 0.8) : 1;
+    let duck = 1;
+    if (state.sfxOn) for (const ev of TIMELINE.sfxEvents) {
+      if (ev.playT > tp + 0.15) break;
+      const age = tp - ev.playT, length = Math.max(0.15, Math.min(0.8, ev.dur || 0.2));
+      if (age < 0 || age > length + 0.3) continue;
+      const amount = age < 0.15 ? age / 0.15 : age <= length ? 1 : 1 - (age - length) / 0.3;
+      duck = Math.min(duck, lerp(1, Math.pow(10, -4 / 20), clamp01(amount)));
+    }
+    // Pad RMS'i efektlerden yaklaşık 12 dB düşük; bölüm ve kesit başı/sonu yumuşak.
+    return 0.36 * chapterFade * clamp01((tp - start) / 0.15) * clamp01((end - tp) / Math.min(2, Math.max(0.1, end - start))) * duck;
+  }
+
+  function scheduleMusic(ctx, destination, start, end, when, rate = 1) {
+    if (!state.musicOn || end <= start) return null;
+    const source = ctx.createBufferSource(), gain = ctx.createGain();
+    source.buffer = getMusicPhrase(ctx); source.loop = true; source.playbackRate.value = rate;
+    gain.gain.value = 0;
+    source.connect(gain).connect(destination);
+    const count = Math.max(2, Math.ceil((end - start) * 20) + 1), curve = new Float32Array(count);
+    for (let i = 0; i < count; i++) curve[i] = musicLevelAt(lerp(start, end, i / (count - 1)), start, end);
+    gain.gain.setValueCurveAtTime(curve, when, (end - start) / rate);
+    source.start(when, start % source.buffer.duration); source.stop(when + (end - start) / rate);
+    source.onended = () => { source.disconnect(); gain.disconnect(); };
+    return { source, gain, start, when, rate };
+  }
+
+  function stopLiveMusic() {
+    const music = state.musicSource;
+    if (!music || !state.audioCtx) return;
+    const now = state.audioCtx.currentTime;
+    // setValueCurveAtTime otomasyonu durdurulurken zarfı o anki seviyeden söndür.
+    if (music.gain.gain.cancelAndHoldAtTime) music.gain.gain.cancelAndHoldAtTime(now);
+    else { music.gain.gain.cancelScheduledValues(0); music.gain.gain.setValueAtTime(musicLevelAt(state.time), now); }
+    music.gain.gain.linearRampToValueAtTime(0, now + 0.15);
+    try { music.source.stop(now + 0.16); } catch (e) {}
+    state.musicSource = null;
+  }
+
+  function syncLiveMusic(force = false) {
+    const music = state.musicSource;
+    if (music && state.audioCtx && Math.abs(music.start + (state.audioCtx.currentTime - music.when) * music.rate - state.time) > 0.12) force = true;
+    if (force || !state.playing || !state.musicOn || state.exporting) stopLiveMusic();
+    if (state.musicSource || !state.playing || !state.musicOn || state.exporting) return;
+    const ac = ensureLiveAudioCtx();
+    if (!ac) return;
+    state.musicRate = effectiveSpeed();
+    state.musicSource = scheduleMusic(ac, state.compNode, state.time, TIMELINE.playDuration, ac.currentTime + 0.01, state.musicRate);
+  }
+
+  // ==========================================================
+  // 9. Safe Pure renderFrame(t) & Playback Loop
+  // ==========================================================
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  let renderErrorLogged = false;
+
+  // 9a. Sabit kâğıt, kayan karalamalar ve yalnız sahneye uygulanan güvenli kamera
+  const doodleCanvas = document.createElement('canvas');
+  doodleCanvas.width = 640; doodleCanvas.height = 360;
+  const vignetteCanvas = document.createElement('canvas');
+  vignetteCanvas.width = W; vignetteCanvas.height = H;
+  (function buildDepthTexture() {
+    const d = doodleCanvas.getContext('2d'), rng = mulberry32(170621);
+    d.strokeStyle = PALETTE.ink; d.fillStyle = PALETTE.ink; d.lineWidth = 1.2;
+    d.font = "400 15px 'Patrick Hand'";
+    for (let i = 0; i < 40; i++) {
+      const x = 20 + rng() * 600, y = 20 + rng() * 320, kind = i % 6;
+      d.beginPath();
+      if (kind === 0) nativeFillText.call(d, rng() > 0.5 ? '0' : '1', x, y);
+      else if (kind === 1) { d.arc(x, y, 1.2, 0, Math.PI * 2); d.fill(); }
+      else if (kind === 2) { d.moveTo(x - 4, y); d.lineTo(x + 4, y); d.moveTo(x, y - 4); d.lineTo(x, y + 4); d.stroke(); }
+      else if (kind === 3) { d.moveTo(x - 3, y - 3); d.lineTo(x + 3, y + 3); d.moveTo(x - 3, y + 3); d.lineTo(x + 3, y - 3); d.stroke(); }
+      else {
+        d.moveTo(x, y); d.quadraticCurveTo(x + 10, y - 12, x + 22, y + 2);
+        if (kind === 5) { d.lineTo(x + 17, y - 3); d.moveTo(x + 22, y + 2); d.lineTo(x + 15, y + 4); }
+        d.stroke();
+      }
+    }
+    const v = vignetteCanvas.getContext('2d');
+    const gradient = v.createRadialGradient(W / 2, H / 2, 160, W / 2, H / 2, Math.hypot(W, H) / 2);
+    gradient.addColorStop(0, 'rgba(36,55,45,0)'); gradient.addColorStop(1, 'rgba(0,0,0,0.04)');
+    v.fillStyle = gradient; v.fillRect(0, 0, W, H);
+  })();
+  const sceneCanvas = document.createElement('canvas'); sceneCanvas.width = W; sceneCanvas.height = H;
+  // LRU sınırı: uzun videoda her beat için 3,5 MB biriktirme; yalnız son dört çıkış karesi.
+  const transitionCache = new Map();
+
+  function cameraAt(beat, t) {
+    if (reducedMotion || !beat.bounds) return { scale: 1, x: 0, y: 0 };
+    const previous = TIMELINE.beats[beat.index - 1];
+    const b = beat.bounds, safe = { x0: 32, x1: W - 32, y0: 40, y1: H - 40 };
+    if (b.x0 < safe.x0 || b.x1 > safe.x1 || b.y0 < safe.y0 || b.y1 > safe.y1) return { scale: 1, x: 0, y: 0 };
+    const p = clamp01((t - beat.start) / beat.duration), blend = ease.inOutPower2((t - beat.start) / 0.9);
+    const focus = beat.focus || { x: W / 2, y: H / 2 }, prevFocus = previous?.focus || focus;
+    const fx = lerp(prevFocus.x, focus.x, blend), fy = lerp(prevFocus.y, focus.y, blend);
+    const maxScale = Math.min(1.012, (safe.x1 - safe.x0) / Math.max(1, b.x1 - b.x0), (safe.y1 - safe.y0) / Math.max(1, b.y1 - b.y0));
+    const desired = 1 + 0.012 * ease.inOutPower2(p);
+    const scale = clamp(lerp(previous?.cameraEndScale ?? 1, desired, blend), 1, maxScale);
+    return { scale, x: clamp((1 - scale) * fx, safe.x0 - scale * b.x0, safe.x1 - scale * b.x1),
+      y: clamp((1 - scale) * fy, safe.y0 - scale * b.y0, safe.y1 - scale * b.y1) };
+  }
+
+  function activeFx(t) {
+    return (TIMELINE.fxEvents || []).filter(ev => t >= ev.t && t - ev.t <= (ev.type === 'confetti' ? 1.4 : 0.8));
+  }
+
+  function drawFx(ctx, t, events) {
+    for (const ev of events) {
+      if (ev.type === 'stamp') continue; // Ölçek nesnenin/sahnenin çiziminde uygulanır.
+      const age = t - ev.t, rng = mulberry32(ev.seed), power = ev.power;
+      const life = ev.type === 'confetti' ? 1.4 : ev.type === 'sparkle' ? 0.7 : 0.8;
+      const p = clamp01(age / life);
+      if (p >= 1) continue;
+      const count = ev.type === 'confetti' ? 36 : ev.type === 'sparkle' ? 8 : 10 + Math.round(6 * power);
+      ctx.save(); ctx.globalAlpha *= (1 - p) * clamp01(age / 0.035);
+      for (let i = 0; i < count; i++) {
+        const angle = ev.type === 'confetti' ? -Math.PI * (0.12 + rng() * 0.76) : rng() * Math.PI * 2;
+        const speed = (ev.type === 'confetti' ? 140 : 55) + rng() * (ev.type === 'confetti' ? 200 : 100) * (0.4 + power);
+        const x = ev.x + Math.cos(angle) * speed * age, y = ev.y + Math.sin(angle) * speed * age + (ev.type === 'sparkle' ? 0 : 160 * age * age);
+        const size = 2 + rng() * (ev.type === 'confetti' ? 6 : 3);
+        ctx.save(); ctx.translate(x, y); ctx.rotate((rng() - 0.5) * age * 9);
+        ctx.fillStyle = [PALETTE.sage, PALETTE.sand, PALETTE.terracotta, PALETTE.lavender][i % 4];
+        if (ev.type === 'sparkle') {
+          ctx.beginPath();
+          for (let k = 0; k < 8; k++) {
+            const a = k * Math.PI / 4, r = k % 2 ? size * 0.3 : size * 1.6;
+            if (!k) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          ctx.closePath(); ctx.fill();
+        } else ctx.fillRect(-size / 2, -size / 3, size, size * 0.66);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+  }
+
+
+  // ==========================================================
+  // Anlatım notları + odak ışığı (Claude, 17.11)
+  // Hydrogen "neyi" söyler (BEAT_SPECS[id].ann: hedef + not), motor "nasıl"ı yapar:
+  // notu hedefin yanında boş yere el yazısıyla yazar ve oku çizer. İz notu yoktur;
+  // odak perdesi varsayılan kapalıdır. Hedef verilmeyen adımda
+  // motor tahmin yürütmez (kullanıcı: "motor yaparsa zorlama olur").
+  // ==========================================================
+  let annEnabled = true;
+  const NOTE = { size: 27, lineH: 34, maxW: 520, gap: 26, pad: 10 };
+  function annSpecOf(beat) {
+    const spec = (typeof BEAT_SPECS !== 'undefined' && BEAT_SPECS[beat.id]) || null;
+    return spec && spec.ann ? spec.ann : null;
+  }
+  function rectFromAny(beat, target) {
+    if (!target) return null;
+    if (Array.isArray(target)) {
+      const rs = target.map(item => rectFromAny(beat, item)).filter(Boolean);
+      return rs.length ? { x0: Math.min(...rs.map(r => r.x0)), y0: Math.min(...rs.map(r => r.y0)),
+        x1: Math.max(...rs.map(r => r.x1)), y1: Math.max(...rs.map(r => r.y1)) } : null;
+    }
+    if (typeof target === 'object' && Number.isFinite(target.x)) {
+      return { x0: target.x, y0: target.y, x1: target.x + (target.w || 0), y1: target.y + (target.h || 0) };
+    }
+    if (typeof target === 'string' && typeof sceneLayout === 'function') {
+      try {
+        const list = sceneLayout(beat.scene, beat.id) || [];
+        // Liste ([{id,x,y,w,h}]) ya da sözlük ({id: {x,y,w,h}}) kabul edilir.
+        const r = Array.isArray(list) ? list.find(item => item && item.id === target) : list[target];
+        if (r) return { x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h };
+      } catch (err) { /* içerik yerleşimi okunamadı: hedefsiz not */ }
+    }
+    return null;
+  }
+  function wrapNoteLines(mctx, text, maxW) {
+    const words = String(text).split(/\s+/).filter(Boolean), lines = [];
+    let line = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (mctx.measureText(test).width > maxW && line) { lines.push(line); line = word; } else line = test;
+    }
+    if (line) lines.push(line);
+    return lines.slice(0, 2);
+  }
+  const rectInter = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+  const padRect = (r, d) => ({ x0: r.x0 - d, y0: r.y0 - d, x1: r.x1 + d, y1: r.y1 + d });
+  const closestOnRect = (r, x, y) => ({ x: clamp(x, r.x0, r.x1), y: clamp(y, r.y0, r.y1) });
+
+  function layoutAnnotation(beat, mctx, texts, cards) {
+    const spec = annSpecOf(beat);
+    if (!spec) return null;
+    const text = spec.note ?? beat.text ?? '';
+    const target = rectFromAny(beat, spec.target);
+    if (!text && !target) return null;
+    mctx.save();
+    mctx.font = `400 ${NOTE.size}px 'Patrick Hand'`;
+    const lines = text ? wrapNoteLines(mctx, text, NOTE.maxW) : [];
+    const textW = Math.max(0, ...lines.map(l => mctx.measureText(l).width));
+    mctx.restore();
+    const w = lines.length ? textW + NOTE.pad * 2 : 0;
+    const h = lines.length ? (lines.length - 1) * NOTE.lineH + NOTE.size + NOTE.pad * 2 : 0;
+    const safe = { x0: 36, y0: 52, x1: W - 36, y1: H - 28 };
+    const place = (x, y) => {
+      const x0 = clamp(x, safe.x0, safe.x1 - w), y0 = clamp(y, safe.y0, safe.y1 - h);
+      return { x0, y0, x1: x0 + w, y1: y0 + h };
+    };
+    let box = null, backing = false;
+    if (lines.length) {
+      const tr = target || { x0: W / 2 - 1, y0: H / 2 - 1, x1: W / 2 + 1, y1: H / 2 + 1 };
+      const cx = (tr.x0 + tr.x1) / 2, cy = (tr.y0 + tr.y1) / 2;
+      const prefer = spec.side || 'auto';
+      // Yakın seçenekler dar sahneler için kalır; boşluk varsa okunur uzunlukta ok tercih edilir.
+      const cands = [NOTE.gap, 90, 140].flatMap(g => Object.entries({
+        below: place(cx - w / 2, tr.y1 + g), above: place(cx - w / 2, tr.y0 - g - h),
+        right: place(tr.x1 + g, cy - h / 2), left: place(tr.x0 - g - w, cy - h / 2),
+        'below-right': place(tr.x1 - w * 0.25, tr.y1 + g), 'below-left': place(tr.x0 - w * 0.75, tr.y1 + g),
+        'above-right': place(tr.x1 - w * 0.25, tr.y0 - g - h), 'above-left': place(tr.x0 - w * 0.75, tr.y0 - g - h)
+      }));
+      // Yakınında yer yoksa tüm boş kâğıdı tara; kartın içi boş alan sayılmaz.
+      const xs = [], ys = [];
+      for (let x = safe.x0; x < safe.x1 - w; x += 24) xs.push(x);
+      for (let y = safe.y0; y < safe.y1 - h; y += 24) ys.push(y);
+      xs.push(safe.x1 - w); ys.push(safe.y1 - h);
+      for (const y of ys) for (const x of xs) cands.push(['free', place(x, y)]);
+      let best = null;
+      for (const [name, c] of cands) {
+        const pc = padRect(c, 6);
+        let textHit = 0, cardHit = 0;
+        for (const tx of texts) textHit += rectInter(pc, tx);
+        for (const cd of cards) cardHit += rectInter(pc, cd);
+        const targetHit = target ? rectInter(pc, target) : 0;
+        if (textHit > 0 || cardHit > 0 || targetHit > 0) continue;
+        const dx = (c.x0 + c.x1) / 2 - cx, dy = (c.y0 + c.y1) / 2 - cy;
+        const gap = Math.hypot(Math.max(tr.x0 - c.x1, c.x0 - tr.x1, 0), Math.max(tr.y0 - c.y1, c.y0 - tr.y1, 0));
+        const distanceReward = target && gap >= 60 && gap <= 160 ? 600 - Math.abs(gap - 100) * 3 : 0;
+        const score = (textHit + cardHit) * 1000 + targetHit * 4000 + Math.hypot(dx, dy) * 0.6 - distanceReward + (name === prefer ? -400 : 0);
+        if (!best || score < best.score) best = { c, score };
+      }
+      backing = !best;
+      box = best ? best.c : place((W - w) / 2, 645 - h / 2);
+    }
+    const kind = spec.kind || (target ? 'arrow' : 'none');
+    const largeTarget = target && (target.x1 - target.x0) * (target.y1 - target.y0) > W * H * 0.12;
+    let from = null, to = null, curve = 22;
+    if (target && box && kind !== 'none') {
+      const tp = padRect(target, 6);
+      const bc = { x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2 };
+      to = closestOnRect(tp, bc.x, bc.y);
+      if (largeTarget) {
+        const cx = (target.x0 + target.x1) / 2, cy = (target.y0 + target.y1) / 2;
+        const dx = bc.x - cx, dy = bc.y - cy, distance = Math.hypot(dx, dy);
+        const edge = Math.min(dx ? (target.x1 - target.x0) / (2 * Math.abs(dx)) : Infinity,
+          dy ? (target.y1 - target.y0) / (2 * Math.abs(dy)) : Infinity, 1);
+        const inset = distance ? Math.max(0, edge - 12 / distance) : 0;
+        to = { x: cx + dx * inset, y: cy + dy * inset };
+      }
+      from = closestOnRect(padRect(box, 4), to.x, to.y);
+      curve = ((from.x < to.x) === (from.y < to.y) ? -1 : 1) * Math.min(28, Math.hypot(to.x - from.x, to.y - from.y) * 0.25);
+      if (Math.hypot(to.x - from.x, to.y - from.y) < 70) { from = null; to = null; } // "1" gibi görünen kısa ok çizme
+    }
+    let kindFinal = kind;
+    if (largeTarget && (kind === 'circle' || kind === 'underline')) kindFinal = 'arrow';
+    const at = clamp(spec.at ?? 0.35, 0, 0.9);
+    const chars = lines.join(' ').length;
+    // Not ve ok adım bitmeden tamamlanmalı (Adım modunda son kare donar).
+    const avail = Math.max(0.3, beat.duration * (1 - at) - 0.12);
+    const writeDur = Math.min(Math.min(1.6, 0.3 + chars * 0.035), avail * 0.68);
+    return {
+      lines, box, backing, target, kind: kindFinal, from, to, curve, at,
+      writeDur, arrowDur: Math.max(0.15, Math.min(0.45, avail - writeDur * 0.55)),
+      seed: (strHash(beat.id) % 9000) + 11, spot: spec.spot !== false && !!target,
+      words: lines.join(' ').split(/\s+/).filter(Boolean).length
+    };
+  }
+
+  function addRoundRectSubpath(ctx, r, rad) {
+    const x = r.x0, y = r.y0, w = r.x1 - r.x0, h = r.y1 - r.y0, k = Math.max(0, Math.min(rad, w / 2, h / 2));
+    ctx.moveTo(x + k, y);
+    ctx.arcTo(x + w, y, x + w, y + h, k); ctx.arcTo(x + w, y + h, x, y + h, k);
+    ctx.arcTo(x, y + h, x, y, k); ctx.arcTo(x, y, x + w, y, k); ctx.closePath();
+  }
+  const lerpRect = (a, b, p) => ({ x0: lerp(a.x0, b.x0, p), y0: lerp(a.y0, b.y0, p), x1: lerp(a.x1, b.x1, p), y1: lerp(a.y1, b.y1, p) });
+
+  // Odak ışığı: hedef ve not açık kalır, gerisi kâğıt rengi perdeyle geri çekilir (silinmez).
+  function drawSpotlight(ctx, beat, t) {
+    if (!THEME.spotlight) return;
+    const L = beat.annLayout;
+    if (!L || !L.spot) return;
+    const lt = t - beat.start;
+    const prev = beat.spotFrom;
+    const hole = padRect(L.target, 16);
+    const a = prev ? 1 : ease.inOutPower2(clamp01((lt - (L.at * beat.duration - 0.2)) / 0.45));
+    if (a <= 0.001) return;
+    const blend = prev ? ease.inOutPower2(clamp01(lt / 0.55)) : 1;
+    const h1 = prev ? lerpRect(padRect(prev.target, 16), hole, blend) : hole;
+    ctx.save();
+    ctx.globalAlpha *= 0.55 * a;
+    ctx.beginPath();
+    ctx.rect(-W, -H, W * 3, H * 3);
+    addRoundRectSubpath(ctx, h1, 18);
+    if (L.box) addRoundRectSubpath(ctx, padRect(L.box, 8), 12);
+    ctx.fillStyle = PALETTE.bg;
+    ctx.fill('evenodd');
+    ctx.restore();
+  }
+
+  function drawNote(ctx, L, local) {
+    if (!L || local <= 0) return;
+    const pWrite = clamp01(local / L.writeDur);
+    const pArrow = clamp01((local - L.writeDur * 0.55) / L.arrowDur);
+    ctx.save();
+    if (L.box && L.lines.length) {
+      if (L.backing) {
+        ctx.save(); ctx.globalAlpha *= ease.outCubic(clamp01(local / 0.25));
+        ctx.shadowColor = 'rgba(36,55,45,0.10)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
+        roundRectPath(ctx, L.box.x0 - 4, L.box.y0 - 2, L.box.x1 - L.box.x0 + 8, L.box.y1 - L.box.y0 + 4, 10);
+        ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.restore();
+      }
+      L.lines.forEach((line, i) => {
+        const lp = clamp01(pWrite * L.lines.length - i);
+        if (lp > 0) drawWriteOn(ctx, line, L.box.x0 + NOTE.pad, L.box.y0 + NOTE.pad + NOTE.size * 0.55 + i * NOTE.lineH, lp,
+          { font: `400 ${NOTE.size}px 'Patrick Hand'`, color: PALETTE.ink, baseline: 'middle' });
+      });
+    }
+    if (L.target && pArrow > 0) {
+      const col = PALETTE.terracotta;
+      if (L.kind === 'circle') {
+        const tr = padRect(L.target, 10);
+        drawSketchEllipse(ctx, (tr.x0 + tr.x1) / 2, (tr.y0 + tr.y1) / 2, (tr.x1 - tr.x0) / 2 + 8, (tr.y1 - tr.y0) / 2 + 6,
+          { seed: L.seed + 5, t: jitterT, progress: pArrow, color: col, width: 3.4 });
+      } else if (L.kind === 'underline') {
+        drawSketchWaveUnderline(ctx, L.target.x0, L.target.y1 + 6, L.target.x1 - L.target.x0, { seed: L.seed + 7, t: jitterT, progress: pArrow, color: col });
+      }
+      const arrowLength = L.from && L.to ? Math.hypot(L.to.x - L.from.x, L.to.y - L.from.y) : 0;
+      if (arrowLength >= 70 && L.kind !== 'none') {
+        drawSketchArrow(ctx, L.from.x, L.from.y, L.to.x, L.to.y, L.curve, { seed: L.seed, t: jitterT, progress: pArrow, color: col, width: 3,
+          headSize: Math.min(12, arrowLength * 0.12) });
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawAnnotations(ctx, beat, t, measurement) {
+    if (!measurement) drawSpotlight(ctx, beat, t);
+    const L = beat.annLayout;
+    if (L) drawNote(ctx, L, (t - beat.start) - L.at * beat.duration);
+  }
+
+  function drawWorldFrame(ctx, beat, t, measurement = false) {
+    const oldFrame = frameMotion, oldJitter = jitterT;
+    frameMotion = { beat, t, counts: new Map(), measurement };
+    jitterT = t;
+    ctx.save();
+    try {
+      const camera = measurement ? { scale: 1, x: 0, y: 0 } : cameraAt(beat, t);
+      const effects = measurement ? [] : activeFx(t);
+      if (!measurement) {
+        ctx.drawImage(paperCanvas, 0, 0);
+        const dx = reducedMotion ? 0 : (t * 8 - camera.x * 0.4) % 640;
+        const dy = reducedMotion ? 0 : (t * 1.6 - camera.y * 0.4) % 360;
+        ctx.save(); ctx.globalAlpha = 0.045;
+        for (let x = -640 + dx; x < W; x += 640) for (let y = -360 + dy; y < H; y += 360) ctx.drawImage(doodleCanvas, x, y);
+        ctx.restore();
+        let shakeX = 0, shakeY = 0;
+        if (!reducedMotion) for (const ev of effects) {
+          const age = t - ev.t;
+          if (ev.type === 'impact' && age < 0.25) {
+            const amp = (1 + ev.power * 0.5) * (1 - age / 0.25) ** 2;
+            shakeX += Math.sin(age * 91) * amp; shakeY += Math.sin(age * 113) * amp * 0.65;
+          }
+        }
+        const shakeLimit = Math.min(1, 1.5 / Math.max(0.001, Math.hypot(shakeX, shakeY)));
+        ctx.translate(camera.x + shakeX * shakeLimit, camera.y + shakeY * shakeLimit);
+        ctx.scale(camera.scale, camera.scale);
+        for (const ev of effects) if (ev.type === 'stamp' && ev.scope === 'scene' && t - ev.t < 0.45 && !reducedMotion) {
+          const s = lerp(1.06, 1, ease.outCubic((t - ev.t) / 0.45));
+          ctx.translate(ev.x, ev.y); ctx.scale(s, s); ctx.translate(-ev.x, -ev.y);
+          ctx.shadowColor = 'rgba(36,55,45,0.1)'; ctx.shadowBlur = 14;
+        }
+      }
+      const ch = TIMELINE.chapters.find(c => c.num === beat.chapter) || TIMELINE.chapters[0];
+      renderChapterScene(ctx, beat, t - beat.start, beat.duration, t, ch);
+      if (annEnabled) drawAnnotations(ctx, beat, t, measurement);
+      if (!measurement) drawFx(ctx, t, effects);
+    } finally { ctx.restore(); frameMotion = oldFrame; jitterT = oldJitter; }
+  }
+
+  function previousSceneFrame(beat) {
+    const previous = TIMELINE.beats[beat.index - 1];
+    if (!previous) return null;
+    const key = `${previous.id}:${THEME.el}`;
+    let image = transitionCache.get(key);
+    if (!image) {
+      image = document.createElement('canvas'); image.width = W; image.height = H;
+      drawWorldFrame(image.getContext('2d'), previous, previous.end - END_EPS);
+    }
+    transitionCache.delete(key); transitionCache.set(key, image);
+    while (transitionCache.size > 4) transitionCache.delete(transitionCache.keys().next().value);
+    return image;
+  }
+
+  function renderFrame(t, exportScope = null, target = ctx, options = {}) {
+    if (!state.fontsReady) return;
+    const ctx = target;
+    const oldJitter = jitterT;
+    ctx.save();
+    try {
+      const clampedT = clamp(t, 0, Math.max(0, TIMELINE.duration - END_EPS));
+      jitterT = clampedT;
+
+      let beat = TIMELINE.beats[0];
+      for (let i = 0; i < TIMELINE.beats.length; i++) {
+        if (clampedT >= TIMELINE.beats[i].start && clampedT < TIMELINE.beats[i].end) {
+          beat = TIMELINE.beats[i];
+          break;
+        }
+      }
+      if (!beat && TIMELINE.beats.length) beat = TIMELINE.beats[TIMELINE.beats.length - 1];
+
+      if (!beat) return;
+      const chMeta = TIMELINE.chapters.find(c => c.num === beat.chapter) || TIMELINE.chapters[0];
+      const lt = clampedT - beat.start;
+
+      if (options.measurement) { drawWorldFrame(ctx, beat, clampedT, true); return; }
+
+      const previous = TIMELINE.beats[beat.index - 1];
+      const chapterChange = previous && previous.chapter !== beat.chapter;
+      const transitionDuration = Math.min(beat.duration, chapterChange ? 0.6 : 0.5);
+      const transition = previous && (chapterChange || (previous.scene !== beat.scene && (beat.sharedRatio ?? 0) < 0.35)) && lt < transitionDuration;
+      if (transition) {
+        const old = previousSceneFrame(beat), layer = sceneCanvas.getContext('2d');
+        drawWorldFrame(layer, beat, clampedT);
+        ctx.drawImage(paperCanvas, 0, 0);
+        const p = clamp01(lt / transitionDuration);
+        if (reducedMotion) {
+          ctx.drawImage(old, 0, 0); ctx.save(); ctx.globalAlpha *= ease.inOutPower2(p); ctx.drawImage(sceneCanvas, 0, 0); ctx.restore();
+        } else if (chapterChange) {
+          ctx.drawImage(old, 0, 0); ctx.save(); ctx.beginPath();
+          ctx.arc(W / 2, H / 2, Math.hypot(W, H) / 2 * ease.inOutPower2(p), 0, Math.PI * 2);
+          ctx.clip(); ctx.drawImage(sceneCanvas, 0, 0); ctx.restore();
+        } else {
+          const out = ease.outCubic(p / 0.6), incoming = clamp01((p - 0.2) / 0.8), enter = ease.outExpo(incoming);
+          ctx.save(); ctx.globalAlpha *= 1 - out; ctx.translate(-40 * out, 0);
+          withMotionBlur(ctx, -12 * (1 - out), 0, () => ctx.drawImage(old, 0, 0)); ctx.restore();
+          ctx.save(); ctx.globalAlpha *= ease.outCubic(incoming); ctx.translate(40 * (1 - enter), 0);
+          withMotionBlur(ctx, -12 * (1 - enter), 0, () => ctx.drawImage(sceneCanvas, 0, 0)); ctx.restore();
+        }
+      } else drawWorldFrame(ctx, beat, clampedT);
+      ctx.drawImage(vignetteCanvas, 0, 0);
+
+      // Sabit arayüz kamera, darbe ve geçiş katmanlarının ardından çizilir.
+      drawProgressBar(ctx, options.playTime ?? contentToPlay(clampedT), exportScope);
+
+      if (beat.scene !== 'intro' && beat.scene !== 'outro') {
+        ctx.save();
+        ctx.font = `600 11px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PALETTE.muted;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`BÖLÜM 0${chMeta.num} • ${chMeta.title.toUpperCase()}`, 44, 38);
+        ctx.restore();
+      }
+
+      if (options.subtitles !== false) drawKineticSubtitles(ctx, beat, lt);
+    } catch (err) {
+      if (options.strict) throw err;
+      if (!renderErrorLogged) {
+        console.error('safeRender error:', err);
+        renderErrorLogged = true;
+      }
+    } finally { ctx.restore(); jitterT = oldJitter; }
+  }
+
+  const state = {
+    ready: false,
+    fontsReady: false,
+    exporting: false,
+    mode: 'step',
+    pausedBeat: null,
+    slowBeat: null,
+    time: 0,
+    playing: false,
+    speed: 1,
+    narrationOn: false,
+    sfxOn: true,
+    musicOn: true,
+    musicSource: null,
+    liveSfx: new Set(),
+    subtitlesOn: false,
+    lastFrameTs: 0,
+    activeBeatIdx: -1,
+    audioCtx: null,
+    compNode: null,
+    narrationBuffer: null,
+    narrationSource: null,
+    lastSfxIdx: -1
+  };
+
+  function ensureLiveAudioCtx() {
+    if (!state.audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      state.audioCtx = new AC();
+      state.compNode = createMasterBus(state.audioCtx, state.audioCtx.destination);
+    }
+    if (state.audioCtx.state === 'suspended') state.audioCtx.resume().catch(() => {});
+    return state.audioCtx;
+  }
+
+  async function decodeEmbeddedNarration() {
+    if (!TIMELINE.narrationAudio || !TIMELINE.narrationAudio.src) return null;
+    if (state.narrationBuffer) return state.narrationBuffer;
+    try {
+      const res = await fetch(TIMELINE.narrationAudio.src);
+      const buf = await res.arrayBuffer();
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      state.narrationBuffer = await ac.decodeAudioData(buf);
+      await ac.close();
+      return state.narrationBuffer;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function stopLiveNarration() {
+    if (state.narrationSource) {
+      try { state.narrationSource.stop(); } catch (e) {}
+      state.narrationSource = null;
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+  }
+
+  function speakBeatWebSpeech(beat) {
+    if (!state.narrationOn || !beat || !beat.text || TIMELINE.narrationAudio) return;
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(beat.text);
+      u.lang = 'tr-TR';
+      u.rate = effectiveSpeed();
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  function syncSfxIndexToTime(t) {
+    let idx = -1;
+    for (let i = 0; i < TIMELINE.sfxEvents.length; i++) {
+      if (TIMELINE.sfxEvents[i].playT < t) idx = i;
+      else break;
+    }
+    state.lastSfxIdx = idx;
+  }
+
+  function triggerLiveSfxInRange(prevT, curT) {
+    if (!state.sfxOn || curT <= prevT) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    for (let i = state.lastSfxIdx + 1; i < TIMELINE.sfxEvents.length; i++) {
+      const ev = TIMELINE.sfxEvents[i];
+      if (ev.playT <= curT + 0.015) {
+        if (ev.playT >= prevT - 0.05) {
+          const source = scheduleSFX(ctx, state.compNode, ev.type, ctx.currentTime + 0.005, ev.gain, ev.dur, ev.pitch);
+          state.liveSfx.add(source);
+          source.addEventListener('ended', () => state.liveSfx.delete(source), { once: true });
+        }
+        state.lastSfxIdx = i;
+      } else break;
+    }
+  }
+
+  function playCurrentNarrationSliceIfEmbedded(t) {
+    if (!state.narrationOn || !state.narrationBuffer || !TIMELINE.narrationAudio) return;
+    const ctx = ensureLiveAudioCtx();
+    if (!ctx) return;
+    stopLiveNarration();
+    const beat = TIMELINE.beats.find(b => t >= b.start && t < b.end);
+    if (!beat || !beat.audioSlice) return;
+    const [s, e] = beat.audioSlice;
+    const offsetInBeat = t - beat.start;
+    const rem = (e - s) - offsetInBeat;
+    if (rem > 0.05) {
+      const src = ctx.createBufferSource();
+      src.buffer = state.narrationBuffer;
+      src.playbackRate.value = effectiveSpeed();
+      src.connect(state.compNode);
+      src.start(ctx.currentTime, s + offsetInBeat, rem);
+      state.narrationSource = src;
+    }
+  }
+
+  // state.time her zaman oynatma saniyesidir; içerik zamanı yalnız çizimde kullanılır.
+  function currentBeat() {
+    return state.pausedBeat === null ? beatAtPlay(state.time) : TIMELINE.beats[state.pausedBeat];
+  }
+
+  function effectiveSpeed() {
+    return state.slowBeat === currentBeat()?.index ? 0.5 : state.speed;
+  }
+
+  function renderCurrentFrame() {
+    renderFrame(playToContent(state.time), null, ctx, { playTime: state.time });
+  }
+
+  function syncLiveNarration() {
+    stopLiveNarration();
+    const beat = currentBeat();
+    state.activeBeatIdx = beat?.index ?? -1;
+    if (!state.playing || !beat || state.time >= beat.playContentEnd) return;
+    if (TIMELINE.narrationAudio) playCurrentNarrationSliceIfEmbedded(playToContent(state.time));
+    else speakBeatWebSpeech(beat);
+  }
+
+  function stopLiveSfx() {
+    for (const source of state.liveSfx) { try { source.stop(); } catch (e) {} }
+    state.liveSfx.clear();
+  }
+
+  function seekTo(newT, play = state.playing) {
+    if (!state.ready || state.exporting) return;
+    stopLiveMusic(); stopLiveSfx();
+    state.time = clamp(newT, 0, TIMELINE.playDuration);
+    state.pausedBeat = null;
+    state.slowBeat = null;
+    // Adım modunda bekleme bölgesine düşen bir arama son karede durur.
+    const beat = beatAtPlay(state.time);
+    if (state.mode === 'step' && beat && state.time >= beat.playContentEnd) {
+      state.time = beat.playContentEnd;
+      state.pausedBeat = beat.index;
+      play = false;
+    }
+    state.playing = play && state.time < TIMELINE.playDuration;
+    state.lastFrameTs = performance.now();
+    syncSfxIndexToTime(state.time);
+    syncLiveNarration();
+    syncLiveMusic();
+    renderCurrentFrame();
+    updateUI();
+  }
+
+  function playBeat(index, slow = false) {
+    const beat = TIMELINE.beats[clamp(index, 0, TIMELINE.beats.length - 1)];
+    if (!beat || !state.ready || state.exporting) return;
+    seekTo(beat.playStart, true);
+    state.slowBeat = slow ? beat.index : null;
+    ensureLiveAudioCtx();
+    syncLiveNarration();
+    syncLiveMusic(true);
+    updateUI();
+  }
+
+  function nextStep() {
+    if (!state.ready || state.exporting) return;
+    if (state.mode === 'flow') { togglePlay(); return; }
+    const beat = currentBeat();
+    if (state.pausedBeat !== null || state.playing) {
+      const index = (beat?.index ?? -1) + 1;
+      playBeat(index >= TIMELINE.beats.length ? 0 : index);
+    } else togglePlay(true);
+  }
+
+  function replayBeat(slow = false) { playBeat(currentBeat()?.index ?? 0, slow); }
+
+  function togglePlay(forceState) {
+    if (!state.ready || state.exporting) return;
+    const next = typeof forceState === 'boolean' ? forceState : !state.playing;
+    if (next && state.mode === 'step' && state.pausedBeat !== null) {
+      const index = state.pausedBeat + 1;
+      playBeat(index >= TIMELINE.beats.length ? 0 : index);
+      return;
+    }
+    if (next && state.time >= TIMELINE.playDuration - END_EPS) {
+      seekTo(0, true);
+      return;
+    }
+    state.playing = next;
+    if (next) {
+      ensureLiveAudioCtx();
+      state.lastFrameTs = performance.now();
+      syncSfxIndexToTime(state.time);
+    }
+    syncLiveNarration();
+    syncLiveMusic();
+    updateUI();
+  }
+
+  function toggleMode() {
+    if (!state.ready || state.exporting) return;
+    state.mode = state.mode === 'step' ? 'flow' : 'step';
+    state.slowBeat = null;
+    if (state.mode === 'flow') state.pausedBeat = null;
+    else {
+      const beat = beatAtPlay(state.time);
+      if (beat && state.time >= beat.playContentEnd) {
+        state.time = beat.playContentEnd;
+        state.pausedBeat = beat.index;
+        state.playing = false;
+      }
+    }
+    state.lastFrameTs = performance.now();
+    syncLiveNarration();
+    syncLiveMusic(true);
+    renderCurrentFrame();
+    updateUI();
+  }
+
+  function toggleTheme() {
+    if (!state.ready || state.exporting) return;
+    THEME.el = !THEME.el;
+    transitionCache.clear();
+    // Beklemeler açılışta bir kez ölçülür; tema değişimi süreleri/konumu oynatmaz.
+    renderCurrentFrame();
+    updateUI();
+  }
+
+  function advancePlayback(dt) {
+    const prevT = state.time;
+    const before = currentBeat();
+    if (state.mode === 'flow') state.time = Math.min(TIMELINE.playDuration, state.time + dt);
+    else {
+      let remaining = dt;
+      while (remaining > 0 && state.playing) {
+        const beat = beatAtPlay(state.time);
+        if (!beat) { state.playing = false; break; }
+        const distance = Math.max(0, beat.playContentEnd - state.time);
+        if (remaining < distance) { state.time += remaining; break; }
+        remaining -= distance;
+        state.time = beat.playContentEnd;
+        if (state.slowBeat === beat.index) state.slowBeat = null;
+        if (beat.scene === 'outro' || (beat.scene !== 'intro' && beat.text !== '')) {
+          state.pausedBeat = beat.index;
+          state.playing = false;
+          break;
+        }
+        const next = TIMELINE.beats[beat.index + 1];
+        if (!next) { state.time = TIMELINE.playDuration; state.playing = false; break; }
+        // Intro ve boş geçişlerde bekleme de duraklama da yok.
+        state.time = next.playStart;
+      }
+    }
+    triggerLiveSfxInRange(prevT, state.time);
+    const beat = currentBeat();
+    if (state.slowBeat !== null && beat?.index !== state.slowBeat) state.slowBeat = null;
+    if (beat && state.time >= beat.playContentEnd) state.slowBeat = null;
+    if (state.time >= TIMELINE.playDuration) state.playing = false;
+    if (!state.playing) stopLiveNarration();
+    else if (beat?.index !== before?.index) syncLiveNarration();
+    else if (beat && state.time >= beat.playContentEnd) stopLiveNarration();
+    syncLiveMusic(state.musicRate !== effectiveSpeed());
+    state.musicRate = effectiveSpeed();
+  }
+
+  function animLoop(now) {
+    if (state.playing && !state.exporting) {
+      const dt = Math.max(0, Math.min(0.1, (now - state.lastFrameTs) / 1000)) * effectiveSpeed();
+      state.lastFrameTs = now;
+      advancePlayback(dt);
+      renderCurrentFrame();
+      updateUI();
+    }
+    requestAnimationFrame(animLoop);
+  }
+
+  // ==========================================================
+  // 10. UI Controls & Chapter Cards
+  // ==========================================================
+  const btnPlay = document.getElementById('btnPlay');
+  const btnBack = document.getElementById('btnBack');
+  const btnFwd = document.getElementById('btnFwd');
+  const btnSpeed = document.getElementById('btnSpeed');
+  const btnNar = document.getElementById('btnNar');
+  const btnSfx = document.getElementById('btnSfx');
+  const btnMusic = document.getElementById('btnMusic');
+  const btnSub = document.getElementById('btnSub');
+  const btnMode = document.getElementById('btnMode');
+  const stepHint = document.getElementById('stepHint');
+  const beatProgress = document.getElementById('beatProgress');
+  const beatProgressFill = document.getElementById('beatProgressFill');
+  const timeReadout = document.getElementById('timeReadout');
+  const chapterStrip = document.getElementById('chapterStrip');
+  const toastEl = document.getElementById('toast');
+
+  function formatMMSS(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toastEl.classList.remove('show'), 3600);
+  }
+
+  function buildChapterCards() {
+    chapterStrip.innerHTML = '';
+    TIMELINE.chapters.forEach((ch) => {
+      const card = document.createElement('div');
+      card.className = 'ch-card';
+      card.dataset.chapter = String(ch.num);
+      card.innerHTML = `
+        <div>
+          <div class="ch-head">
+            <span class="ch-num">BÖLÜM 0${ch.num}</span>
+            <span>${formatMMSS(ch.playDuration)}</span>
+          </div>
+          <div class="ch-title" style="margin-top:8px;">${ch.title}</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn" data-watch="${ch.num}">▶ İzle</button>
+          <button class="btn export-btn" data-mp4="${ch.num}">⬇ MP4</button>
+        </div>
+      `;
+      chapterStrip.appendChild(card);
+    });
+
+    chapterStrip.querySelectorAll('[data-watch]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ch = TIMELINE.chapters.find(c => c.num === Number(btn.dataset.watch));
+        if (ch) seekTo(ch.playStart, true);
+      });
+    });
+
+    chapterStrip.querySelectorAll('[data-mp4]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ch = TIMELINE.chapters.find(c => c.num === Number(btn.dataset.mp4));
+        if (ch) exportRangeMP4({ start: ch.playStart, end: ch.playEnd, chapter: ch, filename: ch.filename });
+      });
+    });
+  }
+
+  function updateUI() {
+    btnPlay.textContent = state.playing ? '❚❚ Duraklat' : state.pausedBeat !== null ? '▶ Sonraki adım' : '▶ Oynat';
+    timeReadout.textContent = `${formatMMSS(state.time)} / ${formatMMSS(TIMELINE.playDuration || 0)}`;
+    btnSpeed.textContent = `${effectiveSpeed()}×`;
+    btnMode.textContent = `⏯️ Mod: ${state.mode === 'step' ? 'Adım' : 'Akış'}`;
+    btnMode.classList.toggle('active-pill', state.mode === 'step');
+    btnNar.textContent = state.narrationOn ? '🗣️ Anlatım: Açık' : '🗣️ Anlatım: Kapalı';
+    btnNar.classList.toggle('active-pill', state.narrationOn);
+    btnSfx.textContent = state.sfxOn ? '🔊 SFX: Açık' : '🔇 SFX: Kapalı';
+    btnSfx.classList.toggle('active-pill', state.sfxOn);
+    btnMusic.textContent = state.musicOn ? '🎵 Müzik: Açık' : '🎵 Müzik: Kapalı';
+    btnMusic.classList.toggle('active-pill', state.musicOn);
+    btnSub.textContent = state.subtitlesOn ? '💬 Altyazı: Açık' : '💬 Altyazı: Kapalı';
+    btnSub.classList.toggle('active-pill', state.subtitlesOn);
+
+    const beat = currentBeat();
+    stepHint.hidden = state.mode !== 'step' || !state.ready;
+    const hint = `Adım ${(beat?.index ?? 0) + 1} / ${TIMELINE.beats.length}  ·  Boşluk: devam  ·  ←: geri  ·  R: tekrar`;
+    if (stepHint.firstElementChild.textContent !== hint) stepHint.firstElementChild.textContent = hint;
+    const duration = TIMELINE.playDuration || 1;
+    beatProgressFill.style.width = `${clamp01(state.time / duration) * 100}%`;
+    beatProgress.setAttribute('aria-valuemax', String(duration));
+    beatProgress.setAttribute('aria-valuenow', String(state.time));
+    beatProgress.setAttribute('aria-valuetext', `Adım ${(beat?.index ?? 0) + 1}`);
+    document.querySelectorAll('.controls-bar button, .ch-actions button').forEach(el => { el.disabled = !state.ready || state.exporting; });
+    const activeCh = TIMELINE.chapters.find(c => c.num === beat?.chapter) || TIMELINE.chapters[0];
+    document.querySelectorAll('.ch-card').forEach(el => {
+      el.classList.toggle('active', activeCh && Number(el.dataset.chapter) === activeCh.num);
+    });
+  }
+
+  function toggleNarration() {
+    state.narrationOn = !state.narrationOn;
+    if (!state.narrationOn) stopLiveNarration();
+    else if (state.playing) {
+      syncLiveNarration();
+    }
+    updateUI();
+  }
+
+  function toggleMusic() { state.musicOn = !state.musicOn; syncLiveMusic(true); updateUI(); }
+  function toggleSfx() {
+    state.sfxOn = !state.sfxOn;
+    if (!state.sfxOn) stopLiveSfx();
+    syncLiveMusic(true); updateUI();
+  }
+
+  function jumpFromProgress(fraction) {
+    if (!state.ready || state.exporting) return;
+    const beat = beatAtPlay(clamp01(fraction) * Math.max(0, TIMELINE.playDuration - END_EPS));
+    if (beat) seekTo(beat.playStart, state.mode === 'step' || state.playing);
+  }
+
+  function buildBeatTicks() {
+    beatProgress.querySelectorAll('.beat-tick').forEach(tick => tick.remove());
+    for (const beat of TIMELINE.beats.slice(1)) {
+      const tick = document.createElement('span');
+      tick.className = 'beat-tick';
+      tick.style.left = `${beat.playStart / TIMELINE.playDuration * 100}%`;
+      beatProgress.appendChild(tick);
+    }
+  }
+
+  beatProgress.addEventListener('click', e => {
+    const rect = beatProgress.getBoundingClientRect();
+    jumpFromProgress((e.clientX - rect.left) / rect.width);
+  });
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width * W;
+    const y = (e.clientY - rect.top) / rect.height * H;
+    if (y <= 26 && x >= 44 && x <= W - 44) jumpFromProgress((x - 44) / (W - 88));
+    else nextStep();
+  });
+  btnPlay.addEventListener('click', () => togglePlay());
+  btnBack.addEventListener('click', () => seekTo(state.time - 5));
+  btnFwd.addEventListener('click', () => seekTo(state.time + 5));
+  btnSpeed.addEventListener('click', () => {
+    state.speed = state.speed === 1 ? 0.5 : state.speed === 0.5 ? 0.75 : 1;
+    if (state.narrationSource) state.narrationSource.playbackRate.value = effectiveSpeed();
+    syncLiveMusic(true);
+    updateUI();
+  });
+  btnNar.addEventListener('click', toggleNarration);
+  btnMode.addEventListener('click', toggleMode);
+  btnSfx.addEventListener('click', toggleSfx);
+  btnMusic.addEventListener('click', toggleMusic);
+  btnSub.addEventListener('click', () => { state.subtitlesOn = !state.subtitlesOn; renderCurrentFrame(); updateUI(); });
+
+  document.getElementById('btnExportFull').addEventListener('click', () => {
+    exportRangeMP4({ start: 0, end: TIMELINE.playDuration, chapter: null, filename: META.onek + '-tam-video.mp4' });
+  });
+
+  document.getElementById('btnExportAll').addEventListener('click', async () => {
+    for (let i = 0; i < TIMELINE.chapters.length; i++) {
+      const ch = TIMELINE.chapters[i];
+      const res = await exportRangeMP4({ start: ch.playStart, end: ch.playEnd, chapter: ch, filename: ch.filename });
+      if (res && (res.cancelled || res.error)) break;
+      await new Promise(r => setTimeout(r, 350));
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (!state.ready || state.exporting || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable)) return;
+    if (e.repeat && ['Space', 'KeyR', 'KeyA', 'KeyH', 'KeyB', 'KeyM'].includes(e.code)) return;
+    // Odaklı düğmenin doğal Boşluk tıklamasıyla çift komut üretme.
+    if (e.code === 'Space') { e.preventDefault(); nextStep(); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); state.mode === 'step' ? playBeat((currentBeat()?.index ?? 0) - 1) : seekTo(state.time - 5); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); state.mode === 'step' ? nextStep() : seekTo(state.time + 5); }
+    else if (e.key.toLowerCase() === 'r') { e.preventDefault(); replayBeat(e.shiftKey); }
+    else if (e.key.toLowerCase() === 'a') toggleMode();
+    else if (e.key === 'n' || e.key === 'N') toggleNarration();
+    else if (e.key === 'm' || e.key === 'M') toggleSfx();
+    else if (e.key === 'b' || e.key === 'B') toggleMusic();
+    else if (e.key === 'c' || e.key === 'C') { state.subtitlesOn = !state.subtitlesOn; renderCurrentFrame(); updateUI(); }
+    else if (e.key >= '1' && e.key <= '9') {
+      const ch = TIMELINE.chapters.find(c => c.num === Number(e.key));
+      if (ch) seekTo(ch.playStart, true);
+    }
+  });
+
+  // ==========================================================
+  // 11. Deterministic MP4 + AAC Export (WebCodecs + OfflineAudioContext + MediaRecorder fallback)
+  // ==========================================================
+  const exportModal = document.getElementById('exportModal');
+  const exportTitle = document.getElementById('exportTitle');
+  const exportSubtext = document.getElementById('exportSubtext');
+  const exportBar = document.getElementById('exportBar');
+  const exportPct = document.getElementById('exportPct');
+  const exportFrames = document.getElementById('exportFrames');
+  const exportMethodNote = document.getElementById('exportMethodNote');
+  const btnCancelExport = document.getElementById('btnCancelExport');
+
+  let cancelRequested = false;
+  btnCancelExport.addEventListener('click', () => { cancelRequested = true; });
+
+  async function renderOfflineAudioBuffer(start, end) {
+    const dur = Math.max(0.1, end - start);
+    const narBuf = state.narrationOn ? await decodeEmbeddedNarration() : null;
+    const sr = narBuf ? narBuf.sampleRate : 44100;
+    const offCtx = new OfflineAudioContext(2, Math.ceil(dur * sr), sr);
+
+    const comp = createMasterBus(offCtx, offCtx.destination);
+
+    if (narBuf) {
+      TIMELINE.beats.forEach(beat => {
+        if (beat.playContentEnd > start && beat.playStart < end && beat.audioSlice) {
+          const [as, ae] = beat.audioSlice;
+          const relStart = Math.max(0, beat.playStart - start);
+          const trimHead = Math.max(0, start - beat.playStart);
+          const playDur = Math.min(ae - as - trimHead, end - Math.max(start, beat.playStart));
+          if (playDur > 0.02) {
+            const src = offCtx.createBufferSource();
+            src.buffer = narBuf;
+            src.connect(comp);
+            src.start(relStart, as + trimHead, playDur);
+          }
+        }
+      });
+    }
+
+    TIMELINE.sfxEvents.forEach(ev => {
+      if (state.sfxOn && ev.playT >= start && ev.playT < end) scheduleSFX(offCtx, comp, ev.type, ev.playT - start, ev.gain, ev.dur, ev.pitch);
+    });
+    scheduleMusic(offCtx, comp, start, end, 0);
+
+    return await offCtx.startRendering();
+  }
+
+  async function pickAudioEncoderConfig(sampleRate) {
+    if (typeof AudioEncoder === 'undefined') return null;
+    const candidates = [
+      { codec: 'mp4a.40.2', muxCodec: 'aac', sampleRate, numberOfChannels: 2, bitrate: 128_000 },
+      { codec: 'opus', muxCodec: 'opus', sampleRate: 48000, numberOfChannels: 2, bitrate: 128_000 }
+    ];
+    for (const c of candidates) {
+      try {
+        const res = await AudioEncoder.isConfigSupported({
+          codec: c.codec, sampleRate: c.sampleRate, numberOfChannels: c.numberOfChannels, bitrate: c.bitrate
+        });
+        if (res && res.supported) return c;
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  async function muxOfflineAudio(muxer, audioBuffer, audioCfg) {
+    const encoder = new AudioEncoder({
+      output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+      error: (err) => { throw err; }
+    });
+    encoder.configure({
+      codec: audioCfg.codec, sampleRate: audioCfg.sampleRate,
+      numberOfChannels: audioCfg.numberOfChannels, bitrate: audioCfg.bitrate
+    });
+
+    const sr = audioCfg.sampleRate;
+    const chCount = audioCfg.numberOfChannels;
+    const totalSamples = audioBuffer.length;
+    for (let offset = 0; offset < totalSamples; offset += 1024) {
+      if (cancelRequested) break;
+      const count = Math.min(1024, totalSamples - offset);
+      const planar = new Float32Array(count * chCount);
+      for (let ch = 0; ch < chCount; ch++) {
+        const srcCh = Math.min(ch, audioBuffer.numberOfChannels - 1);
+        planar.set(audioBuffer.getChannelData(srcCh).subarray(offset, offset + count), ch * count);
+      }
+      const ad = new AudioData({
+        format: 'f32-planar', sampleRate: sr, numberOfFrames: count,
+        numberOfChannels: chCount, timestamp: Math.round((offset / sr) * 1_000_000), data: planar
+      });
+      encoder.encode(ad);
+      ad.close();
+    }
+    await encoder.flush();
+    encoder.close();
+  }
+
+  async function exportMediaRecorderFallback(scope, filename, preparedMix = null) {
+    const start = scope.start, end = scope.end, dur = end - start;
+    exportSubtext.textContent = 'WebCodecs bulunamadı; MediaRecorder yedeği çalışıyor…';
+    const ac = ensureLiveAudioCtx();
+    // Aynı offline miks: müzik, limiter ve varsa gömülü anlatım yedek kayıtta da korunur.
+    const mix = preparedMix || (ac ? await renderOfflineAudioBuffer(start, end) : null);
+    if (cancelRequested) return { cancelled: true };
+    const dest = ac ? ac.createMediaStreamDestination() : null;
+    renderFrame(playToContent(start), scope.chapter ? scope : null, ctx, { playTime: start });
+    const stream = canvas.captureStream(FPS);
+    if (dest) dest.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+
+    const mime = MediaRecorder.isTypeSupported('video/mp4')
+      ? 'video/mp4'
+      : (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm');
+    const outName = mime.includes('mp4') ? filename : filename.replace(/\.mp4$/, '.webm');
+    exportMethodNote.textContent = `Yöntem: MediaRecorder (${mime}).`;
+
+    const chunks = [];
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 });
+    rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    const recDone = new Promise(resolve => { rec.onstop = resolve; });
+    rec.start(250);
+
+    let mixSource = null;
+    if (mix && dest) {
+      mixSource = ac.createBufferSource(); mixSource.buffer = mix; mixSource.connect(dest); mixSource.start(ac.currentTime);
+    }
+
+    const tStart = performance.now();
+    const totalFrames = Math.ceil(dur * FPS);
+    while (!cancelRequested) {
+      const elapsed = (performance.now() - tStart) / 1000;
+      if (elapsed >= dur) break;
+      renderFrame(playToContent(start + elapsed), scope.chapter ? scope : null, ctx, { playTime: start + elapsed });
+      const pct = Math.min(100, Math.round((elapsed / dur) * 100));
+      exportBar.style.width = `${pct}%`;
+      exportPct.textContent = `%${pct}`;
+      exportFrames.textContent = `${Math.min(totalFrames, Math.floor(elapsed * FPS))} / ${totalFrames} kare`;
+      await new Promise(r => setTimeout(r, 16));
+    }
+    rec.stop();
+    await recDone;
+    if (mixSource) { try { mixSource.stop(); } catch (e) {} mixSource.disconnect(); }
+    stream.getTracks().forEach(track => track.stop());
+    if (cancelRequested) return { cancelled: true };
+
+    triggerDownload(new Blob(chunks, { type: mime }), outName);
+    showToast(`${outName} indirildi.`);
+    return { ok: true };
+  }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+  }
+
+  async function exportRangeMP4(scope) {
+    await motorReady;
+    if (state.exporting) return { error: new Error('Bir dışa aktarma zaten çalışıyor.') };
+    togglePlay(false);
+    stopLiveSfx(); stopLiveMusic();
+    state.exporting = true;
+    updateUI();
+    cancelRequested = false;
+    exportModal.classList.add('open');
+    exportBar.style.width = '0%';
+    exportPct.textContent = '%0';
+    exportTitle.textContent = scope.chapter ? `Bölüm ${scope.chapter.num}: ${scope.chapter.title}` : 'Tam Video MP4';
+    exportSubtext.textContent = `Hazırlanıyor: ${scope.filename}`;
+
+    const speechNote = state.narrationOn && TIMELINE.narrationAudio
+      ? 'Gömülü anlatım ve açık SFX, okuma beklemelerine göre eşlenir.'
+      : 'Anlatım kapalıdır veya gömülü ses yoktur; Web Speech MP4 dosyasına girmez. Açık SFX ve müzik eklenir.';
+
+    try {
+      let supportedCfg = null;
+      if (typeof VideoEncoder !== 'undefined' && typeof Mp4Muxer !== 'undefined') {
+        for (const codec of ['avc1.4d002a', 'avc1.640028', 'avc1.42001f']) {
+          const cfg = { codec, width: W, height: H, bitrate: 6_000_000, framerate: FPS };
+          try {
+            const res = await VideoEncoder.isConfigSupported(cfg);
+            if (res && res.supported) { supportedCfg = cfg; break; }
+          } catch (e) {}
+        }
+      }
+
+      if (!supportedCfg) {
+        const res = await exportMediaRecorderFallback(scope, scope.filename);
+        exportModal.classList.remove('open');
+        renderCurrentFrame();
+        return res;
+      }
+
+      exportSubtext.textContent = 'Ses izi (OfflineAudioContext) hazırlanıyor…';
+      let offlineBuf = await renderOfflineAudioBuffer(scope.start, scope.end);
+      const audioCfg = await pickAudioEncoderConfig(offlineBuf.sampleRate);
+      if (!audioCfg && (state.musicOn || state.sfxOn || (state.narrationOn && TIMELINE.narrationAudio))) {
+        // Ses kodlayıcısı yoksa açık müziği sessiz MP4'e düşürmek yerine aynı miksi kaydet.
+        const res = await exportMediaRecorderFallback(scope, scope.filename, offlineBuf);
+        exportModal.classList.remove('open');
+        return res;
+      }
+
+      if (audioCfg && audioCfg.sampleRate !== offlineBuf.sampleRate) {
+        const dur = Math.max(0.1, scope.end - scope.start);
+        const off48 = new OfflineAudioContext(2, Math.ceil(dur * audioCfg.sampleRate), audioCfg.sampleRate);
+        const src = off48.createBufferSource();
+        src.buffer = offlineBuf;
+        src.connect(off48.destination);
+        src.start(0);
+        offlineBuf = await off48.startRendering();
+      }
+
+      const audioLabel = audioCfg ? `${audioCfg.muxCodec.toUpperCase()} ses kodlama` : 'Sessiz MP4';
+      exportMethodNote.textContent = `Yöntem: WebCodecs H.264 + ${audioLabel}. ${speechNote}`;
+
+      const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: { codec: 'avc', width: W, height: H },
+        ...(audioCfg ? { audio: { codec: audioCfg.muxCodec, numberOfChannels: audioCfg.numberOfChannels, sampleRate: audioCfg.sampleRate } } : {}),
+        fastStart: 'in-memory'
+      });
+
+      let encodeErr = null;
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => { encodeErr = e; }
+      });
+      encoder.configure(supportedCfg);
+
+      const dur = scope.end - scope.start;
+      const totalFrames = Math.max(1, Math.ceil(dur * FPS));
+      const frameDurUs = Math.round(1_000_000 / FPS);
+      exportSubtext.textContent = `Kareler kodlanıyor: ${scope.filename}`;
+
+      for (let f = 0; f < totalFrames; f++) {
+        if (cancelRequested || encodeErr) break;
+        const t = scope.start + f / FPS;
+        renderFrame(playToContent(t), scope.chapter ? scope : null, ctx, { playTime: t });
+
+        const frame = new VideoFrame(canvas, { timestamp: Math.round(f * 1_000_000 / FPS), duration: frameDurUs });
+        encoder.encode(frame, { keyFrame: f % (FPS * 2) === 0 });
+        frame.close();
+
+        if (f % 15 === 0 || f === totalFrames - 1) {
+          const pct = Math.min(100, Math.round(((f + 1) / totalFrames) * 100));
+          exportBar.style.width = `${pct}%`;
+          exportPct.textContent = `%${pct}`;
+          exportFrames.textContent = `${f + 1} / ${totalFrames} kare (${formatMMSS(f / FPS)} / ${formatMMSS(dur)})`;
+          await new Promise(r => setTimeout(r, 0));
+        }
+        while (encoder.encodeQueueSize > 12 && !cancelRequested) {
+          await new Promise(r => setTimeout(r, 4));
+        }
+      }
+
+      if (cancelRequested) {
+        try { encoder.close(); } catch (e) {}
+        exportModal.classList.remove('open');
+        renderCurrentFrame();
+        return { cancelled: true };
+      }
+      if (encodeErr) throw encodeErr;
+
+      await encoder.flush();
+      encoder.close();
+
+      if (audioCfg) {
+        exportSubtext.textContent = `Ses izi (${audioCfg.muxCodec.toUpperCase()}) birleştiriliyor…`;
+        await muxOfflineAudio(muxer, offlineBuf, audioCfg);
+      }
+
+      muxer.finalize();
+      triggerDownload(new Blob([muxer.target.buffer], { type: 'video/mp4' }), scope.filename);
+      exportModal.classList.remove('open');
+      renderCurrentFrame();
+      showToast(`${scope.filename} indirildi.`);
+      return { ok: true };
+    } catch (err) {
+      console.error('Export error:', err);
+      exportModal.classList.remove('open');
+      renderCurrentFrame();
+      showToast(`Dışa aktarma hatası: ${err.message || err}`);
+      return { error: err };
+    } finally {
+      state.exporting = false;
+      renderCurrentFrame();
+      updateUI();
+    }
+  }
+
+  // ==========================================================
+  // 12. Boot
+  // ==========================================================
+  async function init() {
+    updateUI();
+    buildTimeline();
+    // İlk kare, ölçüm, denetim ve dışa aktarma aynı font hazırlığını bekler.
+    await loadThemeFonts();
+    state.fontsReady = true;
+    selfTest();
+    buildPlaybackTiming();
+    buildAutomaticMotion();
+    state.ready = true;
+    buildChapterCards();
+    buildBeatTicks();
+    updateUI();
+    document.getElementById('fontStatus').textContent = `${TIMELINE.chapters.length} Bölüm • ${formatMMSS(TIMELINE.playDuration)} • 1280×720 30 FPS`;
+    document.getElementById('btnExportAll').textContent = `⬇ Tümünü İndir (${TIMELINE.chapters.length} MP4)`;
+    const frameMatch = location.hash.match(/^#kare=(\d+(?:\.\d+)?)$/);
+    if (new URLSearchParams(location.search).get('denetim') === '1') {
+      const result = audit();
+      console.table(result.say);
+      console.table(result.ornek);
+      const badge = document.createElement('div');
+      badge.className = 'audit-badge';
+      badge.style.background = result.sorun ? PALETTE.error : PALETTE.green;
+      badge.textContent = result.sorun ? `Denetim: ${result.sorun} sorun` : 'Denetim: temiz';
+      document.body.appendChild(badge);
+    }
+    if (frameMatch) {
+      renderFrame(Number(frameMatch[1]));
+      const image = document.createElement('img');
+      image.width = W; image.height = H; image.alt = 'Ders videosu karesi';
+      image.src = canvas.toDataURL('image/png');
+      document.body.replaceChildren(image);
+      document.body.style.cssText = 'margin:0;padding:0;width:1280px;height:720px;overflow:hidden';
+      image.style.display = 'block';
+      return;
+    }
+    renderCurrentFrame();
+    requestAnimationFrame(animLoop);
+  }
+
+  const motorReady = init();
+  window.__motor = {
+    timeline: () => TIMELINE, renderFrame, audit,
+    // seek ve #kare içerik saniyesi alır; seekPlay ilerleme çubuğuyla aynı birimi alır.
+    seek: t => seekTo(contentToPlay(t), false),
+    seekPlay: t => seekTo(t, false), playToContent, contentToPlay, ready: motorReady
+  };
+  motorReady.catch(err => {
+    console.error('Motor hazırlanamadı:', err);
+    document.getElementById('fontStatus').textContent = `Motor hazırlanamadı: ${err.message || err}`;
+  });
+})();
+</script>
+
+</body>
+</html>
