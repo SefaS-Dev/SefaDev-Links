@@ -15,6 +15,11 @@
   button{appearance:none;border:1px solid transparent;border-radius:999px;background:transparent;color:inherit;padding:9px 13px;font-family:inherit;font-size:.81rem;font-weight:600;line-height:1.1;white-space:nowrap;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
   button:hover{background:#fff2}button:focus-visible{outline:2px solid #fff2bb;outline-offset:2px}button[aria-pressed="true"]{background:#fff0c9;color:#283129;border-color:#fff6db}.restore{position:fixed;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));padding:10px 16px}
   [hidden]{display:none!important}#status{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(86vw,28rem);margin:0;padding:15px 20px;border-radius:18px;text-align:center}
+  #walk-hud{position:fixed;inset:0;pointer-events:none}
+  .crosshair{position:absolute;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);filter:drop-shadow(0 1px 1px #000b)}
+  .crosshair::before,.crosshair::after{content:"";position:absolute;inset:5px 0;background:#fff8e7;border-radius:2px}
+  .crosshair::after{inset:0 5px}
+  #walk-hint{position:absolute;left:50%;top:calc(50% + 22px);transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);padding:11px 16px;margin:0;border-radius:14px;text-align:center;pointer-events:none}
   @media(max-width:680px){.ui{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;gap:8px}.toggle{grid-row:2;justify-self:start;flex-wrap:wrap}.cameras{grid-row:4}.identity{padding:10px 13px}.identity p{margin-bottom:7px}button{padding:8px 10px}}
   @media(max-height:460px) and (min-width:681px){.ui{padding:10px}.identity{padding:9px 13px}}
 </style>
@@ -26,15 +31,20 @@
 <canvas id="view" aria-label="Interactive 3D view of a coastal stilt house"></canvas>
 <div class="ui" id="ui">
   <section class="glass identity" aria-label="Scene information">
-    <h1>Stilt House</h1><p>Drag to orbit 360° · Scroll to zoom</p>
+    <h1>Stilt House</h1><p id="camera-help">Drag to orbit 360° · Scroll to zoom</p>
     <div class="badges"><span class="badge" id="renderer">WebGL 2</span><output class="badge" id="fps" aria-label="Frames per second">— FPS</output></div>
   </section>
   <div class="glass toggle" role="group" aria-label="Scene settings">
     <button data-setting="golden" aria-pressed="false">Golden Hour</button><button data-setting="dusk" aria-pressed="false">Dusk</button><button data-setting="wind" aria-pressed="false">Wind</button><button id="clean" aria-pressed="false">Clean View</button>
   </div>
   <nav class="glass cameras" aria-label="Camera presets">
+    <button id="walk" data-camera="walk" aria-pressed="false" hidden>Walk</button>
     <button data-camera="bay" aria-pressed="true">Bay Deck</button><button data-camera="street" aria-pressed="false">Street Side</button><button data-camera="aerial" aria-pressed="false">Aerial</button><button data-camera="under" aria-pressed="false">Under the House</button><button data-camera="dock" aria-pressed="false">Dock View</button><button data-camera="orbit" aria-pressed="false">Orbit</button>
   </nav>
+</div>
+<div id="walk-hud" hidden>
+  <span class="crosshair" aria-hidden="true"></span>
+  <p class="glass" id="walk-hint" lang="tr">Tıkla ve gez — WASD, Shift, Space, Esc</p>
 </div>
 <button class="glass restore" id="restore" hidden>Restore View</button>
 <p class="glass" id="status" role="status">Loading 3D scene…</p>
@@ -83,6 +93,17 @@ function launch(T, OrbitControls) {
   const lerp = (a,b,t) => a + (b-a)*t;
   const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
   const smooth = (a,b,t) => {const u = clamp((t-a)/(b-a),0,1); return u*u*(3-2*u);};
+  const walkSolids=[],walkSurfaces=[];
+  function walkBox(x,z,width,depth,bottom,top,angle=0,rise=0) {
+    walkSolids.push({x,z,halfX:width/2,halfZ:depth/2,bottom,top,c:cos(angle),s:sin(angle),rise});
+  }
+  function walkBarrier(a,b,width,bottom,top,rise=0) {
+    const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+    if(length>0) walkBox((a[0]+b[0])/2,(a[1]+b[1])/2,width,length+width,bottom,top,Math.atan2(dx,dz),rise);
+  }
+  function walkDeck(x1,x2,z1,z2,y,cut=0,thickness=.24) {
+    walkSurfaces.push({x1,x2,z1,z2,y,cut,thickness});
+  }
   let seed = 734297;
   function rand() {
     seed = (Math.imul(seed,1664525) + 1013904223) >>> 0;
@@ -431,6 +452,7 @@ function launch(T, OrbitControls) {
     f.b(w*.34,-.19,.211,.079,.092,.066,'#c8aa70',iron);
     f.b(0,-h/2-.032,.20,w+.24,.055,.18,'#9b9f8d',iron);
   }
+  walkBox(0,0,17.18,7.56,3.49,upperWall);
   box(0,(4+7.45)/2,0,16.94,3.47,7.34,'#536f61');
   boardwall(0,3.70,17,slab,upperWall);
   boardwall(0,-3.70,17,slab,upperWall,PI);
@@ -495,6 +517,7 @@ function launch(T, OrbitControls) {
 
   function post(x,z,top,width=.31,tint=pile) {
     const bottom=landHeight(x,z)-.10;
+    walkBox(x,z,width+.049,width+.059,bottom,top);
     box(x,(bottom+top)/2,z,width,top-bottom,width+.018,tint,timber);
     box(x,bottom+.18,z,width+.049,.29,width+.059,'#827d67');
   }
@@ -505,6 +528,7 @@ function launch(T, OrbitControls) {
   }
   function sign(x){return x<0?-1:1;}
   for (const x of [-7.58,-3.75,2.95,7.56]) box(x,3.61,0,.27,.33,7.3,joist,timber);
+  walkBox(-5.30,1.25,5.72,4.30,-.15,3.81);
   boardwall(-5.30,3.32,5.51,.12,3.81);
   boardwall(-2.54,1.25,4.14,.12,3.81,PI/2);
   boardwall(-8.05,1.25,4.14,.12,3.81,-PI/2);
@@ -515,6 +539,7 @@ function launch(T, OrbitControls) {
   door(-6.41,1.25,-.83,PI,1.05,2.15);
 
   function lattice(a,b,lo,hi) {
+    walkBarrier(a,b,.09,lo,hi);
     const length=Math.hypot(b[0]-a[0],b[1]-a[1]),h=hi-lo;
     const point=(u,v)=>[lerp(a[0],b[0],u/length),lo+v,lerp(a[1],b[1],u/length)];
     for (const v of [0,h]) beam(point(0,v),point(length,v),.08,.09,'#867863');
@@ -532,6 +557,7 @@ function launch(T, OrbitControls) {
   lattice([8.99,5.8],[11.33,5.8],2.32,3.86);
 
   function rail(a,b,floorY,spacing=.235) {
+    walkBarrier(a,b,.15,floorY,floorY+1.10);
     const length=Math.hypot(b[0]-a[0],b[1]-a[1]);
     const point=(f,y)=>[lerp(a[0],b[0],f),floorY+y,lerp(a[1],b[1],f)];
     beam(point(0,1.005),point(1,1.005),.085,.132,'#c39562');
@@ -550,6 +576,7 @@ function launch(T, OrbitControls) {
     }
   }
   function deck(x1,x2,z1,z2,y,cut=0) {
+    walkDeck(x1,x2,z1,z2,y,cut);
     const count=Math.ceil((x2-x1)/.213),width=(x2-x1)/count;
     for (let i=0;i<count;i++) {
       const x=x1+(i+.5)*width;
@@ -570,6 +597,7 @@ function launch(T, OrbitControls) {
     const angle=Math.atan2(high[0]-low[0],high[2]-low[2]);
     const length=Math.hypot(high[0]-low[0],high[2]-low[2]),rise=high[1]-low[1];
     const at=(t,w,y)=>[lerp(low[0],high[0],t)+cos(angle)*w,y,lerp(low[2],high[2],t)-sin(angle)*w];
+    walkSurfaces.push({x:low[0],z:low[2],y:low[1],length,rise,width,steps,c:cos(angle),s:sin(angle),thickness:.116});
     for (let i=0;i<steps;i++) {
       const y=lerp(low[1],high[1],(i+1)/steps);
       box(...at((i+.5)/steps,0,y-.058),width,.116,length/steps+.038,pick(deckTint),timber,Euler(0,angle));
@@ -580,6 +608,8 @@ function launch(T, OrbitControls) {
     }
     for (const s of railSides) {
       const w=(width*.5-.049)*s;
+      const a=at(0,w,0),b=at(1,w,0);
+      walkBarrier([a[0],a[2]],[b[0],b[2]],.128,low[1],low[1]+1.09,rise);
       beam(at(0,w,low[1]+.97),at(1,w,high[1]+1.005),.105,.101,'#c19565');
       beam(at(.02,w,low[1]+.23),at(.99,w,high[1]+.19),.075,.072,'#9f784e');
       for (let i=0;i<=steps;i++) {
@@ -856,6 +886,8 @@ function launch(T, OrbitControls) {
 
   function makeUte() {
     const ute=new T.Group();ute.position.set(1.40,.065,-10.54);ute.rotation.y=-.09;root.add(ute);
+    walkBox(ute.position.x,ute.position.z,6.82,2.31,0,1.43,ute.rotation.y);
+    walkBox(ute.position.x,ute.position.z,2.22,2.10,1.43,2.19,ute.rotation.y);
     const paint=surface('#679b9f',{roughness:.50,metalness:.23});
     const edge=surface('#7aa6a5',{roughness:.60,metalness:.14});
     const silver=surface('#c2c9c1',{roughness:.31,metalness:.59});
@@ -989,6 +1021,7 @@ function launch(T, OrbitControls) {
 
   // The pier is offset from the terrace so the bay remains visible between them.
   const pierX=14.15,pierY=.67;
+  walkDeck(pierX-1.165,pierX+1.165,10.29,31.94,pierY-.002,0,.24);
   for(let i=0;i<95;i++) {
     const z=10.4+i*.228;
     const w=2.33+sin(i*.9)*.048;
@@ -999,13 +1032,17 @@ function launch(T, OrbitControls) {
     beam([x,pierY-.187,10.36],[x,pierY-.187,31.91],.21,.17,'#7d735c');
     for(let i=0;i<9;i++) {
       const z=10.64+i*2.55;
+      walkBox(x+side*.21,z,.22,.22,-1.20,1.06);
       box(x+side*.21,-.095,z,.19,2.20,.192,pick(['#777362','#8b816b','#9a8f72']),timber);
       box(x+side*.21,1.02,z,.219,.066,.221,'#af9a77',timber);
       if(i%2===0) box(x+side*.195,pierY+.029,z,.22,.058,.27,'#5b5d4b',iron);
     }
   }
   deck(12.95,17.82,30.02,32.20,pierY,.41);
-  for(const z of [30.17,31.98]) box(17.61,.044,z,.18,1.96,.18,'#8c8169',timber);
+  for(const z of [30.17,31.98]) {
+    walkBox(17.61,z,.18,.18,-.94,1.03);
+    box(17.61,.044,z,.18,1.96,.18,'#8c8169',timber);
+  }
   stairs([14.14,.03,9.59],[14.14,pierY,10.43],1.82,4,[]);
   crate(12.36,.08,10.45,.43);
 
@@ -1106,6 +1143,11 @@ function launch(T, OrbitControls) {
     const base=landHeight(x,z)-.04;
     const at=t=>V(x+dx*t*t,base+h*t,z+dz*t*t);
     const thickness=.18+h*.008;
+    for(let y=0;y<Math.min(h,6);y+=2) {
+      const a=at(y/h),b=at(Math.min(y+2,h)/h);
+      const span=thickness*(y===0?2.36:2);
+      walkBox((a.x+b.x)/2,(a.z+b.z)/2,span+Math.abs(a.x-b.x),span+Math.abs(a.z-b.z),a.y,b.y);
+    }
     for(let j=0;j<24;j++) {
       const a=at(j/24),b=at((j+1)/24),delta=b.clone().sub(a);
       const r=thickness*(1-j/24*.48)*(j<2?1.18:1);
@@ -1271,6 +1313,107 @@ function launch(T, OrbitControls) {
   }
   updateLighting(0,1);
 
+  const walkRadius=.25,eyeHeight=1.70,bodyHeight=1.79,stepHeight=.40;
+  const spawnX=5.85,spawnZ=-8.90;
+  const walk={x:spawnX,z:spawnZ,feet:landHeight(spawnX,spawnZ),yaw:PI*.60,pitch:0,velocityY:0,grounded:true};
+  let shownFeet=walk.feet,jumpQueued=false,walking=false;
+  const walkKeys=new Set();
+  const movementKeys=new Set(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','Space']);
+
+  function surfaceTop(surface,x,z) {
+    if(surface.steps) {
+      const dx=x-surface.x,dz=z-surface.z;
+      const along=dx*surface.s+dz*surface.c;
+      if(along<-.019 || along>surface.length+.019 || Math.abs(dx*surface.c-dz*surface.s)>surface.width/2) return -Infinity;
+      const tread=clamp(floor(along/surface.length*surface.steps)+1,1,surface.steps);
+      return surface.y+surface.rise*tread/surface.steps;
+    }
+    if(x<surface.x1-.006 || x>surface.x2+.006 || z<surface.z1-.006 || z>surface.z2+.006) return -Infinity;
+    const edge=surface.z2-Math.max(0,x-(surface.x2-surface.cut));
+    return z<=edge+.006?surface.y:-Infinity;
+  }
+
+  // Feet sample the terrain and nearby treads. The same slabs block the head from below.
+  function walkFloor(x,z,limit) {
+    let height=Math.max(landHeight(x,z),water.position.y-.38);
+    for(const surface of walkSurfaces) {
+      const top=surfaceTop(surface,x,z);
+      if(top<=limit+.001 && top>height) height=top;
+    }
+    return height;
+  }
+
+  function blockedWalk(x,z,feet) {
+    const head=feet+bodyHeight;
+    for(const solid of walkSolids) {
+      if(solid.top+solid.rise<=feet+.001 || solid.bottom>=head) continue;
+      const dx=x-solid.x,dz=z-solid.z;
+      const localX=dx*solid.c-dz*solid.s,localZ=dx*solid.s+dz*solid.c;
+      const gapX=Math.max(0,Math.abs(localX)-solid.halfX),gapZ=Math.max(0,Math.abs(localZ)-solid.halfZ);
+      if(gapX*gapX+gapZ*gapZ>=walkRadius*walkRadius) continue;
+      const offset=solid.rise*clamp(.5+localZ/(solid.halfZ*2),0,1);
+      if(solid.top+offset>feet+.001 && solid.bottom+offset<head) return true;
+    }
+    for(const surface of walkSurfaces) {
+      const top=surfaceTop(surface,x,z);
+      if(top>feet+.001 && top-surface.thickness<head) return true;
+    }
+    return false;
+  }
+
+  function moveWalk(x,z) {
+    if(x< -154 || x>154 || z< -104) return false;
+    const floorY=walkFloor(x,z,walk.feet+(walk.grounded?stepHeight:0));
+    if(z>shore(x)+2.55 && floorY<water.position.y) return false;
+    const nearFloor=walk.grounded && Math.abs(floorY-walk.feet)<=stepHeight+.001;
+    const feet=nearFloor?floorY:walk.feet;
+    if(floorY>feet+.001 || blockedWalk(x,z,feet)) return false;
+    walk.x=x;walk.z=z;walk.feet=feet;walk.grounded=nearFloor;
+    return true;
+  }
+
+  function poseWalkCamera() {
+    camera.position.set(walk.x,shownFeet+eyeHeight,walk.z);
+    camera.rotation.set(walk.pitch,walk.yaw,0,'YXZ');
+  }
+
+  function updateWalk(dt) {
+    const forward=Number(walkKeys.has('KeyW'))-Number(walkKeys.has('KeyS'));
+    const strafe=Number(walkKeys.has('KeyD'))-Number(walkKeys.has('KeyA'));
+    if(jumpQueued && walk.grounded) {
+      walk.velocityY=walk.feet<water.position.y?2.45:4.15;
+      walk.grounded=false;
+    }
+    jumpQueued=false;
+    const distance=Math.hypot(forward,strafe)||1;
+    const dx=(cos(walk.yaw)*strafe-sin(walk.yaw)*forward)/distance;
+    const dz=(-sin(walk.yaw)*strafe-cos(walk.yaw)*forward)/distance;
+    const pace=walkKeys.has('ShiftLeft')||walkKeys.has('ShiftRight')?5.8:2.9;
+    const substeps=Math.max(1,Math.ceil(dt*120)),step=dt/substeps;
+    for(let i=0;i<substeps;i++) {
+      if(forward||strafe) {
+        const move=step*pace*(walk.feet<water.position.y-.035?.48:1);
+        if(!moveWalk(walk.x+dx*move,walk.z+dz*move)) {
+          if(dx) moveWalk(walk.x+dx*move,walk.z);
+          if(dz) moveWalk(walk.x,walk.z+dz*move);
+        }
+      }
+      if(walk.grounded) continue;
+      const floorY=walkFloor(walk.x,walk.z,walk.feet);
+      walk.velocityY-=15*step;
+      const next=walk.feet+walk.velocityY*step;
+      if(next<=floorY) {
+        walk.feet=floorY;walk.velocityY=0;walk.grounded=true;
+      } else if(walk.velocityY>0 && blockedWalk(walk.x,walk.z,next)) {
+        walk.velocityY=0;
+      } else {
+        walk.feet=next;
+      }
+    }
+    shownFeet=walk.grounded?clamp(lerp(shownFeet,walk.feet,1-Math.exp(-dt*25)),walk.feet-.10,walk.feet+.10):walk.feet;
+    poseWalkCamera();
+  }
+
   const presets = {
     bay:{eye:[22.2,13.05,29.0],look:[.95,4.08,2.2],fov:35},
     street:{eye:[17.75,4.72,-27.1],look:[.87,4.38,-1.9],fov:36},
@@ -1283,6 +1426,10 @@ function launch(T, OrbitControls) {
   const settingButtons=[...document.querySelectorAll('[data-setting]')];
   const overlay=document.getElementById('ui'),restore=document.getElementById('restore'),clean=document.getElementById('clean');
   const fps=document.getElementById('fps');
+  const walkButton=document.getElementById('walk'),walkHud=document.getElementById('walk-hud');
+  const walkHint=document.getElementById('walk-hint'),cameraHelp=document.getElementById('camera-help');
+  const touchOnly=matchMedia('(hover: none) and (pointer: coarse)');
+  const walkHintText=walkHint.textContent;
   const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const framingPoints=[
     [-10.66,4.94,2.45],[-10.66,4.94,-1.71],[-9.84,.09,8.10],[-4.20,6.55,5.80],
@@ -1310,7 +1457,28 @@ function launch(T, OrbitControls) {
   function markCamera(name) {
     for(const button of cameraButtons) button.setAttribute('aria-pressed',String(button.dataset.camera===name));
   }
+  function clearWalkInput() {
+    walkKeys.clear();jumpQueued=false;
+  }
+  function updateWalkHud() {
+    walkHud.hidden=!walking;
+    walkHint.hidden=document.pointerLockElement===canvas;
+    cameraHelp.textContent=walking?'Birinci şahıs görünümü':'Drag to orbit 360° · Scroll to zoom';
+  }
+  function selectWalk() {
+    if(walkButton.hidden || walking) return;
+    walking=true;transition=null;preset=null;
+    controls.enabled=false;controls.autoRotate=false;
+    camera.fov=62;camera.near=.055;
+    poseWalkCamera();resize();markCamera('walk');updateWalkHud();
+  }
   function selectCamera(name,instant=false) {
+    if(walking) {
+      walking=false;clearWalkInput();
+      if(document.pointerLockElement===canvas) document.exitPointerLock();
+      controls.enabled=true;camera.near=.13;
+      instant=true;resize();updateWalkHud();
+    }
     preset=name;markCamera(name);controls.autoRotate=false;
     const end=placement(name);
     controls.maxDistance=Math.max(110,end.eye.distanceTo(end.target)*1.15);
@@ -1331,13 +1499,59 @@ function launch(T, OrbitControls) {
   }
   function resize() {
     const w=Math.max(1,window.innerWidth),h=Math.max(1,window.innerHeight);
-    renderer.setPixelRatio(pixelRatio);renderer.setSize(w,h,false);
+    renderer.setPixelRatio(walking?Math.min(pixelRatio,1):pixelRatio);renderer.setSize(w,h,false);
     camera.aspect=w/h;camera.updateProjectionMatrix();
   }
-  resize();selectCamera('bay',true);
+  function updateWalkAvailability() {
+    walkButton.hidden=touchOnly.matches || typeof canvas.requestPointerLock!=='function';
+    if(walking && walkButton.hidden) selectCamera('bay',true);
+  }
+  updateWalkAvailability();
+  if(walkButton.hidden) {resize();selectCamera('bay',true);} else selectWalk();
+  touchOnly.addEventListener('change',updateWalkAvailability);
   window.addEventListener('resize',()=>{resize();if(preset) selectCamera(preset,true);});
   controls.addEventListener('start',()=>{transition=null;controls.autoRotate=false;preset=null;markCamera(null);});
-  for(const button of cameraButtons) button.addEventListener('click',()=>selectCamera(button.dataset.camera));
+  for(const button of cameraButtons) button.addEventListener('click',()=>{
+    if(button===walkButton) selectWalk();else selectCamera(button.dataset.camera);
+  });
+  function showLockError() {
+    if(walking && document.pointerLockElement!==canvas) walkHint.textContent='Fare kilitlenemedi. Tekrar tıkla veya bir kamera seç.';
+  }
+  canvas.addEventListener('click',()=>{
+    if(!walking || walkButton.hidden || document.pointerLockElement===canvas) return;
+    walkHint.textContent=walkHintText;
+    try {
+      const lockRequest=canvas.requestPointerLock({unadjustedMovement:true});
+      lockRequest?.catch?.(()=>{
+        try { canvas.requestPointerLock()?.catch?.(showLockError); } catch { showLockError(); }
+      });
+    } catch {
+      showLockError();
+    }
+  });
+  document.addEventListener('pointerlockerror',showLockError);
+  document.addEventListener('pointerlockchange',()=>{
+    clearWalkInput();walkHint.textContent=walkHintText;updateWalkHud();
+    if(!walking && document.pointerLockElement===canvas) document.exitPointerLock();
+  });
+  document.addEventListener('mousemove',event=>{
+    if(!walking || document.pointerLockElement!==canvas) return;
+    // Chrome/Windows bazen kilitliyken tek olayda dev sıçrama verir: büyük değerleri at, kalanı sınırla.
+    const mx=event.movementX, my=event.movementY;
+    if(Math.abs(mx)>300 || Math.abs(my)>300) return;
+    const sens=.0013;
+    walk.yaw=(walk.yaw-clamp(mx,-120,120)*sens)%(2*PI);
+    walk.pitch=clamp(walk.pitch-clamp(my,-120,120)*sens,-PI/2+.015,PI/2-.015);
+  });
+  window.addEventListener('keydown',event=>{
+    if(!walking || document.pointerLockElement!==canvas || !movementKeys.has(event.code)) return;
+    event.preventDefault();
+    walkKeys.add(event.code);
+    if(event.code==='Space' && !event.repeat) jumpQueued=true;
+  });
+  window.addEventListener('keyup',event=>walkKeys.delete(event.code));
+  window.addEventListener('blur',clearWalkInput);
+  document.addEventListener('visibilitychange',clearWalkInput);
   for(const button of settingButtons) button.addEventListener('click',()=>{
     switch(button.dataset.setting) {
       case 'golden': golden=!golden;if(golden) dusk=false;lightingChange=true;break;
@@ -1353,7 +1567,9 @@ function launch(T, OrbitControls) {
     (enabled?restore:clean).focus({preventScroll:true});
   }
   clean.addEventListener('click',()=>cleanView(true));restore.addEventListener('click',()=>cleanView(false));
-  window.addEventListener('keydown',event=>{if(event.key==='Escape'&&overlay.hidden) cleanView(false);});
+  window.addEventListener('keydown',event=>{
+    if(event.key==='Escape' && overlay.hidden && document.pointerLockElement!==canvas) cleanView(false);
+  });
 
   const start=performance.now();let last=start,lastFps=start,frames=0,slow=0;
   function frame(now) {
@@ -1367,8 +1583,12 @@ function launch(T, OrbitControls) {
       camera.fov=lerp(transition.fromFov,transition.end.fov,u);camera.updateProjectionMatrix();
       if(step>=1){transition=null;controls.autoRotate=preset==='orbit';}
     }
-    controls.update(dt);
-    camera.position.y=Math.max(camera.position.y,.36,landHeight(camera.position.x,camera.position.z)+.32);
+    if(walking) {
+      updateWalk(dt);
+    } else {
+      controls.update(dt);
+      camera.position.y=Math.max(camera.position.y,.36,landHeight(camera.position.x,camera.position.z)+.32);
+    }
     sky.position.copy(camera.position);
     sharedSky.clock.value=t;
     windTime.value=t;
@@ -1392,7 +1612,7 @@ function launch(T, OrbitControls) {
     if(now-lastFps>=580) {
       const rate=Math.round(frames*1000/(now-lastFps));
       fps.textContent=`${rate} FPS`;
-      slow=rate<47?slow+1:0;
+      slow=!walking && rate<47?slow+1:0;
       if(slow>=4 && pixelRatio>1 && !document.hidden) {
         pixelRatio=Math.max(1,pixelRatio-.16);resize();slow=0;
       }
