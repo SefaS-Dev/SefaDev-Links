@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" role="img" aria-label="Stilt House 3D proje önizleme görseli">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#90b4b1"/>
+      <stop offset=".58" stop-color="#c5c5a5"/>
+      <stop offset="1" stop-color="#5a7d79"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#315e5a"/>
+      <stop offset=".5" stop-color="#73908a"/>
+      <stop offset="1" stop-color="#294f4c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1536" height="1024" fill="url(#sky)"/>
+  <rect y="650" width="1536" height="374" fill="url(#water)"/>
+  <g opacity=".22" fill="#e7efdb">
+    <ellipse cx="390" cy="760" rx="260" ry="18"/>
+    <ellipse cx="1110" cy="820" rx="320" ry="22"/>
+  </g>
+  <g transform="translate(425 260)">
+    <rect x="0" y="230" width="690" height="320" rx="12" fill="#d9caa8"/>
+    <rect x="54" y="278" width="160" height="170" rx="8" fill="#5e7772"/>
+    <rect x="478" y="278" width="158" height="170" rx="8" fill="#5e7772"/>
+    <rect x="275" y="278" width="140" height="272" rx="8" fill="#b7a57e"/>
+    <polygon points="-20,238 345,-30 710,238" fill="#5a5141"/>
+    <polygon points="20,236 345,20 670,236" fill="#77705a"/>
+    <rect x="90" y="550" width="34" height="170" fill="#514638"/>
+    <rect x="566" y="550" width="34" height="170" fill="#514638"/>
+    <rect x="220" y="550" width="34" height="170" fill="#514638"/>
+  </g>
+  <path d="M80 900 C360 850 650 930 920 880 S1320 860 1460 910" fill="none" stroke="#a9c0aa" stroke-width="20" opacity=".28"/>
+</svg>
